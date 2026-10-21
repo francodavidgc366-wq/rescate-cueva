@@ -3,7 +3,7 @@
 set -e
 cd "$(dirname "$0")"
 python3 - <<'PY'
-files = ['vendor/peerjs.min.js','src/assets.js','src/story.js','src/engine.js','src/net.js','src/ui.js','src/main.js']
+files = ['vendor/peerjs.min.js','src/assets.js','src/audio.js','src/story.js','src/engine.js','src/net.js','src/ui.js','src/hud.js','src/main.js']
 js = ''.join('<script>\n' + open(f, encoding='utf-8').read().replace('</script', '<\\/script') + '\n</script>\n' for f in files)
 open('index.html', 'w', encoding='utf-8').write(
  '<!doctype html>\n<html lang="es"><head><meta charset="utf-8">\n'

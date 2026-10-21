@@ -1,0 +1,30 @@
+# NOTES-engine3 (engine.js v3)
+`src/engine.js` (`window.Engine`, sin dependencias) + `tools/engine-test.html` (servir con `python3 -m http.server`; abrir `/tools/engine-test.html`; en consola `T.reach()`, `T.conn()`, `T.soak(5)`).
+
+## API real
+`Engine.create(canvas,{assets,getState,onInteract(role,id),onSfx(name,role),localRole,authority=true,water})` (`localId` sigue valiendo como alias de `localRole`). Instancia:
+- `start/stop/step(dt?)/render/fit(maxW,maxH)/resize=fit`; props `water, waterRate, tick, active, bodies, poiMap, stats{warps,interacts,killed}`.
+- **Un humano = un rol**: `setLocal(role)` (camara, prompts y entrada) y `setBot(role,true|false)` (IA autonoma). Por defecto los roles != local son IA. `setActive(role)`=`setLocal`, `setFollow(role,on)`=`setBot`: alias que ya no cambian de personaje en pleno juego (la UI no debe llamarlos con E). `setInput(role,{left,right,jump,interact,up,down})` solo afecta a roles con `bot=false`. E = `interact` (flanco de subida).
+- **POI**: `setPois(round,[{id,slot:0..3,label,icon,kind:'info'|'recurso'|'secreto',used?,by?}])` (slot 3 = secreto del tramo; posicion fija por tramo/ranura); `markPoi(id,{used,by})`; `onInteract(role,poiId)` se llama al pulsar E cerca (humano) o al llegar (`botGoto`). Si `getState().players[role].ap<=0` o el POI esta usado, el motor NO llama a onInteract (suena `error`). Prompt en el mundo: tecla E dibujada + etiqueta; atenuado con "USADO"/"SIN AP". Secreto: destello tenue hasta que alguien se acerca a <40 px (entonces se revela). Flechas en el borde hacia POI sin usar fuera de pantalla. `slotPos(round,slot)`, `poiPos(id)`.
+- **Companeros IA**: `botGoto(role, poiId | {x,y?}, cb(ok)?)` -> bool (false si inalcanzable; sin teletransporte). Navegacion por grafo de saltos simulados con la fisica real (ver abajo). Sin objetivo, el bot pasea/inspecciona. `say(role,text,{ms?,think?})`: burbuja (texto con maquina de escribir, 3 lineas max; `'...'` = pensando; emojis `! ? 💡 ❤ 👍 😅` = pictograma).
+- **Agua**: `setWater(0..100)` (objetivo, suavizado), `setWaterRate(unidades/seg)` (sube continuamente; ponerlo a 0 al salir de `explore`). Avisos automaticos: banner "EL AGUA SUBE..." al cruzar cada 10 %, "CUIDADO: AGUA CERCA" cuando llega a los pies, pulso rojo en bordes, temblor, indicador "AGUA ^" bajo la pantalla; `onSfx('water_warn'|'rumble'|'drip')`.
+- Resto: `gather(round)` (coloca a los 3 y cancela objetivos), `pan(round)`, `resetGates()`, `fx(type,x,y)`=`spawnFx` (dust splash spark drip bubble confetti rescue debris shake flash smoke), `camShake(a)`, `snapshot()/applySnapshot()` (cliente solo interpola), `Engine.demoLoop(canvas)` (menu: 3 IA recorren los POI de cada tramo). Estaticos `Engine.setBot/setPois/markPoi/botGoto/say/setWater/setWaterRate/gather/pan/fx/camShake` delegan en `Engine.current`.
+- `onSfx` solo emite nombres del SPEC: `jump land step splash swim interact error confirm select heal plank rumble water_warn drip` (se eliminaron `switch`, `warp`).
+
+## Nivel (dibujado a mano, 300x16 tiles, 5 tramos de 60 columnas, sube hacia la salida)
+1 campamento base (ambar) · 2 mina vieja (foso: el ING construye puente en `bridge2` con E; el resto cruza por tablones con huecos de 2 tiles) · 3 sala de cristales (pared de 8 tiles: la GUIA la trepa y al llegar arriba la rebaja a escalon; el resto sube por una escalera de tablones) · 4 galeria inundada (barrera de cristal: la MEDICA la disuelve manteniendo E en la estacion `med4`; el resto pasa por encima) · 5 camara de Lia (`lia`, medica mantiene E = `lia_heal`). Las habilidades son ATAJOS (ahorran ~8-10 s), nunca bloqueos: todos los POI son alcanzables a pie por todos los roles.
+Fisica Celeste intacta (60 Hz fijo, coyote 6f, buffer 6f, salto variable, corner correction); `physStep` se extrajo de `tickBody` y la IA lo reutiliza para simular saltos.
+
+## Navegacion IA
+Nodo = celda de pie (apoyo solido/tablon + hueco encima). Aristas: andar, caer del borde, saltos (corriendo o parado, pulsacion corta/media/larga; cada uno verificado con 3 offsets de despegue) y bajar tablon. Grafo por tramo (~40 ms, perezoso en `setPois/botGoto`), reconstruido si cambia una puerta. Campo de distancias inverso por objetivo; el bot se compromete con la arista (carrerilla, alineacion, salto con la misma pulsacion que la simulacion) y re-planifica al aterrizar; aristas que fallan 3 veces se descartan 25 s; sin progreso 6.5 s tres veces -> fundido y reaparicion (ultimo recurso, `stats.warps`).
+## Tests (consola de engine-test.html)
+- `T.reach(50[,true])`: 3 roles x 5 tramos x 4 POI, cada uno desde el spawn (o desde el suelo): 60/60 OK, 0 fundidos, tiempos 0.1-18 s simulados.
+- `T.conn()`: desde cada POI se llega a los otros 3 (vacio = OK).
+- `T.soak(5)`: 5 min simulados con 3 bots rotando de POI: 0 fundidos, parada maxima 6.5 s, 139 interacciones.
+## Visual (todo pre-renderizado, ~2.2 ms/frame step+render)
+Roca con bloques de piedra (Voronoi) + sombreado, hierba/liquen/flores por bioma, raices y lianas, grietas y vetas; decoracion por tramo (campamento con tiendas/hoguera/radio, mina con puntales/vagoneta/rieles/cables, cristales gigantes y colgantes, galeria con tuberias/cadenas/cascadas, camara de Lia con nido/velas); luciernagas, haces de luz fuertes, niebla de profundidad y bruma baja, reflejo especular en el agua, sombras bajo personajes, iconos POI de ART (`poi_icons`/`icons` por `names`). Sprites de personaje sin cambios (ART aun no rehizo `player_*`).
+## Agua y bots
+En el agua los bots bracean hacia la salida seca mas util (o hacia el POI si esta sumergido). Con agua a 30 % (tramo 1 inundado) 58/60 POI siguen alcanzables; los 2 fallos son la repisa secreta alta del tramo 1 desde el suelo inundado.
+## Limites / pendiente
+- Los bots no usan cuerdas ni la habilidad de pared/puente por su cuenta (los atajos los usa el humano; `Engine` expone la accion por E). Las cuerdas existen para humanos.
+- Assets nuevos de ART (`poi_icons`, `icons`): `poi_icons` se lee si trae `meta.names[]` (o `meta.index{}`), `fw/fh/cols`; si no, iconos 9x9 procedurales.

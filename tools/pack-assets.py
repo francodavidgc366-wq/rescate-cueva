@@ -6,7 +6,7 @@ meta = json.load(open(f'{R}/assets/gen/meta.json'))
 images = {}
 for n in meta:
     images[n] = 'data:image/png;base64,' + base64.b64encode(open(f'{R}/assets/gen/{n}.png', 'rb').read()).decode()
-credits = ['Todos los sprites, tilesets y fondos: generados por código (tools/gen-sprites.py), originales del proyecto, dedicados a CC0 1.0.',
+credits = ['Todos los sprites, ilustraciones, retratos, iconos y fondos: generados por código (tools/gen-sprites.py + art_*.py), originales del proyecto, dedicados a CC0 1.0.',
            'Fuente UI: Press Start 2P (CodeMan38, SIL OFL 1.1) si está disponible; sin ella, monospace del sistema.']
 js = 'window.ASSETS = ' + json.dumps(dict(images=images, meta=meta, credits=credits), separators=(',', ':')) + ';\n'
 assert len(js) < 3_000_000, len(js)

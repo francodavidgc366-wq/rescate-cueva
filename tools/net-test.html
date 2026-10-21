@@ -6,13 +6,14 @@
 <pre id="o"></pre><pre id="log" style="height:40vh;overflow:auto"></pre>
 <script src="../vendor/peerjs.min.js"></script><script src="../src/net.js"></script>
 <script>
-var st = { snaps: 0, inputs: 0, lastSnap: null, lastInput: null, errors: [], leaves: [], states: [] }, t0 = Date.now();
+var st = { got: {}, snaps: 0, inputs: 0, lastSnap: null, lastInput: null, errors: [], leaves: [], states: [] }, t0 = Date.now();
 window.ST = st;
 function L(m) { var e = document.getElementById('log'); e.textContent += ((Date.now() - t0) / 1000).toFixed(1) + ' ' + m + '\n'; e.scrollTop = 1e9; }
-['players', 'input', 'pick', 'state', 'snapshot', 'chat', 'ready', 'leave', 'error', 'reconnecting', 'reconnected'].forEach(function (t) {
+['players', 'input', 'pick', 'state', 'snapshot', 'chat', 'ready', 'vote', 'poi', 'secret', 'phase', 'typing', 'priv', 'leave', 'error', 'reconnecting', 'reconnected'].forEach(function (t) {
   Net.on(t, function (d, from) {
     if (t === 'snapshot') { st.snaps++; st.lastSnap = d; return; }
     if (t === 'input') { st.inputs++; st.lastInput = d; return; }
+    (st.got[t] = st.got[t] || []).push({ d: d, from: from });
     if (t === 'error') st.errors.push(d); if (t === 'leave') st.leaves.push(d); if (t === 'state') st.states.push(d);
     L(t + ' ' + JSON.stringify(d) + ' <' + from);
   });

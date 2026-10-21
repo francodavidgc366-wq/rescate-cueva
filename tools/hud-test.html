@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>hud-test</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}#game{position:absolute;inset:0;background:linear-gradient(#0d2b3a,#1b1038 70%,#0a0716);overflow:hidden}
+#game:before{content:"";position:absolute;left:0;right:0;bottom:0;height:35%;background:repeating-linear-gradient(90deg,#2a2236 0 32px,#241c2e 32px 64px);border-top:6px solid #4b3a63}
+#game:after{content:"(canvas del juego)";position:absolute;left:30%;top:45%;color:#fff3;font:12px monospace}
+#dev{position:fixed;right:0;top:0;z-index:99999;display:flex;flex-wrap:wrap;gap:2px;max-width:46vw;font:10px monospace;justify-content:flex-end}#dev button{font:10px monospace;padding:1px 4px;opacity:.75}</style></head>
+<body><div id="game"></div>
+<script>const Q=new URLSearchParams(location.search);if(Q.has('real'))document.write('<script src="../src/assets.js"><\/script>');</script>
+<script src="../src/hud.js"></script>
+<script>
+
+const R='medica';
+const pub={v:3,phase:'explore',round:2,tleft:62,difficulty:'normal',s:{agua:48,salud:62,material:55,confianza:70},score:{total:340,equipo:100,info:80,honestidad:60,riesgo:100},
+ event:{id:'derrumbe',title:'Derrumbe en la galería',text:'Un temblor sacude la cueva. Parte del techo cae y bloquea el paso principal; el agua busca nuevas salidas entre las rocas.',art:'event_derrumbe',radio:'Chicos, se oye todo crujir... daos prisa, por favor.'},
+ pois:[{id:'p1',slot:0,label:'Mapa viejo',icon:'mapa',kind:'info',used:true,by:'guia'},{id:'p2',slot:1,label:'Radio rota',icon:'radio',kind:'info',used:true,by:'medica'},{id:'p3',slot:2,label:'Caja de material',icon:'material',kind:'recurso',used:false},{id:'p4',slot:3,label:'?',icon:'ojo',kind:'secreto',used:false}],
+ plan:{options:[{id:'A',title:'Ruta alta por la grieta',text:'Subir por la grieta norte. Más lenta, pero lejos del agua.',known:'La grieta aguanta a dos personas como máximo.'},{id:'B',title:'Cruzar la galería inundada',text:'Nadar 20 metros con cuerda. Rápido y arriesgado.',known:'El agua está a 1,2 m y sube.'},{id:'C',title:'Esperar y reforzar',text:'Fortificar el campamento y esperar a que baje el caudal.',known:'Gastaría material y tiempo.'}],votes:{guia:'B'},chosen:null},
+ players:{guia:{name:'Nico',ready:true,ap:1,connected:true,ai:true},medica:{name:'Ona',ready:false,ap:2,connected:true,ai:false},ing:{name:'Iván',ready:false,ap:0,connected:true,ai:true}},
+ chat:[],hallazgos:2};
+const priv={goal:{text:'Mantén la salud de Lía por encima de 60 al terminar.',stat:'salud',min:60,points:150},secret:{text:'Sospechas una lesión interna en Lía y no se lo has dicho a nadie.',revealed:false},ap:2,
+ intel:[{id:'i1',round:2,poi:'p2',title:'Radio rota: último mensaje',text:'Se oye: "...la salida norte está bloqueada, solo queda el túnel bajo..."',truth:true,reliability:0.82,shared:false,about:['B']},
+ {id:'i2',round:2,poi:'p3',title:'Marcas en la pared',text:'Una línea de humedad a 1,5 m. El agua ha llegado hasta ahí antes.',reliability:0.6,shared:true},
+ {id:'i0',round:1,poi:'p1',title:'Pulso de Lía',text:'Lía respira con dificultad, pero está consciente.',reliability:0.93,shared:true}],
+ secretOptions:[{title:'Racionar suministros',text:'Repartes el material para que nadie se quede sin nada.',kind:'team',risk:1,reward:'+confianza'},{title:'Examen a escondidas',text:'Examinas a Lía en secreto para confirmar la lesión interna.',kind:'goal',risk:2,reward:'+objetivo'},{title:'Cruzar sola por delante',text:'Adelantas al grupo para abrir camino. Si falla, os cuesta caro.',kind:'risk',risk:3,reward:'+++ / ---'}],secretPick:null,planHints:{B:'Tu radio dice que el túnel bajo es la única salida (82%)'}};
+const msgs=[
+ {id:1,from:'director',kind:'event',text:'Derrumbe en la galería'},
+ {id:2,from:'lia',kind:'radio',text:'Chicos, se oye todo crujir... daos prisa, por favor.'},
+ {id:3,from:'guia',kind:'chat',text:'Yo he mirado el mapa: hay una grieta al norte que parece transitable.'},
+ {id:4,from:'guia',kind:'chat',text:'Ona, ¿tú qué has encontrado?'},
+ {id:5,from:'ing',kind:'share',text:'Mirad lo que he medido:',card:{title:'Caudal estimado',text:'El agua sube unos 4 cm por minuto en la galería baja.',reliability:0.71}},
+ {id:6,from:'medica',kind:'chat',text:'Yo creo que la ruta B es demasiado peligrosa para Lía.'},
+ {id:7,from:'ing',kind:'chat',text:'Pues a mí me parece la más rápida. No nos fiemos de la grieta.'},
+ {id:8,from:'sys',kind:'sys',text:'Nico ha inspeccionado: Mapa viejo'},
+ {id:9,from:'lia',kind:'radio',text:'Ona... me duele el costado...'}];
+function clone(o){return JSON.parse(JSON.stringify(o))}
+let S=clone(pub);Hud.mount(document.getElementById('game'));
+Hud.onChat(t=>{Hud.chat.add({id:'m'+Date.now(),from:R,kind:'chat',text:t,t:Date.now()});setTimeout(()=>{Hud.chat.typing('guia',true);setTimeout(()=>Hud.chat.add({id:'r'+Date.now(),from:'guia',kind:'chat',text:'Entendido, '+t.slice(0,20)+'…',t:Date.now()}),1500)},500)});
+Hud.onShare((id,o)=>{console.log('share',id,o);Hud.chat.add({id:'s'+Date.now(),from:R,kind:'share',text:o.asIs?'':'(versión mía)',card:{title:priv.intel.find(c=>c.id===id).title,text:o.text||priv.intel.find(c=>c.id===id).text,reliability:.8},altered:!o.asIs})});
+Hud.onVote(id=>{console.log('vote',id);S.plan.votes[R]=id;S.plan.votes.ing='B';Hud.update(S,priv,R)});
+Hud.onSecret(i=>console.log('secret',i));Hud.onReady(()=>{console.log('ready');S.players[R].ready=true;Hud.update(S,priv,R)});
+Hud.onExit(()=>console.log('exit'));
+function go(ph,extra){S=Object.assign(clone(S),{phase:ph},extra||{});Hud.update(S,priv,R)}
+const T={
+ explore:()=>{S.chat=msgs;go('explore',{tleft:62})},
+ explore_urgent:()=>{S.chat=msgs;go('explore',{tleft:9,s:{agua:82,salud:40,material:15,confianza:70}})},
+ briefing:()=>go('briefing',{tleft:14}),
+ plan:()=>{S.chat=msgs;go('plan',{tleft:38})},
+ plan_chosen:()=>{S.plan.votes={guia:'B',medica:'B',ing:'A'};S.plan.chosen='B';go('plan',{tleft:3})},
+ secret:()=>{S.chat=msgs;go('secret',{tleft:17})},
+ resolve:()=>{go('resolve',{tleft:0});Hud.showResolve({narrative:'Cruzáis la galería con la cuerda. Ona sujeta a Lía mientras Iván asegura el nudo. El agua os llega a la cintura.',rolls:[{label:'Cruce de la galería',roll:.34,need:.65},{label:'Estabilidad del techo',roll:.82,need:.55}],reveals:[{kind:'lie',role:'ing',text:'Iván mintió con el caudal: subía el doble de rápido.'},{role:'guia',text:'Nico había tomado un desvío por su cuenta.'}],delta:{agua:12,salud:-8,material:-10,confianza:-15},scoreDelta:{equipo:40,info:30,honestidad:-20,riesgo:50},achievements:['detective']}).then(()=>console.log('resolve done'))},
+ summary:()=>{go('summary');Hud.showSummary({round:2,score:{equipo:40,info:30,honestidad:-20,riesgo:50},notes2:{equipo:'Votasteis por mayoría',info:'Compartiste 2 tarjetas',honestidad:'Mentira descubierta',riesgo:'Cruce arriesgado superado'},total:340,notes:['Lía sigue consciente.','La confianza del equipo ha caído.']}).then(()=>console.log('summary done'))},
+ dossier:()=>{S.chat=msgs;go('explore');Hud.openDossier('intel')},
+ lie:()=>{T.dossier();document.querySelector('[data-act=edit]').click()},
+ secreto:()=>{T.dossier();Hud.openDossier('secreto')},
+ ach:()=>{Hud.achievement({id:'lengua',title:'Lengua de plata',text:'Una mentira te ha salido perfecta.'})},
+ float:()=>{Hud.floatText('+12 AGUA','bad','agua');Hud.floatText('+40 PTS','score','score')},
+ pause:()=>Hud.openPause(),
+ help:()=>Hud.help(),
+ waterup:()=>{go('explore',{s:{agua:78,salud:62,material:55,confianza:70}})}
+};
+if(!Q.has('dev0')){const d=document.createElement('div');d.id='dev';Object.keys(T).forEach(k=>{const b=document.createElement('button');b.textContent=k;b.onclick=()=>T[k]();d.appendChild(b)});document.body.appendChild(d)}
+localStorage.setItem('rcv3_hudhelp','{}');
+window.T=T;(T[Q.get('go')||'explore'])();
+</script></body></html>

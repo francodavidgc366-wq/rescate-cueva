@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Genera todos los sprites procedurales en assets/gen/*.png + assets/gen/meta.json.
 Uso: .venv/bin/python tools/gen-sprites.py   (necesita Pillow)"""
-import json, math, os, random
+import json, math, os, random, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from PIL import Image, ImageDraw
 
 OUT = os.path.join(os.path.dirname(__file__), '..', 'assets', 'gen')
@@ -469,5 +470,8 @@ def gen_ui():
 
 if __name__ == '__main__':
     gen_tiles(); gen_players(); gen_lia(); gen_water(); gen_props(); gen_cablecar(); gen_sky(); gen_ui()
+    import artlib, art_stills, art_portraits, art_icons, art_events, art_ui  # v3: ilustraciones, retratos, iconos (numpy)
+    art_stills.gen_stills(); art_portraits.gen_portraits(); art_icons.gen_icons(); art_events.gen_events(); art_ui.gen_trophies(); art_ui.gen_poi(); art_ui.gen_ui()
+    META.update(artlib.META)
     json.dump(META, open(os.path.join(OUT, 'meta.json'), 'w'), indent=1)
     print('ok', {k: (v['w'], v['h']) for k, v in META.items()})

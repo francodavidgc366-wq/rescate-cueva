@@ -252,6 +252,373 @@
   "w": 24,
   "h": 24,
   "slice": 8,
-  "note": "9-slice: esquinas 8px, centro tileable; fondo interior violeta oscuro, borde naranja"
+  "note": "9-slice: esquinas 8px, centro tileable; borde \u00e1mbar doble, interior violeta oscuro"
+ },
+ "still_valle": {
+  "w": 320,
+  "h": 180,
+  "note": "ilustraci\u00f3n de cinem\u00e1tica 320x180, para Ken Burns/parallax; sin alfa"
+ },
+ "still_cabina": {
+  "w": 320,
+  "h": 180,
+  "note": "ilustraci\u00f3n de cinem\u00e1tica 320x180, para Ken Burns/parallax; sin alfa"
+ },
+ "still_tormenta": {
+  "w": 320,
+  "h": 180,
+  "note": "ilustraci\u00f3n de cinem\u00e1tica 320x180, para Ken Burns/parallax; sin alfa"
+ },
+ "still_entrada": {
+  "w": 320,
+  "h": 180,
+  "note": "ilustraci\u00f3n de cinem\u00e1tica 320x180, para Ken Burns/parallax; sin alfa"
+ },
+ "still_radio": {
+  "w": 320,
+  "h": 180,
+  "note": "ilustraci\u00f3n de cinem\u00e1tica 320x180, para Ken Burns/parallax; sin alfa"
+ },
+ "still_mapa": {
+  "w": 320,
+  "h": 180,
+  "note": "ilustraci\u00f3n de cinem\u00e1tica 320x180, para Ken Burns/parallax; sin alfa"
+ },
+ "still_inundada": {
+  "w": 320,
+  "h": 180,
+  "note": "ilustraci\u00f3n de cinem\u00e1tica 320x180, para Ken Burns/parallax; sin alfa"
+ },
+ "still_rescate": {
+  "w": 320,
+  "h": 180,
+  "note": "ilustraci\u00f3n de cinem\u00e1tica 320x180, para Ken Burns/parallax; sin alfa"
+ },
+ "still_derrota": {
+  "w": 320,
+  "h": 180,
+  "note": "ilustraci\u00f3n de cinem\u00e1tica 320x180, para Ken Burns/parallax; sin alfa"
+ },
+ "portrait_guia": {
+  "w": 192,
+  "h": 48,
+  "cell": 48,
+  "fw": 48,
+  "fh": 48,
+  "frames": 4,
+  "cols": 4,
+  "expressions": [
+   "neutral",
+   "preocupado",
+   "enfadado",
+   "feliz"
+  ],
+  "note": "fila \u00fanica: neutral, preocupado, enfadado, feliz (x=i*48)"
+ },
+ "portrait_medica": {
+  "w": 192,
+  "h": 48,
+  "cell": 48,
+  "fw": 48,
+  "fh": 48,
+  "frames": 4,
+  "cols": 4,
+  "expressions": [
+   "neutral",
+   "preocupado",
+   "enfadado",
+   "feliz"
+  ],
+  "note": "fila \u00fanica: neutral, preocupado, enfadado, feliz (x=i*48)"
+ },
+ "portrait_ing": {
+  "w": 192,
+  "h": 48,
+  "cell": 48,
+  "fw": 48,
+  "fh": 48,
+  "frames": 4,
+  "cols": 4,
+  "expressions": [
+   "neutral",
+   "preocupado",
+   "enfadado",
+   "feliz"
+  ],
+  "note": "fila \u00fanica: neutral, preocupado, enfadado, feliz (x=i*48)"
+ },
+ "portrait_lia": {
+  "w": 192,
+  "h": 48,
+  "cell": 48,
+  "fw": 48,
+  "fh": 48,
+  "frames": 4,
+  "cols": 4,
+  "expressions": [
+   "neutral",
+   "preocupado",
+   "enfadado",
+   "feliz"
+  ],
+  "note": "fila \u00fanica: neutral, preocupado, enfadado, feliz (x=i*48)"
+ },
+ "portrait_director": {
+  "w": 192,
+  "h": 48,
+  "cell": 48,
+  "fw": 48,
+  "fh": 48,
+  "frames": 4,
+  "cols": 4,
+  "expressions": [
+   "neutral",
+   "preocupado",
+   "enfadado",
+   "feliz"
+  ],
+  "note": "fila \u00fanica: neutral, preocupado, enfadado, feliz (x=i*48)"
+ },
+ "icons": {
+  "w": 160,
+  "h": 32,
+  "cell": 16,
+  "fw": 16,
+  "fh": 16,
+  "cols": 10,
+  "rows": 2,
+  "names": [
+   "agua",
+   "salud",
+   "material",
+   "confianza",
+   "cuerda",
+   "bateria",
+   "radio",
+   "mapa",
+   "botiquin",
+   "llave",
+   "ojo",
+   "candado",
+   "trofeo",
+   "estrella",
+   "reloj",
+   "chat",
+   "voto",
+   "alerta",
+   "secreto",
+   "ap"
+  ],
+  "index": {
+   "agua": 0,
+   "salud": 1,
+   "material": 2,
+   "confianza": 3,
+   "cuerda": 4,
+   "bateria": 5,
+   "radio": 6,
+   "mapa": 7,
+   "botiquin": 8,
+   "llave": 9,
+   "ojo": 10,
+   "candado": 11,
+   "trofeo": 12,
+   "estrella": 13,
+   "reloj": 14,
+   "chat": 15,
+   "voto": 16,
+   "alerta": 17,
+   "secreto": 18,
+   "ap": 19
+  },
+  "order": [
+   "agua",
+   "salud",
+   "material",
+   "confianza",
+   "cuerda",
+   "bateria",
+   "radio",
+   "mapa",
+   "botiquin",
+   "llave",
+   "ojo",
+   "candado",
+   "trofeo",
+   "estrella",
+   "reloj",
+   "chat",
+   "voto",
+   "alerta",
+   "secreto",
+   "ap"
+  ],
+  "note": "idx k -> x=(k%10)*16, y=(k//10)*16; ap = punto de acci\u00f3n"
+ },
+ "event_derrumbe": {
+  "w": 160,
+  "h": 90,
+  "note": "ilustraci\u00f3n de evento 160x90"
+ },
+ "event_inundacion": {
+  "w": 160,
+  "h": 90,
+  "note": "ilustraci\u00f3n de evento 160x90"
+ },
+ "event_gas": {
+  "w": 160,
+  "h": 90,
+  "note": "ilustraci\u00f3n de evento 160x90"
+ },
+ "event_grieta": {
+  "w": 160,
+  "h": 90,
+  "note": "ilustraci\u00f3n de evento 160x90"
+ },
+ "event_tormenta": {
+  "w": 160,
+  "h": 90,
+  "note": "ilustraci\u00f3n de evento 160x90"
+ },
+ "event_linterna": {
+  "w": 160,
+  "h": 90,
+  "note": "ilustraci\u00f3n de evento 160x90"
+ },
+ "event_hipotermia": {
+  "w": 160,
+  "h": 90,
+  "note": "ilustraci\u00f3n de evento 160x90"
+ },
+ "event_murcielagos": {
+  "w": 160,
+  "h": 90,
+  "note": "ilustraci\u00f3n de evento 160x90"
+ },
+ "event_eco": {
+  "w": 160,
+  "h": 90,
+  "note": "ilustraci\u00f3n de evento 160x90"
+ },
+ "trophies": {
+  "w": 256,
+  "h": 64,
+  "cell": 32,
+  "fw": 32,
+  "fh": 32,
+  "cols": 8,
+  "rows": 2,
+  "names": [
+   "confesion",
+   "cero_bajas",
+   "cartografo",
+   "lengua_plata",
+   "detective",
+   "al_borde",
+   "todos_cumplen",
+   "sin_pausas",
+   "everest",
+   "cartas_arriba",
+   "riesgo_calculado",
+   "hombro",
+   "manos_limpias",
+   "cada_uno",
+   "unanimes",
+   "sin_secretos"
+  ],
+  "index": {
+   "confesion": 0,
+   "cero_bajas": 1,
+   "cartografo": 2,
+   "lengua_plata": 3,
+   "detective": 4,
+   "al_borde": 5,
+   "todos_cumplen": 6,
+   "sin_pausas": 7,
+   "everest": 8,
+   "cartas_arriba": 9,
+   "riesgo_calculado": 10,
+   "hombro": 11,
+   "manos_limpias": 12,
+   "cada_uno": 13,
+   "unanimes": 14,
+   "sin_secretos": 15
+  },
+  "note": "insignias de logros; idx k -> x=(k%8)*32,y=(k//8)*32; = Story ACH.trophy"
+ },
+ "poi_icons": {
+  "w": 160,
+  "h": 32,
+  "cell": 16,
+  "fw": 16,
+  "fh": 16,
+  "cols": 10,
+  "rows": 2,
+  "names": [
+   "mapa",
+   "agua",
+   "alerta",
+   "botiquin",
+   "cuerda",
+   "material",
+   "secreto",
+   "ojo",
+   "llave",
+   "radio",
+   "cristal",
+   "linterna",
+   "huellas",
+   "caja",
+   "libreta",
+   "brujula",
+   "tuberia",
+   "puerta",
+   "pozo",
+   "bateria"
+  ],
+  "index": {
+   "mapa": 0,
+   "agua": 1,
+   "alerta": 2,
+   "botiquin": 3,
+   "cuerda": 4,
+   "material": 5,
+   "secreto": 6,
+   "ojo": 7,
+   "llave": 8,
+   "radio": 9,
+   "cristal": 10,
+   "linterna": 11,
+   "huellas": 12,
+   "caja": 13,
+   "libreta": 14,
+   "brujula": 15,
+   "tuberia": 16,
+   "puerta": 17,
+   "pozo": 18,
+   "bateria": 19
+  },
+  "note": "idx k -> x=(k%10)*16,y=(k//10)*16; a\u00f1ade halo en el motor"
+ },
+ "ui_buttons": {
+  "w": 96,
+  "h": 48,
+  "fw": 24,
+  "fh": 16,
+  "cols": 4,
+  "rows": 3,
+  "slice": 6,
+  "states": [
+   "normal",
+   "hover",
+   "pressed",
+   "disabled"
+  ],
+  "variants": [
+   "primary",
+   "secondary",
+   "danger"
+  ],
+  "note": "9-slice slice=6; fila=variante, columna=estado"
  }
 }

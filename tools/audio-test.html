@@ -1,0 +1,78 @@
+<!doctype html><meta charset="utf-8"><title>audio-test</title>
+<style>body{background:#0b0816;color:#ddd;font:12px monospace;margin:12px}table{border-collapse:collapse}td,th{border:1px solid #333;padding:2px 6px;text-align:right}.f{color:#f66}.p{color:#6f6}button{font:14px monospace;padding:6px 12px}</style>
+<button id="go">Gesto: Sound.unlock() + musica</button> <button id="run">Render offline de todo</button> <span id="st"></span>
+<pre id="out"></pre>
+<script src="../src/audio.js"></script>
+<script>
+/* Pruebas de audio. Offline: cada pista y cada SFX se renderiza con OfflineAudioContext y se analiza (RMS, pico, clipping, bandas, planitud espectral,
+   periodicidad ritmica, croma vs escala). Navegador real: tras un gesto, Sound.state().running===true y Sound.level()>0. Resultados en window.__AUDIO_RESULTS. */
+function fft(re, im) { const n = re.length; for (let i = 1, j = 0; i < n; i++) { let b = n >> 1; for (; j & b; b >>= 1) j ^= b; j ^= b; if (i < j) { [re[i], re[j]] = [re[j], re[i]]; [im[i], im[j]] = [im[j], im[i]]; } }
+  for (let len = 2; len <= n; len <<= 1) { const a = -2 * Math.PI / len, wr = Math.cos(a), wi = Math.sin(a); for (let i = 0; i < n; i += len) { let cr = 1, ci = 0; for (let k = 0; k < len / 2; k++) { const u = i + k, v = i + k + len / 2, tr = re[v] * cr - im[v] * ci, ti = re[v] * ci + im[v] * cr; re[v] = re[u] - tr; im[v] = im[u] - ti; re[u] += tr; im[u] += ti; const t = cr * wr - ci * wi; ci = cr * wi + ci * wr; cr = t; } } } }
+const db = x => 20 * Math.log10(Math.max(x, 1e-9));
+function mono(buf) { const a = buf.getChannelData(0), b = buf.numberOfChannels > 1 ? buf.getChannelData(1) : a, m = new Float32Array(a.length); for (let i = 0; i < a.length; i++) m[i] = (a[i] + b[i]) / 2; return m; }
+function spectra(x, sr, N, maxFrames) { // devuelve potencia media por bin y lista de frames
+  const hop = Math.max(N, Math.floor((x.length - N) / maxFrames)), fr = []; const w = new Float32Array(N); for (let i = 0; i < N; i++) w[i] = .5 - .5 * Math.cos(2 * Math.PI * i / N);
+  for (let s = 0; s + N <= x.length; s += hop) { const re = new Float32Array(N), im = new Float32Array(N); for (let i = 0; i < N; i++) re[i] = x[s + i] * w[i]; fft(re, im); const p = new Float32Array(N / 2); for (let k = 0; k < N / 2; k++) p[k] = re[k] * re[k] + im[k] * im[k]; fr.push(p); }
+  return fr;
+}
+function analyze(buf, opt) {
+  opt = opt || {}; const sr = buf.sampleRate, x = mono(buf); let pk = 0, sq = 0, clip = 0, dc = 0;
+  for (let c = 0; c < buf.numberOfChannels; c++) { const d = buf.getChannelData(c); for (let i = 0; i < d.length; i++) { const v = Math.abs(d[i]); if (v > pk) pk = v; if (v >= .999) clip++; } }
+  for (let i = 0; i < x.length; i++) { sq += x[i] * x[i]; dc += x[i]; }
+  const rms = Math.sqrt(sq / x.length); dc /= x.length;
+  // ventana activa: trozos de 10ms por encima de -50 dBFS
+  const W = Math.round(sr * .01); let act = 0, last = 0; for (let i = 0; i + W <= x.length; i += W) { let s = 0; for (let j = 0; j < W; j++) s += x[i + j] ** 2; if (db(Math.sqrt(s / W)) > -50) { act++; last = i + W; } }
+  const N = 4096, fr = spectra(x, sr, N, 40), bins = N / 2, hz = sr / N, avg = new Float32Array(bins); fr.forEach(p => { for (let k = 0; k < bins; k++) avg[k] += p[k] / fr.length; });
+  const edges = [0, 80, 250, 1000, 4000, 10000, 1e9], names = ['sub', 'bajo', 'medbajo', 'medio', 'agudo', 'aire'], band = {}; let tot = 0; const be = new Array(6).fill(0);
+  for (let k = 1; k < bins; k++) { const f = k * hz; for (let b = 0; b < 6; b++) if (f >= edges[b] && f < edges[b + 1]) { be[b] += avg[k]; tot += avg[k]; } }
+  names.forEach((n, i) => band[n] = +(10 * Math.log10((be[i] + 1e-12) / (tot || 1))).toFixed(1)); // dB relativos a la potencia total
+  // planitud espectral (100-8000 Hz): ruido blanco ~0.56 (media geometrica/aritmetica del periodograma), tonos << 0.1
+  let fl = 0, nf = 0; fr.forEach(p => { let g = 0, a = 0, c = 0; for (let k = Math.ceil(100 / hz); k < 8000 / hz; k++) { const v = p[k] + 1e-12; g += Math.log(v); a += v; c++; } if (a / c > 1e-9) { fl += Math.exp(g / c) / (a / c); nf++; } });
+  const r = { rmsDb: +db(rms).toFixed(1), peak: +pk.toFixed(3), peakDb: +db(pk).toFixed(1), clip, dc: +dc.toExponential(1), activeMs: act * 10, lastActiveMs: Math.round(last / sr * 1000), flatness: nf ? +(fl / nf).toFixed(3) : null, band };
+  const L = buf.getChannelData(0), Rr = buf.getChannelData(buf.numberOfChannels - 1); let dd = 0; for (let i = 0; i < L.length; i += 7) dd += Math.abs(L[i] - Rr[i]); r.stereoDiff = +(dd / (L.length / 7)).toFixed(4);
+  if (opt.sc) { // croma: fraccion de energia (150-2500 Hz) en las clases de altura de la escala
+    const pcs = new Set(opt.sc.map(s => (opt.root + s) % 12)), ch = new Array(12).fill(0); let all = 0;
+    for (let k = Math.ceil(150 / hz); k < 2500 / hz; k++) { const pc = mod(Math.round(12 * Math.log2(k * hz / 440) + 69), 12); ch[pc] += avg[k]; all += avg[k]; }
+    r.inScale = +([...pcs].reduce((s, p) => s + ch[p], 0) / all).toFixed(3); r.chroma = ch.map(v => +(v / all).toFixed(2));
+  }
+  if (opt.bpm) { // periodicidad ritmica: autocorrelacion de la envolvente de onsets (derivada de |x| en tramos de 10 ms)
+    const F = Math.round(sr * .01), env = []; for (let i = 0; i + F <= x.length; i += F) { let s = 0; for (let j = 1; j < F; j++) s += Math.abs(x[i + j] - x[i + j - 1]); env.push(s); }
+    const mean = env.reduce((a, b) => a + b, 0) / env.length, e = env.map(v => v - mean), v0 = e.reduce((a, b) => a + b * b, 0);
+    const ac = lag => { const l = Math.round(lag / .01); let s = 0; for (let i = 0; i + l < e.length; i++) s += e[i] * e[i + l]; return s / v0; };
+    const beat = 60 / opt.bpm; r.acBar = +Math.max(ac(beat * 4 - .01), ac(beat * 4), ac(beat * 4 + .01)).toFixed(3); r.acCtl = +Math.max(ac(beat * 1.37), ac(beat * 2.63), ac(beat * 5.37)).toFixed(3);
+  }
+  return r;
+}
+const mod = (a, n) => ((a % n) + n) % n;
+function wav(buf) { const n = buf.length, ch = 2, d = new DataView(new ArrayBuffer(44 + n * ch * 2)), w = (o, s) => [...s].forEach((c, i) => d.setUint8(o + i, c.charCodeAt(0)));
+  w(0, 'RIFF'); d.setUint32(4, 36 + n * ch * 2, true); w(8, 'WAVEfmt '); d.setUint32(16, 16, true); d.setUint16(20, 1, true); d.setUint16(22, ch, true); d.setUint32(24, buf.sampleRate, true); d.setUint32(28, buf.sampleRate * ch * 2, true); d.setUint16(32, ch * 2, true); d.setUint16(34, 16, true); w(36, 'data'); d.setUint32(40, n * ch * 2, true);
+  const a = buf.getChannelData(0), b = buf.getChannelData(1); for (let i = 0; i < n; i++) { d.setInt16(44 + i * 4, Math.max(-1, Math.min(1, a[i])) * 32767, true); d.setInt16(46 + i * 4, Math.max(-1, Math.min(1, b[i])) * 32767, true); } return new Blob([d.buffer], { type: 'audio/wav' }); }
+async function saveWav(kind, name, o, file) { const b = await Sound.render(kind, name, o); const r = await fetch('/save/' + file, { method: 'PUT', body: wav(b) }); return r.ok; }
+function whiteNoiseRef() { const oc = new OfflineAudioContext(2, 44100 * 4, 44100), b = oc.createBuffer(2, 44100 * 4, 44100); for (let c = 0; c < 2; c++) { const d = b.getChannelData(c); for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * .3; } return b; }
+
+async function runAll(log) {
+  const res = { music: {}, sfx: {}, adaptive: {}, fails: [] }, fail = (w, why) => res.fails.push(w + ': ' + why);
+  res.noiseRef = analyze(whiteNoiseRef()).flatness;
+  for (const name of Sound.tracks) {
+    const D = Sound._TR[name], x = D.adapt ? .5 : undefined, buf = await Sound.render('music', name, { seconds: 20, intensity: x }), a = analyze(buf, { sc: D.sc, root: D.root, bpm: D.bpm }); res.music[name] = a; log && log('musica ' + name);
+    if (a.rmsDb < -38) fail(name, 'RMS demasiado bajo ' + a.rmsDb); if (a.peak > .98 || a.clip) fail(name, 'clipping/pico ' + a.peak); if (a.flatness > .25) fail(name, 'parece ruido (planitud ' + a.flatness + ')');
+    if (a.inScale < .7) fail(name, 'poca tonalidad: ' + a.inScale + ' en escala'); if (!(a.acBar > a.acCtl) && D.perc && Object.keys(D.perc).length > 1) fail(name, 'sin periodicidad ritmica (' + a.acBar + ' vs ' + a.acCtl + ')'); if (Math.abs(a.dc) > .01) fail(name, 'DC');
+    if (D.adapt) { const lo = analyze(await Sound.render('music', name, { seconds: 20, intensity: 0 })), hi = analyze(await Sound.render('music', name, { seconds: 20, intensity: 1 })); res.adaptive[name] = { lo: lo.rmsDb, hi: hi.rmsDb, loBands: lo.band, hiBands: hi.band, hiPeak: hi.peak }; if (!(hi.rmsDb > lo.rmsDb + 1.5)) fail(name, 'las capas no suben con intensidad (' + lo.rmsDb + ' -> ' + hi.rmsDb + ')'); if (hi.peak > .98) fail(name, 'clipping a intensidad 1'); }
+  }
+  for (const name of Sound.sfxNames) {
+    const buf = await Sound.render('sfx', name, { seconds: 3.5 }), a = analyze(buf); res.sfx[name] = a; log && log('sfx ' + name);
+    if (a.peak < .05) fail(name, 'casi silencio (pico ' + a.peak + ')'); if (a.peak > .98 || a.clip) fail(name, 'clipping ' + a.peak); if (a.activeMs < 20) fail(name, 'dura <20ms'); if (a.lastActiveMs > 3300) fail(name, 'no se apaga (cola ' + a.lastActiveMs + 'ms)'); if (Math.abs(a.dc) > .005) fail(name, 'DC');
+  }
+  res.ok = res.fails.length === 0; return res;
+}
+async function runBrowser() { // gesto real (click de Playwright) -> contexto en marcha
+  const t0 = performance.now(); await Sound.unlock(); Sound.music('explore'); Sound.setIntensity(.7);
+  const s1 = Sound.state(); await new Promise(r => setTimeout(r, 1800)); Sound.sfx('achievement'); await new Promise(r => setTimeout(r, 400));
+  let mx = 0; for (let i = 0; i < 20; i++) { mx = Math.max(mx, Sound.level()); await new Promise(r => setTimeout(r, 50)); }
+  const s2 = Sound.state(); Sound.mute(true); await new Promise(r => setTimeout(r, 400)); const muted = Sound.level(); Sound.mute(false);
+  return { s1, s2, maxLevel: +mx.toFixed(4), levelWhenMuted: +muted.toExponential(2), speak: Sound.speak('Prueba de voz.', { who: 'lia' }), dtMs: Math.round(performance.now() - t0) };
+}
+const out = document.getElementById('out'), st = document.getElementById('st');
+document.getElementById('go').onclick = async () => { window.__BROWSER = await runBrowser(); out.textContent = JSON.stringify(window.__BROWSER, null, 1); st.textContent = 'running=' + window.__BROWSER.s2.running; };
+document.getElementById('run').onclick = async () => { const r = await runAll(m => st.textContent = m); window.__AUDIO_RESULTS = r; st.textContent = r.ok ? 'TODO OK' : 'FALLOS ' + r.fails.length; out.textContent = (r.fails.join('\n') || 'sin fallos') + '\n\n' + JSON.stringify(r, null, 1); };
+</script>

@@ -17,9 +17,14 @@
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
         { urls: 'stun:stun.cloudflare.com:3478' },
-        // TURN opcional: { urls: 'turn:host:3478', username: 'u', credential: 'p' }
+        { urls: 'stun:global.stun.twilio.com:3478' },
+        { urls: 'stun:stun.nextcloud.com:3478' }
+        // TURN de reserva: NO hay ninguno público gratuito verificado (ver NOTES-net3.md). Añade el tuyo con
+        // Net.addTurn('turn:host:3478', 'user', 'pass') o Net.config.iceServers.push({urls,username,credential}).
       ],
+      iceTransportPolicy: 'all', // 'relay' fuerza TURN (solo para probarlo)
       snapshotHz: 20, heartbeatMs: 2000, timeoutMs: 8000, connectTimeoutMs: 12000, graceMs: 30000, debug: false
     },
     role: null,       // 'host' | 'client' | null
@@ -50,7 +55,7 @@
 
   function makePeer(id) {
     var b = Net.config.brokers[brokerIdx] || {};
-    var o = { config: { iceServers: Net.config.iceServers }, debug: Net.config.debug ? 2 : 0 };
+    var o = { config: { iceServers: Net.config.iceServers, iceTransportPolicy: Net.config.iceTransportPolicy || 'all' }, debug: Net.config.debug ? 2 : 0 };
     for (var k in b) o[k] = b[k];
     return id ? new window.Peer(id, o) : new window.Peer(o);
   }
@@ -74,8 +79,9 @@
   }
 
   function send1(c, m) { try { if (c && c.open) { c.send(m); return true; } } catch (e) { log('send fail', e); } return false; }
+  function hideTok(p, t) { Object.defineProperty(p, 'token', { value: t, enumerable: false, writable: true }); } // no filtrar tokens
   function roster() { return Net.players.map(function (p) { return { id: p.id, name: p.name, role: p.role, bot: p.bot, ready: p.ready, host: p.host, connected: p.connected }; }); }
-  function pushPlayers() { var r = roster(); Net.players = r.map(function (p) { return p; }); bcast('players', r); emit('players', r); }
+  function pushPlayers() { var r = roster(); if (Net.role !== 'host') Net.players = r; /* host conserva token en Net.players */ bcast('players', r); emit('players', r); }
   function bcast(t, d, unreliable) {
     var m = { t: t, d: d }, ids = Object.keys(conns);
     ids.forEach(function (id) { var c = conns[id]; send1(unreliable && c.u && c.u.open ? c.u : c.r, m); });
@@ -90,7 +96,7 @@
     return openPeer(PREFIX + code, function () { code = newCode(); return PREFIX + code; }).then(function (p) {
       peer = p; Net.role = 'host'; Net.localId = 'p0'; Net.roomCode = code; conns = {}; Net.locked = false;
       Net.link = location.origin + location.pathname + '#sala=' + code;
-      Net.players = [{ id: 'p0', name: opts.name || name, role: ROLES[0], bot: false, ready: false, host: true, connected: true, token: token }];
+      Net.players = [{ id: 'p0', name: opts.name || name, role: ROLES[0], bot: false, ready: false, host: true, connected: true }]; hideTok(Net.players[0], token);
       p.on('connection', onIncoming);
       p.on('disconnected', function () { if (!leaving && peer === p) { log('broker caído, reconectando'); setTimeout(function () { try { p.reconnect(); } catch (e) {} }, 1500); } });
       p.on('error', function (e) { if (e.type === 'peer-unavailable') return; log('peer error', e.type); });
@@ -113,13 +119,13 @@
         var humans = Net.players.filter(function (p) { return !p.bot && p.connected; }).length;
         if (Net.players.length >= MAX || humans >= MAX || !freeRole()) { send1(c, { t: 'reject', d: 'La sala está llena (máx. 3 jugadores).' }); return setTimeout(function () { c.close(); }, 300); }
         var n = 1; while (Net.players.some(function (p) { return p.id === 'p' + n; })) n++;
-        pl = { id: 'p' + n, name: (c.metadata.name || 'Jugador').slice(0, 16), role: freeRole(), bot: false, ready: false, host: false, connected: true, token: tok };
-        Net.players.push(pl);
+        pl = { id: 'p' + n, name: (c.metadata.name || 'Jugador').slice(0, 16), role: freeRole(), bot: false, ready: false, host: false, connected: true };
+        hideTok(pl, tok); Net.players.push(pl);
       } else { // reconexión: recupera su hueco
         if (conns[pl.id] && conns[pl.id].r !== c) try { conns[pl.id].r.close(); } catch (x) {}
         pl.bot = false; pl.connected = true; delete pl.leftAt;
       }
-      var ent = conns[pl.id] = { r: c, u: null, last: Date.now(), token: tok };
+      var ent = conns[pl.id] = { r: c, u: null, last: Date.now(), token: tok, bk: {} };
       send1(c, { t: 'welcome', d: { id: pl.id, role: pl.role, room: Net.roomCode } });
       pushPlayers();
       c.on('data', function (m) { ent.last = Date.now(); hostRecv(pl.id, m); });
@@ -128,9 +134,21 @@
     });
   }
 
+  // Validación cliente->host: tipos permitidos y [bytes máx, ráfaga, mensajes/s]. 'priv'/'phase'/'state'... solo los envía el host.
+  var LIM = { input: [400, 120, 90], ping: [60, 10, 5], pong: [60, 10, 5], bye: [60, 2, 1], hello: [200, 5, 1], setrole: [60, 5, 1], ready: [100, 8, 2],
+    chat: [1500, 6, 1.5], typing: [100, 8, 4], vote: [400, 6, 2], poi: [400, 10, 3], secret: [400, 6, 2], pick: [1000, 20, 10] };
+  function allow(ent, m) { // token bucket por peer y tipo; tamaño por JSON
+    var l = LIM[m.t]; if (!l) return false;
+    var sz; try { sz = JSON.stringify(m.d === undefined ? null : m.d).length; } catch (e) { return false; }
+    if (sz > l[0]) return false;
+    var b = ent.bk[m.t] || (ent.bk[m.t] = { n: l[1], t: Date.now() }), now = Date.now();
+    b.n = Math.min(l[1], b.n + (now - b.t) * l[2] / 1000); b.t = now;
+    if (b.n < 1) return false; b.n--; return true;
+  }
   function hostRecv(id, m) {
     if (!m || typeof m.t !== 'string') return;
     var ent = conns[id], pl = Net.players.filter(function (p) { return p.id === id; })[0];
+    if (!ent || !allow(ent, m)) { log('descartado', id, m.t); return; }
     if (m.t === 'ping') return send1(ent.r, { t: 'pong', d: m.d });
     if (m.t === 'pong') return;
     if (m.t === 'bye') return dropPlayer(id, 'salió');
@@ -138,7 +156,7 @@
     if (m.t === 'setrole') return Net.setRole(m.d, id);
     if (m.t === 'ready' && pl) { pl.ready = !!(m.d && m.d.ready); pushPlayers(); }
     if (m.t === 'input' && m.d) { m.d.id = id; }
-    if (m.t === 'chat' && m.d) { m.d.from = id; bcast('chat', m.d); }
+    if (m.t === 'chat' || m.t === 'typing') { if (!m.d || typeof m.d !== 'object') return; m.d.from = id; bcast(m.t, m.d); }
     emit(m.t, m.d, id);
   }
 
@@ -272,8 +290,18 @@
       Object.keys(conns).forEach(function (id) { var c = conns[id]; send1(c.u && c.u.open ? c.u : c.r, m); });
       return true;
     }
+    if (type === 'priv') return false; // privado: solo Net.sendTo
     bcast(type, payload); return true;
   };
+  // host -> un solo cliente (ej. 'priv'). sendTo('p0',..) = loopback local. false si no existe/está caído.
+  Net.sendTo = function (peerId, type, payload) {
+    if (Net.role !== 'host') return false;
+    if (peerId === Net.localId) { emit(type, payload, 'p0'); return true; }
+    var c = conns[peerId]; return c ? send1(c.r, { t: type, d: payload }) : false;
+  };
+  Net.sendHost = function (type, payload) { return Net.send(type, payload); };
+  Net.addTurn = function (urls, username, credential) { Net.config.iceServers.push({ urls: urls, username: username, credential: credential }); return Net; };
+  Net.debugDrop = function () { if (hostConn) try { hostConn.r.close(); } catch (e) {} }; // solo pruebas: simula corte de conexión
   Net.isHost = function () { return Net.role === 'host'; };
   Net.humanCount = function () { return Net.players.filter(function (p) { return !p.bot; }).length; };
 

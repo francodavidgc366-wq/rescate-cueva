@@ -1,170 +1,227 @@
-// main.js: máquina de estados. Host = autoridad (motor + lógica); clientes solo renderizan snapshots y envían input/picks.
+// main.js v3: orquestador. El host es la autoridad (fases, temporizadores, bots, motor); los clientes reciben `state` público + su `priv`.
 (function () {
   'use strict';
   const RK = ['guia', 'medica', 'ing'], ZERO = { left: 0, right: 0, jump: 0, interact: 0, up: 0, down: 0 };
-  const CIN = ['linterna', 'agua', 'relampago', 'agua', 'linterna'];
-  const SFX = { jump: 'jump', land: 'land', splash: 'water', swim: 'water', interact: 'blip', heal: 'blip', plank: 'click', rumble: 'thunder', switch: 'click', warp: 'flick' };
-  const netOn = () => !!(window.Net && Net.role);
-  const isClient = () => netOn() && Net.role === 'client';
-  let st = null, eng = null, active = 'guia', myId = 'solo', rdPromise = null, chain = Promise.resolve(), lastRadio = '';
-  const keys = {};
+  const TRACK = { briefing: 'briefing', explore: 'explore', plan: 'plan', secret: 'secret', resolve: 'resolve', summary: 'summary' };
+  const WHY = { sin_ap: 'Sin acciones: ya gastaste las 3', ya_visto: 'Ya has revisado esto', agotado: 'Otro compañero se lo ha llevado', fase: 'Ahora no se puede', poi: 'Eso no existe' };
+  const S = window.Sound || {}, snd = (n) => { try { S.sfx && S.sfx(n); } catch (e) { } };
+  let st = null, eng = null, cv = null, gameEl = null, myRole = 'ing', myId = 'solo', myPriv = null, mode = 'solo', started = false;
+  let timer = null, snapT = null, busyRound = false, lastTrack = '', shownRes = -1, shownSum = -1, shownFinal = false, lastChatId = 0, lastChatAt = 0, lastStart = null;
+  let earlyN = 0, sec = 0, typing = false; const busy = {}, nextBot = {}, introReady = {}, keys = {};
+  const isClient = () => mode === 'client';
+  const ownerRole = id => RK.find(r => st.players[r].owner === id);
 
-  const newState = () => ({ phase: 'cinematic', round: 1, s: { agua: 10, salud: 70, material: 60, confianza: 60 },
-    players: { guia: { owner: null }, medica: { owner: null }, ing: { owner: null } },
-    roundData: null, picks: {}, log: [], verdict: null, saved: null, note: '', radio: '', demo: !Story.hasKey(), noIntro: false });
-  const humanRoles = () => RK.filter(r => st.players[r].owner);
-  const mine = () => RK.filter(r => st.players[r].owner === myId);
-  const bcast = () => { if (netOn() && !isClient()) Net.broadcast('state', st); };
-  const setPhase = p => { st.phase = p; bcast(); enter(st); };
-
-  // ---------- Motor ----------
+  // ---------- Contenedor, motor y HUD ----------
+  function ensureGame() {
+    if (gameEl) return;
+    gameEl = document.createElement('div'); gameEl.id = 'rcgame';
+    gameEl.style.cssText = 'position:fixed;inset:0;background:#0d0b16;display:none;align-items:center;justify-content:center;z-index:10';
+    cv = document.createElement('canvas'); cv.width = 320; cv.height = 180; cv.style.imageRendering = 'pixelated';
+    gameEl.appendChild(cv); document.body.appendChild(gameEl);
+    addEventListener('resize', () => eng && eng.fit(innerWidth, innerHeight));
+    Hud.mount(gameEl);
+    Hud.onChat(onChat); Hud.onShare(onShare); Hud.onVote(onVote); Hud.onSecret(onSecret); Hud.onReady(onReady);
+    Hud.onExit(() => location.reload()); Hud.onSettings(() => UI.openSettings());
+    Hud.onFx && Hud.onFx((t, i) => eng && eng.camShake(i || 2)); Hud.onChatFocus && Hud.onChatFocus(b => { typing = b; pushInput(); });
+  }
   function makeEngine(authority) {
     if (eng) return;
-    eng = Engine.create(UI.gameCanvas(), { assets: window.ASSETS, getState: () => st, authority, localId: active, water: 10,
-      onInteract: (role, id) => { if (!isClient() && id === 'zone' + st.round) startDecision(); },
-      onSfx: n => { if (SFX[n]) UI.sfx(SFX[n]); } });
-    eng.start();
+    eng = Engine.create(cv, { assets: window.ASSETS, getState: () => st, authority, localRole: myRole, water: 10, onInteract, onSfx: n => snd(n) });
+    eng.start(); eng.fit(innerWidth, innerHeight);
   }
-  function applyOwners() { // los humanos no siguen a nadie: los controla su input
-    RK.forEach(r => eng.setFollow(r, r !== active && (!st.players[r].owner || st.players[r].owner === myId)));
-  }
-  function claim(role, id) { // un humano toma un personaje (solo si no es de otro humano)
-    const o = st.players[role].owner;
-    if (id === 'solo') return true; // en solitario controlas los tres: no se suelta ninguno
-    if (o && o !== id) return false;
-    RK.forEach(r => { if (st.players[r].owner === id && r !== role) st.players[r].owner = null; });
-    if (o !== id) { st.players[role].owner = id; bcast(); }
-    return true;
-  }
+  function setupBots() { RK.forEach(r => eng.setBot(r, r !== myRole && (!isClient() ? st.players[r].ai : true))); eng.setLocal(myRole); }
+  function showGame() { gameEl.style.display = 'flex'; Hud.show && Hud.show(); eng.fit(innerWidth, innerHeight); }
 
-  // ---------- Entrada ----------
-  const KEYMAP = { ArrowLeft: 'left', a: 'left', ArrowRight: 'right', d: 'right', ArrowUp: 'up', w: 'up', ArrowDown: 'down', s: 'down',
-    ' ': 'jump', z: 'jump', k: 'jump', f: 'interact', x: 'interact' };
-  function pushInput() {
-    if (!st || !eng) return;
-    const inp = curInput();
-    if (isClient()) Net.send('input', Object.assign({ role: active }, inp)); else eng.setInput(active, inp);
-  }
-  addEventListener('keydown', e => { if (/INPUT|TEXTAREA/.test(e.target.tagName)) return; const k = KEYMAP[e.key.length > 1 ? e.key : e.key.toLowerCase()]; if (k) { keys[k] = 1; if (st && st.phase === 'play') e.preventDefault(); pushInput(); } });
-  addEventListener('keyup', e => { const k = KEYMAP[e.key.length > 1 ? e.key : e.key.toLowerCase()]; if (k) { keys[k] = 0; pushInput(); } });
-  addEventListener('blur', () => Object.keys(keys).forEach(k => keys[k] = 0));
-  const curInput = () => (st && st.phase === 'play') ? Object.assign({}, ZERO, keys) : ZERO;
-  setInterval(() => {
-    pushInput(); if (st && eng && !isClient() && netOn()) Net.broadcast('snapshot', eng.snapshot());
-  }, 50);
+  // ---------- Teclado ----------
+  const KEYMAP = { ArrowLeft: 'left', a: 'left', ArrowRight: 'right', d: 'right', ArrowUp: 'up', w: 'up', ArrowDown: 'down', s: 'down', ' ': 'jump', e: 'interact' };
+  const kmap = e => KEYMAP[e.key.length > 1 ? e.key : e.key.toLowerCase()];
+  const cur = () => (st && st.phase === 'explore' && !typing) ? Object.assign({}, ZERO, keys) : ZERO;
+  function pushInput() { if (!st || !eng || !started) return; const i = cur(); if (isClient()) Net.send('input', i); else eng.setInput(myRole, i); }
+  addEventListener('keydown', e => { if (/INPUT|TEXTAREA/.test(e.target.tagName) || e.ctrlKey || e.metaKey) return; const k = kmap(e); if (k) { keys[k] = 1; if (st && st.phase === 'explore') e.preventDefault(); pushInput(); } });
+  addEventListener('keyup', e => { const k = kmap(e); if (k) { keys[k] = 0; pushInput(); } });
+  addEventListener('blur', () => { Object.keys(keys).forEach(k => keys[k] = 0); pushInput(); });
 
-  UI.onSwitch(role => {
-    if (!st || !eng || st.phase === 'decide') return;
-    active = role; UI.setActive(role); eng.setActive(role);
-    if (isClient()) Net.send('input', Object.assign({ role }, ZERO));
-    else { claim(role, myId); applyOwners(); }
-  });
-
-  // ---------- Host: lógica de partida ----------
-  function prepareRound() {
-    rdPromise = (st.demo ? Promise.resolve(Story.demoRound(st.round, st)) : Story.askRound(st))
-      .then(rd => { st.roundData = rd; if (rd._fallback) st.note = 'La IA falló: ronda pregrabada.'; });
-    Story.npcLine(st).then(t => { st.radio = t; bcast(); enter(st); }).catch(() => { });
-  }
-  async function startDecision() {
-    if (st.phase !== 'play') return;
-    st.phase = 'wait'; // evita doble disparo mientras llega la ronda
-    UI.toast('El director prepara la decisión…');
-    await rdPromise;
-    st.picks = {}; setPhase('decide');
-  }
-  function onPick(d, from) {
-    if (isClient() || !st || st.phase !== 'decide' || !RK.includes(d.role)) return;
-    if (st.players[d.role].owner !== from || !Number.isInteger(d.idx)) return;
-    st.picks[d.role] = d.idx;
-    if (humanRoles().every(r => Number.isInteger(st.picks[r]))) resolveRound();
-  }
-  async function resolveRound() {
-    st.phase = 'resolve-wait';
-    Story.resolve(st); eng.setWater(st.s.agua);
-    st.lastDelta = st.log[st.log.length - 1];
-    setPhase('resolve');
-  }
-  async function afterResolve() { // host, tras la cinemática de transición
-    if (Story.isOver(st)) {
-      st.saved = Story.saved(st); st.verdict = await Story.verdict(st); return setPhase('final');
+  // ---------- Estado -> pantalla ----------
+  function syncPois() { if (!eng || !st || !st.pois) return; st.pois.forEach(p => eng.markPoi(p.id, { used: p.used, by: p.by })); }
+  function push() {
+    if (!st) return; render();
+    if (mode === 'host') {
+      Net.broadcast('state', Story.publicState(st));
+      RK.forEach(r => { const o = st.players[r].owner; if (o && o !== myId && o !== 'solo') Net.sendTo(o, 'priv', Story.privOf(st, r)); });
     }
-    st.round++; st.roundData = null; st.picks = {}; st.radio = '';
-    eng.gather(st.round); eng.pan(st.round); prepareRound(); setPhase('play');
+  }
+  const revKind = t => t === 'lie' ? 'lie' : (t === 'secret' || t === 'secret_action' || t === 'trap' || t === 'crisis') ? 'secret' : 'good';
+  const achs = res => (res && res.achievements || []).map(a => ({ id: a.id, title: a.name, text: a.desc }));
+  function render() {
+    if (!st || !started) return;
+    if (!isClient()) myPriv = Story.privOf(st, myRole);
+    syncPois();
+    if (st.phase === 'intro' || !myPriv) return;
+    Hud.update(st, myPriv, myRole);
+    const t = TRACK[st.phase]; if (t && t !== lastTrack) { lastTrack = t; S.music && S.music(t); }
+    S.setIntensity && S.setIntensity(st.s.agua / 100);
+    (st.chat || []).forEach(m => { if (m.id > lastChatId) { lastChatId = m.id; lastChatAt = Date.now(); if (RK.includes(m.from) && (m.kind === 'chat' || m.kind === 'share') && eng) eng.say(m.from, String(m.text).slice(0, 70)); } });
+    const res = st.lastRes;
+    if (st.phase === 'resolve' && res && shownRes !== st.round) {
+      shownRes = st.round;
+      Hud.showResolve(Object.assign({}, res, { reveals: (res.reveals || []).map(r => Object.assign({}, r, { kind: revKind(r.type) })), achievements: achs(res) }));
+    }
+    if (st.phase === 'summary' && shownSum !== st.round) {
+      shownSum = st.round; Hud.showSummary({ round: st.round, score: res ? res.scoreDelta : {}, total: st.score.total, achievements: achs(res) });
+    }
+    if (st.phase === 'final' && st.final && !shownFinal) {
+      shownFinal = true; Hud.hide && Hud.hide(); gameEl.style.display = 'none'; S.music && S.music(st.final.saved ? 'win' : 'lose');
+      UI.showFinal(st.final, st);
+    }
   }
 
-  // ---------- Entrada de fase (host y clientes) ----------
-  function enter(s) { chain = chain.then(() => run(s)).catch(e => console.error(e)); }
-  async function run(s) {
-    if (s.radio && s.radio !== lastRadio) { lastRadio = s.radio; UI.say(s.radio, 'Lía'); }
-    if (s.phase === 'cinematic') {
-      if (s._seen === 'cinematic') return; s._seen = 'cinematic';
-      if (!s.noIntro) await UI.playCinematic('intro');
-      UI.updateHud(s); if (!isClient()) { prepareRound(); setPhase('play'); UI.toast('Flechas/WASD mover · Espacio saltar · F interactuar · Tab cambiar de personaje'); }
-    } else if (s.phase === 'play') { UI.hideDecision(); UI.updateHud(s); if (s.note) { UI.toast(s.note); s.note = ''; } }
-    else if (s.phase === 'decide') {
-      const roles = RK.filter(r => s.players[r].owner === myId);
-      UI.updateHud(s);
-      await new Promise(done => { if (!roles.length) return done(); UI.decide(s, (role, idx) => { if (netOn()) Net.send('pick', { role, idx }); else onPick({ role, idx }, myId); }, done, roles); });
-    } else if (s.phase === 'resolve') {
-      UI.updateHud(s); const d = s.lastDelta && s.lastDelta.delta;
-      if (d) UI.toast(Object.keys(d).map(k => Story.STATS[k][0] + ' ' + (d[k] > 0 ? '+' : '') + d[k]).join(' · '));
-      await UI.playCinematic(CIN[(s.round - 1) % CIN.length], { round: s.round });
-      if (!isClient()) await afterResolve();
-    } else if (s.phase === 'final') { UI.showFinal(s); }
+  // ---------- Intro y rol ----------
+  async function playIntro() {
+    UI.hide(); gameEl.style.display = 'none'; Hud.hide && Hud.hide();
+    for (let i = 0; i < 30 && !myPriv; i++) await new Promise(r => setTimeout(r, 100));
+    await UI.playCinematic('intro'); if (myPriv) await UI.showRole(myPriv, myRole);
+    UI.hide(); showGame(); S.music && S.music('briefing');
   }
+  async function waitIntro() { // host: espera a los clientes humanos (máx. 90 s)
+    const t0 = Date.now(), pend = () => RK.some(r => { const o = st.players[r].owner; return o && o !== myId && o !== 'solo' && !introReady[o]; });
+    while (Date.now() - t0 < 90000 && pend()) await new Promise(r => setTimeout(r, 500));
+  }
+
+  // ---------- Host: partida ----------
+  async function startGame(o, noIntro) {
+    lastStart = o; shownRes = shownSum = -1; shownFinal = false; lastChatId = 0; lastTrack = ''; clearInterval(timer);
+    const hostMode = o.host && !o.solo && window.Net && Net.role === 'host';
+    mode = hostMode ? 'host' : 'solo'; myRole = o.role || 'ing'; myId = hostMode ? Net.localId : 'solo';
+    const hs = hostMode ? Net.players.filter(p => !p.bot && RK.includes(p.role)).map(p => p.role) : [myRole];
+    st = Story.newGame({ seed: (Date.now() % 1000000) | 0, difficulty: o.difficulty || (UI.settings && UI.settings().diff) || 'normal', humans: hs, demo: !Story.hasKey() });
+    if (hostMode) { Net.lock(true); Net.players.forEach(p => { if (!p.bot && RK.includes(p.role)) { st.players[p.role].owner = p.id; st.players[p.role].connected = true; } }); }
+    else st.players[myRole].owner = 'solo';
+    started = true; ensureGame(); makeEngine(true); setupBots(); eng.resetGates(); eng.setWater(st.s.agua); eng.setWaterRate(0);
+    st.phase = 'intro'; busyRound = true; myPriv = Story.privOf(st, myRole);
+    if (hostMode) RK.forEach(r => { const ow = st.players[r].owner; if (ow && ow !== myId) Net.sendTo(ow, 'priv', Story.privOf(st, r)); });
+    snapT = snapT || setInterval(() => { if (mode === 'host' && eng) Net.broadcast('snapshot', eng.snapshot()); pushInput(); }, 50);
+    if (hostMode) Net.broadcast('state', Story.publicState(st));
+    if (noIntro) { UI.hide(); showGame(); } else { await playIntro(); await waitIntro(); }
+    await startRound(); timer = setInterval(tick, 250);
+  }
+  async function startRound() {
+    busyRound = true; earlyN = 0;
+    await Story.roundStart(st);
+    eng.setPois(st.round, st.pois); eng.gather(st.round); eng.pan(st.round); eng.setWaterRate(0); eng.setWater(st.s.agua);
+    busyRound = false; push(); react('brief');
+  }
+  async function react(trig, ctx) { try { await Story.botsReact(st, trig, ctx); } catch (e) { } push(); }
+  const allVoted = () => RK.every(r => st.plan.votes && st.plan.votes[r]);
+  const allSecret = () => RK.every(r => { const p = Story.privOf(st, r); return p.secretPick !== null && p.secretPick !== undefined; });
+
+  function tick() {
+    if (!st || busyRound || st.phase === 'intro' || st.phase === 'final') return;
+    st.tleft = Math.max(0, st.tleft - 0.25);
+    if (st.phase === 'explore') {
+      const w = Story.tickWater(st, 0.25); eng.setWater(st.s.agua);
+      if (w && w.warn) { snd('water_warn'); react('water', { level: w.warn }); }
+    }
+    botLoop();
+    if (st.phase === 'explore' && Date.now() - lastChatAt > 25000) { lastChatAt = Date.now(); react('idle'); }
+    const early = (st.phase === 'explore' && Story.allReady(st)) || (st.phase === 'plan' && allVoted()) || (st.phase === 'secret' && allSecret());
+    earlyN = early ? earlyN + 1 : 0;
+    if (st.tleft <= 0 || earlyN >= 8) advance();
+    else if (++sec % 4 === 0) push();
+  }
+  async function advance() {
+    if (busyRound) return; busyRound = true; earlyN = 0;
+    try {
+      switch (st.phase) {
+        case 'briefing': Story.setPhase(st, 'explore'); break;
+        case 'explore': Story.setPhase(st, 'plan'); react('plan'); break;
+        case 'plan': { const t = Story.tally(st); if (t && t.react) react('tally', t.react.ctx); Story.setPhase(st, 'secret'); react('secret'); break; }
+        case 'secret': Story.setPhase(st, 'resolve'); st.lastRes = Story.resolve(st); eng.setWater(st.s.agua); react('resolve', { result: st.lastRes }); break;
+        case 'resolve': Story.setPhase(st, 'summary'); break;
+        case 'summary':
+          if (Story.isOver(st)) { st.final = await Story.finish(st, { role: myRole }); break; }
+          Story.advance(st); await startRound(); return;
+      }
+    } catch (e) { console.error(e); }
+    busyRound = false; push();
+  }
+
+  // ---------- Compañeros IA ----------
+  function botLoop() {
+    if (!['explore', 'plan', 'secret'].includes(st.phase)) return;
+    RK.forEach(r => {
+      if (!st.players[r].ai || busy[r] || Date.now() < (nextBot[r] || 0)) return;
+      nextBot[r] = Date.now() + 2500 + Math.random() * 3500; busy[r] = true; botStep(r).catch(() => { }).then(() => busy[r] = false);
+    });
+  }
+  async function botStep(r) {
+    const ph = st.phase, a = await Story.botAct(st, r, ph); if (!a || st.phase !== ph) return;
+    if (a.type === 'poi') {
+      Story.botChat(st, r, 'poi', { poi: a.label }).then(push).catch(() => { });
+      eng.botGoto(r, a.poiId, ok => {
+        if (!ok || st.phase !== 'explore') return; Story.exec(st, r, a); syncPois();
+        Story.botChat(st, r, 'found', { poi: a.label, hide: false }).catch(() => { }).then(push); push();
+      });
+    } else { const out = Story.exec(st, r, a); if (out && out.react) react(out.react.trigger, out.react.ctx); push(); }
+  }
+
+  // ---------- Acciones del jugador (host las ejecuta; los clientes las envían) ----------
+  function fb(role, out) {
+    const msg = out.card ? 'NUEVA INFO: ' + out.card.title : out.hallazgo ? 'HALLAZGO ' + out.hallazgo.n + '/5: ' + out.hallazgo.title : out.kind === 'recurso' ? 'RECURSO PARA EL EQUIPO' : '';
+    const sfx = out.hallazgo ? 'achievement' : 'intel';
+    if (role === myRole) { if (msg) Hud.floatText(msg, 'info'); snd(sfx); }
+    else { const o = st.players[role].owner; if (o && o !== 'solo') Net.sendTo(o, 'phase', { note: msg, sfx }); }
+  }
+  function onInteract(role, poiId) { // solo host
+    if (isClient() || !st || st.phase !== 'explore') return;
+    const out = Story.poiInteract(st, role, poiId);
+    if (!out || !out.ok) { if (role === myRole) Hud.floatText(WHY[out && out.reason] || 'No se puede', 'bad'); return; }
+    syncPois(); fb(role, out); push();
+  }
+  function doChat(role, text) { text = String(text || '').slice(0, 300).trim(); if (!text) return; Story.say(st, role, text, 'chat'); react('chat', { from: role, text }); }
+  function doShare(role, d) { const out = Story.share(st, role, d.cardId, { asIs: d.asIs !== false, text: d.text }); if (out && out.ok) { if (out.lie && role === myRole) Hud.floatText('Has compartido información falsa', 'bad'); if (out.react) react(out.react.trigger, out.react.ctx); } push(); }
+  function doVote(role, optId) { const out = Story.vote(st, role, optId); if (out && out.react) react(out.react.trigger, out.react.ctx); push(); }
+  function onChat(text) { if (isClient()) Net.send('chat', { text }); else doChat(myRole, text); }
+  function onShare(cardId, o) { const d = { act: 'share', cardId, asIs: !o || o.asIs !== false, text: o && o.text }; if (isClient()) Net.send('poi', d); else doShare(myRole, d); }
+  function onVote(optId) { if (isClient()) Net.send('vote', { optId }); else doVote(myRole, optId); }
+  function onSecret(idx) { if (isClient()) Net.send('secret', { idx }); else { Story.secretPick(st, myRole, idx); push(); } }
+  function onReady() { if (isClient()) Net.send('ready', { act: 'explore' }); else { Story.ready(st, myRole); push(); } }
 
   // ---------- Red ----------
   function wireNet() {
     if (!window.Net || !Net.available) return;
-    Net.on('input', (d, from) => { // host
-      if (isClient() || !st || !eng || !RK.includes(d.role)) return;
-      if (from === 'p0') return; // el host usa su teclado local
-      if (!claim(d.role, from)) return;
-      eng.setFollow(d.role, false); eng.setInput(d.role, st.phase === 'play' ? d : ZERO);
-    });
-    Net.on('pick', (d, from) => onPick(d, from));
-    Net.on('players', () => { // host: quien se va pasa a bot
-      if (isClient() || !st) return;
-      let ch = false; const live = Net.players.filter(p => !p.bot && p.connected !== false).map(p => p.id);
-      RK.forEach(r => { const o = st.players[r].owner; if (o && o !== 'solo' && !live.includes(o)) { st.players[r].owner = null; if (eng) eng.setFollow(r, r !== active); ch = true; } });
-      if (ch) { bcast(); if (st.phase === 'decide' && humanRoles().every(r => Number.isInteger(st.picks[r]))) resolveRound(); }
+    const host = () => mode === 'host' && st;
+    Net.on('input', (d, from) => { if (!host() || from === 'p0') return; const r = ownerRole(from); if (!r) return; eng.setBot(r, false); eng.setInput(r, st.phase === 'explore' ? d : ZERO); });
+    Net.on('chat', (d, from) => { if (!host()) return; const r = ownerRole(d.from || from); if (r && r !== myRole && d.text) doChat(r, d.text); });
+    Net.on('poi', (d, from) => { if (!host() || !d || d.act !== 'share') return; const r = ownerRole(from); if (r) doShare(r, d); });
+    Net.on('vote', (d, from) => { if (!host()) return; const r = ownerRole(from); if (r) doVote(r, d.optId); });
+    Net.on('secret', (d, from) => { if (!host()) return; const r = ownerRole(from); if (r) { Story.secretPick(st, r, d.idx); push(); } });
+    Net.on('ready', (d, from) => { if (!host() || !d) return; if (d.act === 'intro') introReady[from] = 1; else if (d.act === 'explore') { const r = ownerRole(from); if (r) { Story.ready(st, r); push(); } } });
+    Net.on('players', () => { // quien se va pasa a compañero IA
+      if (!host()) return; const live = Net.players.filter(p => !p.bot && p.connected !== false).map(p => p.id); let ch = false;
+      RK.forEach(r => { const o = st.players[r].owner; if (o && o !== myId && !live.includes(o)) { st.players[r].owner = null; st.players[r].ai = true; st.players[r].connected = false; eng.setBot(r, true); ch = true; } });
+      if (ch) push();
     });
     Net.on('state', s => { // cliente
-      if (!isClient()) return;
-      if (!st) beginClient(s);
-      st = s; enter(s);
+      if (Net.role !== 'client') return;
+      const prev = st; st = s;
+      if (!started) {
+        mode = 'client'; myId = Net.localId; const me = Net.players.find(p => p.id === myId); myRole = (me && me.role) || RK.find(r => s.players[r].owner === myId) || 'medica';
+        started = true; UI.hide(); ensureGame(); makeEngine(false); setupBots();
+      }
+      if (s.phase === 'intro' && (!prev || prev.phase !== 'intro')) playIntro().then(() => Net.send('ready', { act: 'intro' }));
+      else if (s.phase !== 'intro') render();
     });
-    Net.on('snapshot', s => { if (isClient() && eng) eng.applySnapshot(s); });
-    Net.on('leave', d => { if (d && d.host) UI.toast('El anfitrión se ha ido. Volviendo al inicio…'), setTimeout(() => location.reload(), 2500); });
-  }
-  function beginClient(s) {
-    myId = Net.localId; UI.setLocalId(myId);
-    const me = Net.players.find(p => p.id === myId); active = (me && me.role) || RK.find(r => s.players[r].owner === myId) || 'medica';
-    makeEngine(false); UI.setActive(active); eng.setActive(active); UI.showGame();
+    Net.on('priv', d => { myPriv = d; if (st) render(); });
+    Net.on('phase', d => { if (d && d.note) { Hud.floatText(d.note, 'info'); snd(d.sfx || 'intel'); } });
+    Net.on('snapshot', s => { if (mode === 'client' && eng) eng.applySnapshot(s); });
+    Net.on('leave', d => { if (d && d.host) { UI.toast('El anfitrión se ha ido. Volviendo al inicio…', { bad: true }); setTimeout(() => location.reload(), 2500); } });
   }
 
   // ---------- Arranque ----------
-  function begin(o) {
-    if (isClient()) return;
-    st = newState(); active = o.role || 'guia'; st.noIntro = !!o.noIntro;
-    if (netOn() && Net.isHost() && !o.solo) {
-      myId = Net.localId; Net.lock(true);
-      Net.players.forEach(p => { if (!p.bot && p.role && RK.includes(p.role)) st.players[p.role].owner = p.id; });
-    } else { myId = 'solo'; RK.forEach(r => st.players[r].owner = 'solo'); }
-    UI.setLocalId(myId); UI.setActive(active);
-    makeEngine(true); eng.resetGates(); eng.setWater(st.s.agua); eng.gather(1); eng.setActive(active); applyOwners(); UI.showGame();
-    bcast(); enter(st);
-  }
-  UI.on('start', o => begin(o || {}));
-  UI.on('restart', () => {
-    if (isClient()) return UI.toast('Solo el anfitrión puede reiniciar.');
-    if (!st) return;
-    const solo = myId === 'solo', owners = RK.map(r => st.players[r].owner);
-    begin({ role: active, solo, noIntro: true });
-    if (!solo) RK.forEach((r, i) => st.players[r].owner = owners[i]);
-  });
+  UI.on('start', o => { if (window.Net && Net.role === 'client') return; startGame(o || {}, false); });
+  UI.on('restart', () => { if (isClient()) return UI.toast('Solo el anfitrión puede reiniciar.'); if (lastStart) startGame(lastStart, true); });
   UI.on('menu', () => location.reload());
-  window.RC = { st: () => st, eng: () => eng, decide: startDecision }; // gancho para pruebas
-  wireNet(); UI.showTitle(); if (/#sala=/.test(location.hash)) UI.showLobby(); // enlace de invitación: directo al lobby con el código puesto
+  window.RC = { st: () => st, eng: () => eng, advance: () => advance(), priv: () => myPriv, role: () => myRole }; // gancho para pruebas
+  wireNet(); UI.showMenu();
+  if (/#sala=/.test(location.hash)) UI.showLobby({ mode: 'join' });
 })();
