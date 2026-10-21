@@ -432,13 +432,13 @@ const ROUND_D = [
       O('el pozo', 'Descender por el pozo', 'Ahorra una hora; anclajes viejos sin revisar.', 'Rápido; equipo antiguo incierto.', [-6, -2, -3, -1], .42, [6, -10, -8, -5]),
       O('la balsa', 'Montar una balsa', 'Usan el caudal del río. Gasta mucho material.', 'Rápido si el río ayuda; mucho material.', [-3, 0, -15, 2], .28, [6, -5, -10, -3], 25)],
     poi: [{ label: 'Mapa del campamento', icon: 'mapa', cards: {
-        guia: ['gem', 'Camino marcado', 'Mis notas marcan {o} como lo más seguro. Estaba firme.'],
-        medica: ['trap', 'Aire húmedo y frío', 'Por {o} sale aire húmedo y frío: se acumula agua. Peligro para Lía.'],
-        ing: ['trap', 'Clavos oxidados', 'Los anclajes de {o} tienen 20 años y están oxidados. Peligro.'] } },
+        guia: ['gem', 'Camino marcado', 'Mis notas: {o} es lo más seguro.'],
+        medica: ['trap', 'Aire húmedo y frío', 'Por {o} sale aire húmedo. Peligro para Lía.'],
+        ing: ['trap', 'Clavos oxidados', 'Los anclajes de {o} están oxidados. Peligro.'] } },
       { label: 'Arroyo de la entrada', icon: 'agua', cards: {
-        guia: ['trap', 'Barro fresco', 'Barro fresco junto a {o}: ya baja agua. Peligro de arrastre.'],
-        medica: ['gem', 'Camino más corto a Lía', 'Si Lía cayó donde creo, {o} es el camino más corto y seguro.'],
-        ing: ['gem', 'La roca suena sana', 'Golpeé la pared de {o}: roca sana, sin grietas. Es sólida.'] } }],
+        guia: ['trap', 'Barro fresco', 'Hay barro junto a {o}. Peligro de arrastre.'],
+        medica: ['gem', 'Camino más corto a Lía', 'Si Lía cayó ahí, {o} es lo más seguro.'],
+        ing: ['gem', 'La roca suena sana', 'La roca de {o} está sana. Es sólida.'] } }],
     rec: { label: 'Mochila perdida', icon: 'material', text: 'Cuerdas, anillas y fusibles de alguien con prisa.', e: [0, 0, 10, 0] },
     sec: { label: 'Grieta alta', icon: 'secreto', h: { title: 'La libreta de Lía', text: 'Libreta de Lía: «Si me pasa algo, que no sea culpa de nadie».', e: [0, 0, 0, 2] } } },
   { ev: [E('derrumbe', 'Un derrumbe corta la galería', 'Derrumbe: la galería queda cortada y cae polvo.', 'event_derrumbe', '¡Oí un golpe enorme! ¿Están bien?', 'roca', [2, 0, -5, -2], .08),
@@ -447,13 +447,13 @@ const ROUND_D = [
       O('el paso estrecho', 'Forzar el paso estrecho', 'Se pasa de lado, sin mochila, con agua a las rodillas.', 'Directo; muy angosto y con agua.', [-6, -1, -3, 0], .45, [6, -8, -6, -4]),
       O('el refuerzo con maderos', 'Reforzar con maderos', 'Maderos y cuñas ensanchan el paso para la camilla.', 'Seguro con material; lento.', [-2, 0, -13, 3], .25, [3, -3, -8, -2], 20)],
     poi: [{ label: 'Caseta del mapa', icon: 'mapa', cards: {
-        guia: ['gem', 'Marcas de rescatistas', 'Las marcas de la última expedición llevan a {o}: ruta segura.'],
-        medica: ['trap', 'Lía respira peor', 'Por {o}, trampa para Lía. Mateo guarda un track GPS raro.', 'guia'],
-        ing: ['trap', 'El techo suena a hueco', 'El techo sobre {o} suena a hueco: roca suelta. Peligro.'] } },
+        guia: ['gem', 'Marcas de rescatistas', 'Las marcas llevan a {o}. Ruta segura.'],
+        medica: ['trap', 'Lía respira peor', 'Trampa en {o}. Mateo guarda un GPS raro.', 'guia'],
+        ing: ['trap', 'El techo suena a hueco', 'El techo de {o} suena a hueco. Peligro.'] } },
       { label: 'Pared del derrumbe', icon: 'alerta', cards: {
-        guia: ['trap', 'Goteos nuevos', 'Gotea sobre {o}: roca débil, peligro. Samuel dijo 3 cm/min; vi 4.', 'ing'],
-        medica: ['gem', 'Cabe la camilla', 'Con la camilla, {o} deja pasar a Lía sin doblarla. Es seguro.'],
-        ing: ['gem', 'Maderos de sobra', 'Tengo maderos de sobra: con {o} el techo queda firme y sólido.'] } }],
+        guia: ['trap', 'Goteos nuevos', 'Gotea en {o}: peligro. Samuel: 3; vi 4', 'ing'],
+        medica: ['gem', 'Cabe la camilla', 'La camilla pasa por {o}. Es seguro.'],
+        ing: ['gem', 'Maderos de sobra', 'Con maderos, {o} queda firme y sólido.'] } }],
     rec: { label: 'Botiquín de pared', icon: 'botiquin', text: 'Vendas secas, suero y un termo caliente.', e: [0, 6, 0, 0] },
     sec: { label: 'Escombros', icon: 'secreto', h: { title: 'El casco del minero', text: 'Casco «J.M. 1931» con un mapa de una cámara que no figura en planos.', e: [0, 0, 3, 0] } } },
   { ev: [E('gas', 'Bolsa de gas en la sala', 'Olor dulzón y poco oxígeno: cada palabra cuesta.', 'event_gas', 'Me duele la cabeza... me cuesta respirar.', 'aire', [0, -5, 0, -1], .06),
@@ -462,13 +462,13 @@ const ROUND_D = [
       O('la sima', 'Bajar por la sima', 'Cuerda de 40 m. Rápido, pero peligroso con Lía a cuestas.', 'Atajo vertical; peso y altura.', [-7, -3, -4, 0], .45, [6, -10, -7, -4]),
       O('la ventilación', 'Abrir la ventilación', 'Un ventilador de campaña hasta que el aire sea respirable.', 'Mejora el aire; gasta batería y tiempo.', [3, 2, -12, 2], .22, [4, -4, -8, -1], 20)],
     poi: [{ label: 'Sala de cristales', icon: 'estrella', cards: {
-        guia: ['trap', 'El detector pita', 'Mi detector pita cerca de {o}: hay gas. Peligro de asfixia.'],
-        medica: ['gem', 'Lía respira mejor', 'Lía respira mejor cerca de {o}: aire limpio y seguro.'],
-        ing: ['trap', 'Nudo viejo en la cuerda', 'La cuerda de {o} tiene un nudo viejo. Con peso cede: peligro.'] } },
+        guia: ['trap', 'El detector pita', 'Mi detector pita en {o}: gas. Peligro.'],
+        medica: ['gem', 'Lía respira mejor', 'En {o} hay aire limpio. Es seguro.'],
+        ing: ['trap', 'Nudo viejo en la cuerda', 'La cuerda de {o} tiene un nudo. Peligro.'] } },
       { label: 'Pozo de ventilación', icon: 'cuerda', cards: {
-        guia: ['gem', 'Flecha de un minero', 'Un minero pintó una flecha hacia {o}: esa ruta llegó. Es segura.'],
-        medica: ['trap', 'Manos temblorosas', 'A Mateo le tiemblan las manos; {o} exige rapidez: es una trampa.'],
-        ing: ['gem', 'Aire limpio', 'Aire respirable en {o}. Elena guarda analgésicos abiertos.', 'medica'] } }],
+        guia: ['gem', 'Flecha de un minero', 'Una flecha minera apunta a {o}. Es segura.'],
+        medica: ['trap', 'Manos temblorosas', 'Mateo tiembla en {o}: es una trampa'],
+        ing: ['gem', 'Aire limpio', 'Aire limpio en {o}. Elena: analgésicos.', 'medica'] } }],
     rec: { label: 'Bombona de oxígeno', icon: 'salud', text: 'Bombona pequeña, medio llena. Vale oro para Lía.', e: [0, 5, -2, 0] },
     sec: { label: 'Cristal que canta', icon: 'secreto', h: { title: 'La sala que escucha', text: 'Los cristales amplifican la voz: Lía oye todo lo que decís.', e: [0, 2, 0, 0] } } },
   { ev: [E('hipotermia', 'El frío muerde', 'Agua a 6 grados: tiemblan y las manos fallan.', 'event_hipotermia', 'Tengo mucho frío. Ya no noto los dedos.', 'frio', [2, -5, 0, 0], .06),
@@ -477,13 +477,13 @@ const ROUND_D = [
       O('la cornisa', 'Avanzar por la cornisa', 'Repisa seca y estrecha sobre el agua; un resbalón y adiós.', 'Seca; estrecha y resbaladiza.', [0, -2, -4, 2], .28, [5, -8, -5, -3]),
       O('el bombeo', 'Bombear la galería', 'Tres bombas vacían el tramo en una hora.', 'Baja el agua; mucho material.', [-5, 1, -15, 2], .25, [3, -3, -9, -2], 25)],
     poi: [{ label: 'Marca de crecida', icon: 'agua', cards: {
-        guia: ['trap', 'Marca hasta el techo', 'La crecida llegó al techo en {o}. Si el agua sube, los atrapa: peligro.'],
-        medica: ['gem', 'Agua menos fría', 'En {o} el agua corre y es menos fría. Es lo más seguro para Lía.'],
-        ing: ['trap', 'Corriente fuerte', 'Hay una corriente fuerte en {o}. Es peligroso: no se nada contra eso.'] } },
+        guia: ['trap', 'Marca hasta el techo', 'La crecida llegó al techo de {o}. Peligro.'],
+        medica: ['gem', 'Agua menos fría', 'En {o} el agua es menos fría. Es seguro.'],
+        ing: ['trap', 'Corriente fuerte', 'En {o} hay corriente fuerte. Es peligroso.'] } },
       { label: 'Cruces de Lía', icon: 'botiquin', cards: {
-        guia: ['gem', 'Cruces de Lía', 'Lía pintó cruces blancas hacia {o}: ruta señalizada y segura.'],
-        medica: ['trap', 'Dedos helados', 'Con este frío fallan los dedos. {o} exige agarre fino: gran riesgo.'],
-        ing: ['gem', 'Las bombas funcionan', 'Las bombas funcionan en {o}: desagüe libre. Es lo más fiable.'] } }],
+        guia: ['gem', 'Cruces de Lía', 'Lía pintó cruces hacia {o}. Ruta segura.'],
+        medica: ['trap', 'Dedos helados', 'Con este frío, {o} es un gran riesgo.'],
+        ing: ['gem', 'Las bombas funcionan', 'Las bombas funcionan en {o}. Es fiable.'] } }],
     rec: { label: 'Manta térmica', icon: 'salud', text: 'Manta dorada en bolsa estanca. Todos la querrían.', e: [0, 5, 0, 2] },
     sec: { label: 'Líneas de crecida', icon: 'secreto', h: { title: 'La marca de la expedición', text: 'Crecidas de 1978; la última, a la altura de sus cabezas: «No esperen».', e: [-2, 0, 0, 0] } } },
   { ev: [E('eco', 'El eco de la cámara', 'Se oye a Lía, cerca. También el estruendo del agua.', 'event_eco', 'Los oigo. Estoy en la cámara alta. ¡Rápido!', 'final', [3, 0, 0, 3], 0),
@@ -492,13 +492,13 @@ const ROUND_D = [
       O('la cuerda doble', 'Montar la cuerda doble', 'Dos anclajes, dos personas a la vez. Lento pero aguanta.', 'Seguro si hay material.', [-3, 1, -12, 4], .2, [4, -5, -7, -2], 20),
       O('la compuerta', 'Forzar la compuerta', 'Atascada: si cede, sacan a Lía en minutos; si no, nada.', 'Salida directa; mecanismo atascado.', [-10, -3, -4, 0], .48, [8, -12, -6, -6])],
     poi: [{ label: 'Cámara de Lía', icon: 'ojo', cards: {
-        guia: ['trap', 'Eco de suelo roto', 'El eco de {o} suena a vacío: se hundió el suelo. Peligro.'],
-        medica: ['gem', 'Lía señala el camino', 'Lía me oyó y apunta hacia {o}: aire y suelo firme. Es seguro.'],
-        ing: ['trap', 'Puerta de mina oxidada', 'Las bisagras de {o} están atascadas y oxidadas: forzar eso es peligroso.'] } },
+        guia: ['trap', 'Eco de suelo roto', 'El eco de {o} suena a vacío. Peligro.'],
+        medica: ['gem', 'Lía señala el camino', 'Lía apunta hacia {o}: suelo firme. Es seguro.'],
+        ing: ['trap', 'Puerta de mina oxidada', 'Las bisagras de {o} están oxidadas. Peligroso.'] } },
       { label: 'Compuerta', icon: 'llave', cards: {
-        guia: ['gem', 'Ruta conocida', 'Conozco {o} de memoria. Es la más segura, lo juro.'],
-        medica: ['trap', 'Sacudidas peligrosas', 'Por la respiración de Lía, {o} la sacudiría demasiado. Es un riesgo.'],
-        ing: ['gem', 'La cuerda aguanta', 'Calculé las cargas de {o}: aguanta con margen. Es lo más seguro.'] } }],
+        guia: ['gem', 'Ruta conocida', 'Conozco {o} de memoria. Es segura.'],
+        medica: ['trap', 'Sacudidas peligrosas', 'Por {o} sacudirían a Lía. Es un riesgo.'],
+        ing: ['gem', 'La cuerda aguanta', 'Calculé las cargas de {o}: es seguro.'] } }],
     rec: { label: 'Cuerda nueva', icon: 'cuerda', text: 'Cincuenta metros de cuerda nueva, con etiqueta.', e: [-2, 0, 8, 0] },
     sec: { label: 'Rendija baja', icon: 'secreto', h: { title: 'La carta de Lía', text: 'Carta a los tres: «Sé que cada uno guarda algo. Ven a por mí igualmente».', e: [0, 0, 0, 3] } } }
 ];
@@ -526,9 +526,9 @@ const SA = {
     [A('Asegurar la cuerda final con tu última anilla', [-4, 1, -4, 1]), A('Reservar lo mejor para el viaje de vuelta', [1, -1, 7, -3]), A('Cargar la compuerta con todo lo que queda', [-8, 0, -4, 2], .5, [9, -4, -8, -5])]]
 };
 const CONFESS = {
-  guia: { text: 'Confesar a todos que ayer te desviaste de la ruta', e: [0, 0, 0, -5], msg: 'Ayer me salí de la ruta. Por eso cayó Lía.' },
-  medica: { text: 'Contar a todos tu sospecha de lesión interna', e: [3, 2, -2, 1], msg: 'Sospecho una lesión interna: silbido y tos con sangre.' },
-  ing: { text: 'Decir el caudal real y entregar tu reserva', e: [-2, 0, 6, 2], msg: 'El agua sube más de lo que dije. Reparto material.' }
+  guia: { title: 'Confesar mi desvío', text: 'Confesar a todos que ayer te desviaste de la ruta', e: [0, 0, 0, -5], msg: 'Ayer me salí de la ruta. Por eso cayó Lía.' },
+  medica: { title: 'Contar mi sospecha', text: 'Contar a todos tu sospecha de lesión interna', e: [3, 2, -2, 1], msg: 'Sospecho una lesión interna. Tos con sangre.' },
+  ing: { title: 'Decir el caudal real', text: 'Decir el caudal real y entregar tu reserva', e: [-2, 0, 6, 2], msg: 'El agua sube más. Reparto material.' }
 };
 
 // ================= LOGROS =================
@@ -572,7 +572,7 @@ function newGame(o) {
   const priv = {}, hid = { struct: [], cards: {}, truth: {}, poiMeta: {}, secrets: {}, pTrust: {}, shares: [], lies: [], pts: {}, said: [], resolved: {}, botMem: {}, stat: { asIs: {}, team: {}, apFull: {}, riskWins: 0, trapAvoid: 0, unan: 0, conf: 0, lieCount: 0, lieCaught: 0, detective: {}, plata: {}, hall: [] }, water: { warned: {} }, expT: 0, chatN: 0, cad: { lastSpont: -1e12, gap: 7000, streak: 0, mem: {} }, spoke: {} };
   RK.forEach(r => {
     st.players[r] = { owner: null, name: ROLES[r].short, ready: false, ap: 3, connected: true, ai: !humans.includes(r), style: normStyle(o.style, r) };
-    priv[r] = { role: r, goal: { text: ROLES[r].goal, stat: ROLES[r].stat, min: ROLES[r].min + df.goal, points: ROLES[r].points }, secret: { text: ROLES[r].secret, revealed: false }, intel: [], secretOptions: [], secretPick: null, ap: 3 };
+    priv[r] = { role: r, goal: { text: ROLES[r].goal, stat: ROLES[r].stat, min: ROLES[r].min + df.goal, points: ROLES[r].points }, secret: { text: ROLES[r].secret, revealed: false }, intel: [], secretOptions: [], secretNote: 'Se aplica al final del tramo', secretPick: null, ap: 3 };
     hid.secrets[r] = { revealed: false, how: null, round: 0, redeem: 0, exposed: false }; hid.pTrust[r] = 50; hid.pts[r] = 0;
     hid.stat.asIs[r] = 0; hid.stat.team[r] = 0; hid.stat.apFull[r] = 0; hid.stat.detective[r] = 0; hid.stat.plata[r] = 0; hid.botMem[r] = {};
   });
@@ -584,8 +584,20 @@ function newGame(o) {
   hide(st, 'priv', priv); hide(st, 'hid', hid);
   return st;
 }
-const privOf = (st, role) => st.priv[role];
-const publicState = st => JSON.parse(JSON.stringify(st));
+// Datos de iconos del plan. hints = tarjetas COMPARTIDAS favorables; con role se suman las pistas privadas (solo en privOf).
+function refreshPlan(st, role) {
+  const ops = st.plan.options; if (!ops.length) return [];
+  const f = [0, 0, 0], u = [0, 0, 0], pf = [0, 0, 0], clue = ['', '', ''], sc = [0, 0, 0], sh = {};
+  st.hid.shares.filter(x => x.round === st.round && x.claim && x.claim.opt >= 0 && x.claim.pol !== 0).forEach(x => { sh[x.id] = x; });
+  Object.keys(sh).forEach(id => { const x = sh[id], c = (st.priv[x.from].intel.find(i => i.id === id) || {}).reliability || .8; (x.claim.pol > 0 ? f : u)[x.claim.opt]++; sc[x.claim.opt] += x.claim.pol * (1 + c / 10); });
+  if (role) st.priv[role].intel.filter(c => !c.item && c.round === st.round).forEach(c => { const cl = parseClaim(st, c.text); if (cl.opt >= 0 && cl.pol) { (cl.pol > 0 ? pf : u)[cl.opt]++; if (!clue[cl.opt]) clue[cl.opt] = c.text.slice(0, 40); } });
+  ops.forEach((o, i) => { o.hints = f[i]; const n = f[i] + u[i] + pf[i]; o.risk_known = n > 0; o.risk = !n ? 2 : Math.max(1, Math.min(3, (optT(st, i).r < .2 ? 1 : optT(st, i).r < .35 ? 2 : 3) + (u[i] > f[i] + pf[i] ? 1 : f[i] + pf[i] > u[i] ? -1 : 0))); });
+  let b = 0; sc.forEach((x, i) => { if (x > sc[b]) b = i; }); const best = sc[b] > 0 && sc.filter(x => x === sc[b]).length === 1 ? ops[b].id : null, any = f.some(Boolean) || u.some(Boolean);
+  st.plan.brief = best ? 'Pista fuerte: ' + best + ' es más segura' : any ? 'Pistas mezcladas: hablen en el chat' : 'Sin pistas: pregunten qué vio cada uno';
+  return clue;
+}
+const privOf = (st, role) => { const pv = st.priv[role], cl = refreshPlan(st, role); pv.planOpts = st.plan.options.map((o, i) => Object.assign({}, o, { clue: cl[i] })); refreshPlan(st); return pv; };
+const publicState = st => { refreshPlan(st); return JSON.parse(JSON.stringify(st)); };
 const sc_ = st => st.hid.struct[st.round - 1];
 const optT = (st, p) => ROUND_D[st.round - 1].opts[sc_(st).perm[p]];
 function say(st, from, text, kind, extra) {
@@ -607,17 +619,24 @@ function ctxSentence(st) {
   if (S.ing.revealed && S.ing.how === 'exposed') o.push('Samuel evita el caudalímetro.');
   return o.slice(0, 1).join(' ');
 }
+const sc3 = v => Math.sign(v) * Math.min(3, Math.ceil(Math.abs(v) / 3)); // magnitud 1..3 con el signo real (agua +  = sube = malo)
+const fxList = e => { const o = Array.isArray(e) ? { agua: e[0], salud: e[1], material: e[2], confianza: e[3] } : e; return SK.filter(k => o[k]).map(k => ({ k, d: sc3(o[k]) })).sort((a, b) => Math.abs(b.d) - Math.abs(a.d)).slice(0, 3); };
+const SAT = {
+  guia: [['Marcar anclajes primero', 'Arenga para animar', 'Atajo tú solo'], ['Tantear la roca', 'Cargar con la culpa', 'Cruzar sin cuerda'], ['Guiar con tu linterna', 'Recuerdo de Lía', 'Ruta nueva a ojo'], ['Cargar la camilla', 'Ordenar un descanso', 'Explorar sin avisar'], ['Sostener la cuerda', 'Prometer a todos', 'Saltar sin red']],
+  medica: [['Férula para Lía', 'Todo el botiquín a Lía', 'Drenar el pecho'], ['Abrigar a Lía', 'Pedir silencio', 'Dosis alta'], ['Repartir agua', 'Todos los sueros a Lía', 'Despertarla a la fuerza'], ['Dar tu manta', 'Todo el tiempo a Lía', 'Baño de agua tibia'], ['Preparar el traslado', 'Sedar a Lía', 'Moverla sin parar']],
+  ing: [['Reforzar anclajes', 'Racionar piezas', 'Poleas improvisadas'], ['Montar pasamanos', 'Contar el material', 'Mini explosión'], ['Bomba pequeña', 'Guardar baterías', 'Ventilador a batería'], ['Compartir baterías', 'No prestar nada', 'Presa improvisada'], ['Asegurar la cuerda', 'Reservar lo mejor', 'Forzar la compuerta']] };
 function buildSecretOptions(st, role) {
   const r = st.round, base = SA[role][r - 1], sec = st.hid.secrets[role], out = [];
   const mk = (a, tag) => {
     const e = V(a.e), cost = SK.filter(k => e[k] !== 0).map(k => STATS[k][0].split(' ')[0] + ' ' + (e[k] > 0 ? '+' : '') + e[k]).join(' · ');
-    return { text: a.text, tag, effects: e, risk: a.risk, fail: a.fail ? V(a.fail) : null, hint: (tag === 'team' || tag === 'confess' ? 'EQUIPO' : tag === 'goal' ? 'TU OBJETIVO' : 'ARRIESGADA ' + Math.round(a.risk * 100) + '% de salir mal') + ' · ' + cost };
+    const ti = SAT[role][r - 1][tag === 'team' || tag === 'confess' ? 0 : tag === 'goal' ? 1 : 2];
+    return { id: tag, kind: tag === 'goal' ? 'objetivo' : tag === 'risky' ? 'riesgo' : 'equipo', verb: tag === 'goal' ? 'PARA MÍ' : tag === 'risky' ? 'ARRIESGAR' : 'AYUDAR', title: tag === 'confess' ? CONFESS[role].title : ti, text: a.text, tag, fx: e, effects: fxList(e), p: a.risk, risk: a.risk ? (a.risk >= .5 ? 3 : 2) : 0, fail: a.fail ? V(a.fail) : null, hint: (tag === 'team' || tag === 'confess' ? 'EQUIPO' : tag === 'goal' ? 'TU OBJETIVO' : 'ARRIESGADA ' + Math.round(a.risk * 100) + '% de salir mal') + ' · ' + cost };
   };
   if (!sec.revealed && r <= 4) { const c = CONFESS[role]; out.push(mk({ text: c.text, e: c.e }, 'confess')); } else out.push(mk(base[0], 'team'));
   out.push(mk(base[1], 'goal'), mk(base[2], 'risky')); return out;
 }
 // Evento -> [índice de POI a mirar, rótulo corto]. La cámara va al slot de ese POI.
-const EVX = { tormenta: [1, 'Llueve a cántaros: el arroyo desborda hacia las galerías.'], inundacion: [1, 'El río sube y baña la entrada.'], derrumbe: [1, 'Se cae el techo: la galería queda cortada.'], grieta: [1, 'Una grieta recorre el techo y gotea.'],
+const EVX = { tormenta: [1, 'Llueve a cántaros: el arroyo desborda.'], inundacion: [1, 'El río sube y baña la entrada.'], derrumbe: [1, 'Se cae el techo: la galería queda cortada.'], grieta: [1, 'Una grieta recorre el techo y gotea.'],
   gas: [0, 'Hay gas en la sala: cuesta respirar.'], murcielagos: [0, 'Una nube de murciélagos dispersa al grupo.'], hipotermia: [0, 'El agua helada les quita las fuerzas.'], linterna: [1, 'Las linternas se apagan una a una.'],
   eco: [0, 'Se oye a Lía: está cerca.'], };
 const POIX = { info: ['pista', 'Pista privada sobre qué ruta es peligrosa o segura (puede ser dudosa)', 'investigar: pista privada, fiable o dudosa'], secreto: ['hallazgo', 'Un hallazgo: historia y pequeño bonus para el equipo', 'mirar de cerca: hallazgo'] };
@@ -627,7 +646,7 @@ function setRoundContent(st, ev, optsTxt, poiLabels) {
   const xv = EVX[evT.id] || [0, evT.title], cap = xv[1], radio = (ev && ev.radio) || evT.radio;
   st.event = { id: evT.id, title: (ev && ev.title) || evT.title, text: ((ev && ev.text) || evT.text) + (x ? ' ' + x : ''), art: evT.art, radio, cat: evT.cat, caption: cap,
     focus: { poi: 'r' + r + '_' + xv[0], slot: S.slots[xv[0]], x: null }, lines: [cap, radio] };
-  st.plan = { options: [0, 1, 2].map(p => { const T = D.opts[S.perm[p]], ov = optsTxt && optsTxt[p]; return { id: 'ABC'[p], n: ov ? ov.n : T.n, title: ov ? ov.title : T.t, text: ov ? ov.text : T.x, known: ov ? ov.known : T.k, req: T.req ? { material: T.req } : undefined, ask: ZASK[r - 1], what: WHAT[T.n] || T.x, travel: TRAVEL[T.n], gain: optGain(T), risk: optRisk(T) }; }), ask: ZASK[r - 1], votes: {}, chosen: null };
+  st.plan = { options: [0, 1, 2].map(p => { const T = D.opts[S.perm[p]], ov = optsTxt && optsTxt[p]; return { id: 'ABC'[p], n: ov ? ov.n : T.n, text: ov ? ov.text : T.x, known: ov ? ov.known : T.k, req: T.req ? { material: T.req } : undefined, ask: ZASK[r - 1], long: T.t, title: SHORT[T.n][0], what: SHORT[T.n][1], kind: TRAVEL[T.n].kind, speed: T.e[0] <= -5 ? 3 : T.e[0] < 0 ? 2 : 1, effects: fxList(T.e), hints: 0, risk: 2, risk_known: false, travel: TRAVEL[T.n], gain: optGain(T), riskTxt: optRisk(T) }; }), ask: ZASK[r - 1], brief: '', votes: {}, chosen: null };
   const lab = [D.poi[0].label, D.poi[1].label, D.rec.label, D.sec.label]; // las etiquetas de la IA se ignoran: nombre, why y puertas deben casar con la zona
   const meta = st.hid.poiMeta; st.pois = [];
   const types = [{ kind: 'info', idx: 0, icon: D.poi[0].icon }, { kind: 'info', idx: 1, icon: D.poi[1].icon }, { kind: 'recurso', icon: D.rec.icon }, { kind: 'secreto', icon: D.sec.icon }];
@@ -820,13 +839,13 @@ function resolve(st) {
   // acciones secretas
   const picks = {};
   RK.forEach(k => {
-    const pv = st.priv[k], i = Number.isInteger(pv.secretPick) && pv.secretOptions[pv.secretPick] ? pv.secretPick : 0, a = pv.secretOptions[i], afk = pv.secretPick == null; let e = a.effects, aok = true, aroll = null;
-    if (a.risk) { const nd = Math.round(a.risk * 100 * df.risk); aroll = 1 + hi(100, st.seed, 'roll', r, k); aok = aroll > nd; rolls.push({ what: 'secret', role: k, label: a.text, need: nd, roll: aroll, ok: aok }); if (!aok) e = a.fail; if (aok) sc.riesgo += 25; }
-    P('sec:' + k, [e.agua < 0 ? e.agua * ASC : a.tag === 'goal' ? Math.round(e.agua * .4) : e.agua, e.salud, e.material, e.confianza]); picks[k] = { role: k, idx: i, tag: a.tag, text: a.text, ok: aok, afk };
+    const pv = st.priv[k], i = Number.isInteger(pv.secretPick) && pv.secretOptions[pv.secretPick] ? pv.secretPick : 0, a = pv.secretOptions[i], afk = pv.secretPick == null; let e = a.fx, aok = true, aroll = null;
+    if (a.p) { const nd = Math.round(a.p * 100 * df.risk); aroll = 1 + hi(100, st.seed, 'roll', r, k); aok = aroll > nd; rolls.push({ what: 'secret', role: k, label: a.text, need: nd, roll: aroll, ok: aok }); if (!aok) e = a.fail; if (aok) sc.riesgo += 25; }
+    P('sec:' + k, [e.agua < 0 ? e.agua * ASC : a.tag === 'goal' ? Math.round(e.agua * .4) : e.agua, e.salud, e.material, e.confianza]); picks[k] = { role: k, idx: i, tag: a.tag, text: a.title, ok: aok, afk };
     if (a.tag === 'team' || a.tag === 'confess') { hd.stat.team[k]++; sc.equipo += 10; hd.pts[k] += 10; }
     SK.forEach(c => { if (e[c] !== 0 && ((c === 'material' || c === 'salud' || c === 'confianza') && e[c] <= -4 || c === 'agua' && e[c] >= 5)) { if (!blame[c] || Math.abs(e[c]) > blame[c].v) blame[c] = { role: k, v: Math.abs(e[c]) }; } });
     if (a.tag === 'confess') confessSecret(st, k, reveals, d, msgs, sc);
-    reveals.push({ type: 'secret_action', role: k, text: ROLES[k].short + ': ' + a.text + (a.risk ? (aok ? ' (bien)' : ' (mal)') : ''), tag: a.tag });
+    reveals.push({ type: 'secret_action', role: k, text: ROLES[k].short + ': ' + a.title + (a.p ? (aok ? ' (bien)' : ' (mal)') : ''), tag: a.tag });
   });
   // costes de secretos ocultos y redención
   const sec = hd.secrets;
@@ -835,7 +854,7 @@ function resolve(st) {
   if (!sec.ing.revealed) P('hidden:ing', [1, 0, 0, 0]);
   // exposiciones por filtración
   RK.forEach(k => { const S2 = sec[k]; if (S2.how === 'exposed' && !S2.charged) { S2.charged = true; const c = ({ guia: -12, medica: -6, ing: -10 })[k]; P('exposed:' + k, [0, 0, 0, c]); sc.honestidad -= 30; hd.pts[S2.exposedBy] = (hd.pts[S2.exposedBy] || 0) + 10;
-      reveals.push({ type: 'secret', role: k, how: 'exposed', text: 'Secreto de ' + NAMES[k] + ': ' + ({ guia: 'se desvió de la ruta; Lía cayó.', medica: 'sospechaba lesión interna y calló.', ing: 'el agua sube más y guardaba material.' })[k], delta: c }); } });
+      reveals.push({ type: 'secret', role: k, how: 'exposed', text: 'Secreto de ' + NAMES[k] + ': ' + ({ guia: 'se desvió de la ruta; Lía cayó.', medica: 'sospechaba lesión interna y calló.', ing: 'guardaba material.' })[k], delta: c }); } });
   // mentiras descubiertas
   hd.lies.filter(l => l.round === r && !l.caught).forEach(l => {
     const cd = hd.cards[l.id], contra = RK.filter(k => k !== l.from && hd.shares.concat(RK.map(q => st.priv[q].intel.map(c => ({ from: q, id: c.id }))).flat()).some(x => x.from === k && hd.cards[x.id] && hd.cards[x.id].round === r && hd.cards[x.id].kind === cd.kind && hd.cards[x.id].truth));
@@ -873,7 +892,7 @@ function confessSecret(st, k, reveals, d, msgs, sc) {
   S.redeem = k === 'guia' ? 4 : 0; sc.honestidad += 60; st.hid.pts[k] += 60; st.hid.pTrust[k] = clamp(st.hid.pTrust[k] + 12, 0, 100);
   if (k === 'ing') st.hid.reserve = 0; d[3] += 2;
   msgs.push(say(st, k, CONFESS[k].msg, 'chat')); st.hid.reveal = st.hid.reveal || []; st.hid.reveal.push({ role: k, how: 'confesion' });
-  reveals.push({ type: 'secret', role: k, how: 'confesion', text: NAMES[k] + ' confiesa: ' + ({ guia: 'se desvió de la ruta.', medica: 'sospecha lesión interna.', ing: 'el agua sube más y guardaba material.' })[k] });
+  reveals.push({ type: 'secret', role: k, how: 'confesion', text: NAMES[k] + ' confiesa: ' + ({ guia: 'se desvió de la ruta.', medica: 'sospecha lesión interna.', ing: 'guardaba material.' })[k] });
 }
 function advance(st) { if (isOver(st)) return false; st.round++; st.plan = { options: [], votes: {}, chosen: null }; return true; }
 
@@ -971,15 +990,15 @@ const ZONES = [{ id: 1, name: 'La entrada y el campamento' }, { id: 2, name: 'La
 // Por zona y POI (mismo orden que ROUND_D: 0,1 pistas, 2 recurso, 3 hallazgo): why = por qué ir; hr = rol que ve algo especial; hint = qué ve (SOLO ese rol).
 const POIV = [
   [{ why: 'Bajadas del campamento: dice cuál está asegurada.', hr: 'guia', hint: 'Marca a lápiz: la bajada más usada por la última expedición.' },
-   { why: 'Barro y huellas: por dónde baja el agua y pasó Lía.', hr: 'ing', hint: 'Por el cauce, el arroyo sube más rápido de lo que parece.' },
+   { why: 'Barro y huellas: por aquí pasó Lía.', hr: 'ing', hint: 'Por el cauce, el arroyo sube más rápido de lo que parece.' },
    { why: 'Mochila con prisas: puede traer material para todos.', hr: 'medica', hint: 'El botiquín del asa es de Lía: reconoces sus vendas.' },
-   { why: 'Algo brilla en la grieta: quizá un objeto de Lía.', hr: 'medica', hint: 'Sangre seca y vendaje: Lía pasó por aquí herida.' }],
+   { why: 'Algo brilla en la grieta: ¿algo de Lía?', hr: 'medica', hint: 'Sangre seca y vendaje: Lía pasó por aquí herida.' }],
   [{ why: 'Mapa minero: dice por dónde rodear el derrumbe.', hr: 'guia', hint: 'Un paso tachado a mano que no está en la leyenda.' },
    { why: 'Roca caída: dice si el paso estrecho aguanta.', hr: 'ing', hint: 'Las grietas finas aún se mueven.' },
    { why: 'Botiquín antiguo: vendas y suero para Lía.', hr: 'medica', hint: 'El suero sigue siendo válido.' },
    { why: 'Entre las piedras asoma algo de otra expedición.', hr: 'ing', hint: 'Marcas de cuña: alguien abrió ese hueco a mano.' }],
   [{ why: 'Los cristales marcan dónde hay gas y dónde aire limpio.', hr: 'medica', hint: 'Dolor de cabeza: el aire es peor cerca del techo.' },
-   { why: 'Cuerdas del pozo: dicen si la bajada aguanta con peso.', hr: 'guia', hint: 'Una flecha pintada baja por el pozo: solo tú la reconoces.' },
+   { why: 'Cuerdas del pozo: ¿aguanta la bajada?', hr: 'guia', hint: 'Una flecha pintada baja por el pozo: solo tú la reconoces.' },
    { why: 'Bombona medio llena: aire para Lía.', hr: 'medica', hint: 'Válvula de uso médico: sirve para ella.' },
    { why: 'Zumbido: los cristales amplifican voces, quizá la de Lía.', hr: 'ing', hint: 'Vibración regular: es el aire, no la voz.' }],
   [{ why: 'Marcas del agua helada: si el sifón se cierra, quedan atrapados.', hr: 'ing', hint: 'La marca más alta es de esta noche: el agua ya subió.' },
@@ -993,15 +1012,15 @@ const POIV = [
 // Puertas de habilidad: id z<zona>_<kind>. poi = índice (0..3) del POI de la zona que bloquean.
 // Regla anti-bloqueo: una puerta protege el POI COMÚN (extra) o el POI propio de quien la abre; nadie depende de otro para su tarea propia.
 const GATES = [
-  ['z1_anclaje', 1, 'guia', 'anclaje', 'Anclaje de la grieta', 2, 'Grieta en alto: clava un anclaje (clavo para la cuerda).'],
+  ['z1_anclaje', 1, 'guia', 'anclaje', 'Anclaje de la grieta', 2, 'Grieta alta: clava un anclaje.'],
   ['z2_puente', 2, 'ing', 'puente', 'Puente del foso', 1, 'Un foso corta el paso: hace falta un puente.'],
   ['z2_anclaje', 2, 'guia', 'anclaje', 'Anclaje de escombros', 3, 'Escombros en un saliente: se sube con cuerda.'],
-  ['z3_reptadero', 3, 'medica', 'reptadero', 'Reptadero con gas', 2, 'Pasadizo bajo con gas (reptadero): Elena cuida al que repta.'],
+  ['z3_reptadero', 3, 'medica', 'reptadero', 'Reptadero con gas', 2, 'Paso bajo con gas: Elena cuida al que repta.'],
   ['z3_valvula', 3, 'ing', 'valvula', 'Válvula del pozo', 3, 'Válvula cerrada: no llega aire al pozo.'],
-  ['z4_anclaje', 4, 'guia', 'anclaje', 'Anclaje de la cornisa', 1, 'Las cruces de Lía están en una cornisa: va con cuerda.'],
-  ['z4_valvula', 4, 'ing', 'valvula', 'Válvula del desagüe', 3, 'Desagüe cerrado: inunda el pasaje de las líneas.'],
+  ['z4_anclaje', 4, 'guia', 'anclaje', 'Anclaje de la cornisa', 1, 'Cruces de Lía en cornisa: va con cuerda.'],
+  ['z4_valvula', 4, 'ing', 'valvula', 'Válvula del desagüe', 3, 'Desagüe cerrado: se inunda el pasaje.'],
   ['z5_puente', 5, 'ing', 'puente', 'Puente a la compuerta', 1, 'La compuerta está tras un tramo inundado.'],
-  ['z5_reptadero', 5, 'medica', 'reptadero', 'Reptadero de la cámara', 3, 'Rendija muy baja: se pasa arrastrándose (reptadero).']
+  ['z5_reptadero', 5, 'medica', 'reptadero', 'Reptadero de la cámara', 3, 'Rendija baja: se pasa arrastrándose.']
 ].map(g => ({ id: g[0], zone: g[1], role: g[2], kind: g[3], label: g[4], poi: g[5], why: g[6], open: false }));
 const KIND_VERB = { anclaje: 'clavar el anclaje', puente: 'montar el puente', valvula: 'abrir la válvula', reptadero: 'abrir el reptadero' };
 const gatePoi = g => 'r' + g.zone + '_' + g.poi;
@@ -1136,7 +1155,7 @@ function scene(st, kind) {
     const best = RK.slice().sort((a, b) => (hd.pts[b] || 0) - (hd.pts[a] || 0))[0], other = RK.filter(k => k !== best);
     if (win) {
       const perfect = !hurtF.length && st.s.salud >= 60 && st.s.agua < 60, costly = hurtF.length || st.s.salud < 35;
-      add('director', 'happy', 'Último tramo cruzado. Al fondo, una linterna se mueve: Lía.');
+      add('director', 'happy', 'Último tramo. Una linterna se mueve: es Lía.');
       add('lia', 'happy', '(radio) ¡Los veo! ¡Sabía que llegarían!');
       add('director', costly ? 'hurt' : 'happy', perfect ? 'Salen ilesos. El agua y el miedo quedan atrás.' : costly ? (hurtF.length ? NAMES[hurtF[0].id] + ' sale herido y Lía muy débil. Costó caro.' : 'Lía muy débil, pero respira. Costó caro.') : 'Salen justos, con el agua pisándoles los talones.');
       add('lia', 'happy', 'Gracias. Pensé que no volvería a ver la luz.');
@@ -1145,7 +1164,7 @@ function scene(st, kind) {
       add('director', 'happy', 'Luz del día en la boca de la cueva. Están a salvo.');
     } else {
       const wr = Object.keys(hd.resolved).map(Number).sort((a, b) => ((hd.resolved[b].delta.agua || 0) - (hd.resolved[b].delta.salud || 0)) - ((hd.resolved[a].delta.agua || 0) - (hd.resolved[a].delta.salud || 0)))[0], w = wr && hd.resolved[wr], shut = GATES.filter(g => g.zone <= st.round && !st.gatesOpen[g.id])[0], ex = RK.find(k => hd.secrets[k].how === 'exposed');
-      add('director', 'hurt', st.s.agua >= 100 ? 'Tramo ' + lost + ': el agua cubrió la galería. Sin contacto con Lía.' : 'Tramo ' + lost + ': la salud de Lía llegó a cero. Radio en silencio.');
+      add('director', 'hurt', st.s.agua >= 100 ? 'Tramo ' + lost + ': el agua cubrió la galería. Sin Lía.' : 'Tramo ' + lost + ': la salud de Lía llegó a cero. Radio en silencio.');
       add('director', 'hurt', w ? 'Pesó: «' + w.plan.title + '», tramo ' + wr + (w.isTrap ? ' (peligroso)' : '') + (w.ok ? '.' : ' (se torció).') : 'Pesó el tiempo perdido en el camino.');
       add(best, 'hurt', ex ? 'El secreto de ' + NAMES[ex] + ' salió tarde y costó confianza.' : shut ? 'Si «' + shut.label + '» se hubiera abierto a tiempo...' : 'Cada decisión tenía su precio.');
       add(other[0], 'hurt', 'Lo siento, Lía. Lo siento mucho.');
@@ -1446,7 +1465,7 @@ function demoAct(st, role, phase) {
   if (phase === 'secret') { if (Number.isInteger(pv.secretPick)) return null; const o = pv.secretOptions; let i;
     if (o[0].tag === 'confess') { i = rr(st, role, 'cf', st.round) < clamp(sy.confess * (st.round === 1 ? 1 : 1), 0, 1) ? 0 : 1 + wpick(st, [sy.sec[1], sy.sec[2]], role, 'sc'); if (st.players[role].style === 'persona' && rr(st, role, 'cf', st.round) >= sy.confess * (.5 + st.round * .2)) i = 1 + wpick(st, [sy.sec[1] + .2, sy.sec[2]], role, 'sc'); }
     else i = wpick(st, sy.sec, role, 'sc', st.round);
-    if (o[i].risk && st.s.agua > 85 && P.style === 'persona') i = 0; return { type: 'secret', idx: i }; }
+    if (o[i].p && st.s.agua > 85 && P.style === 'persona') i = 0; return { type: 'secret', idx: i }; }
   return null;
 }
 function egoPref(st, role, cd) { // opción que más conviene al propio objetivo
@@ -1609,35 +1628,30 @@ const DO = [['buscar qué bajada está asegurada', 'medir cuánto sube el agua',
   ['medir hasta dónde llegó el agua', 'seguir las cruces blancas de Lía', 'recoger la manta contra el frío', 'leer las líneas pintadas'],
   ['revisar el pulso y la respiración de Lía', 'ver si se puede forzar la compuerta', 'agarrar la cuerda para el traslado', 'mirar qué hay en la rendija']];
 const ZASK = ['¿Cómo bajamos a la galería?', '¿Cómo pasamos el derrumbe?', '¿Cómo cruzamos la sala del gas?', '¿Cómo cruzamos el agua helada?', '¿Cómo llegamos a Lía?'];
-const WHAT = { 'la galería alta': 'Bajan por un camino largo y seco, con cuerdas ya puestas.', 'el pozo': 'Bajan directos por un pozo con anclajes muy viejos.', 'la balsa': 'Montan una balsa y dejan que el río los lleve.',
-  'el desvío seco': 'Rodean el derrumbe por un camino más largo pero firme.', 'el paso estrecho': 'Se cuelan de lado por un hueco angosto con agua.', 'el refuerzo con maderos': 'Ponen puntales y ensanchan el paso para la camilla.',
-  'el corredor de cristal': 'Cruzan un pasillo estrecho de cristales con buen aire.', 'la sima': 'Bajan a cuerda por un agujero vertical de 40 metros.', 'la ventilación': 'Montan un ventilador y esperan a que el aire sea respirable.',
-  'el sifón': 'Nadan cuatro metros bajo el agua helada.', 'la cornisa': 'Avanzan por una repisa estrecha sobre el agua.', 'el bombeo': 'Vacían la galería con bombas antes de pasar.',
-  'la repisa': 'Rodean la cámara por un camino alto y seco.', 'la cuerda doble': 'Montan dos anclajes con cuerda doble para subir a Lía.', 'la compuerta': 'Fuerzan la puerta de la mina para llegar a Lía.' };
-// Cómo viajan (para la cinemática): kind, caption, 2-3 líneas {who,mood,text}; bad = versión «se torció».
-const L = (who, mood, text) => ({ who, mood, text }), TV = (kind, caption, lines, bc, bl) => ({ kind, caption, lines, bad: { caption: bc, lines: bl } });
-const TRAVEL = {
-  'la galería alta': TV('galeria', 'Bajan por la galería alta, sujetos a las cuerdas fijas', [L('guia', 'talk', 'Cuerda a cuerda, sin prisa. Yo voy delante.'), L('ing', 'talk', 'Los anclajes aguantan. Sigan.')], 'Un tramo de la galería se desprende bajo sus pies', [L('guia', 'alert', '¡Cuidado, resbala!'), L('medica', 'hurt', 'Me torcí el pie, pero sigo.')]),
-  'el pozo': TV('pozo', 'Bajan por el pozo con las cuerdas', [L('guia', 'alert', 'Uno a uno. Despacio con los anclajes viejos.'), L('ing', 'talk', 'Aguantan... de momento.'), L('medica', 'talk', 'No miren abajo.')], 'Un anclaje cede y bajan de golpe por el pozo', [L('ing', 'alert', '¡El anclaje se soltó!'), L('guia', 'hurt', 'Me quemó la cuerda en las manos.')]),
-  'la balsa': TV('balsa', 'Navegan en la balsa por el río subterráneo', [L('ing', 'talk', 'La corriente nos lleva. Mantengan el peso al centro.'), L('guia', 'alert', 'Curva a la izquierda. ¡Remen!')], 'La balsa vuelca y el agua helada los empapa', [L('medica', 'alert', '¡Agarren a Lía!'), L('ing', 'hurt', 'Perdí material en el río.')]),
-  'el desvío seco': TV('galeria', 'Rodean el derrumbe por el desvío seco', [L('guia', 'talk', 'Más largo, pero la roca es firme.'), L('medica', 'talk', 'Prefiero eso a correr riesgos.')], 'Una roca suelta cae en el desvío y los frena', [L('ing', 'alert', '¡Atrás, cae piedra!'), L('guia', 'hurt', 'Un golpe en el hombro, nada más.')]),
-  'el paso estrecho': TV('paso', 'Se cuelan de lado por el paso, con agua a las rodillas', [L('guia', 'talk', 'De lado y sin mochila.'), L('ing', 'alert', 'El agua está helada. Rápido.')], 'Se atascan en el hueco y el agua sube mientras forcejean', [L('ing', 'alert', '¡Estoy atascado!'), L('medica', 'hurt', 'Me raspé las costillas al salir.')]),
-  'el refuerzo con maderos': TV('puntales', 'Colocan puntales y ensanchan el paso con la camilla', [L('ing', 'talk', 'Cuña aquí, puntal allá. Ya cabe la camilla.'), L('medica', 'talk', 'Con cuidado: Lía va encima.')], 'Un puntal cede y el techo suelta tierra sobre ellos', [L('ing', 'alert', '¡Fuera, se mueve!'), L('guia', 'hurt', 'Polvo en los ojos, pero pasamos.')]),
-  'el corredor de cristal': TV('corredor', 'Cruzan el corredor de cristal con cuidado', [L('guia', 'talk', 'No toquen los cristales con las manos.'), L('medica', 'talk', 'El aire aquí es bueno. Sigan.')], 'Los cristales cortan guantes y manos en el pasillo', [L('medica', 'alert', '¡Alto, estás sangrando!'), L('guia', 'hurt', 'Un corte en la mano. Sigo.')]),
-  'la sima': TV('cuerda', 'Descienden por la sima colgados de la cuerda', [L('guia', 'alert', 'Cuarenta metros. Bajo yo primero.'), L('ing', 'talk', 'Aseguro arriba. Ahora Lía.')], 'La cuerda se tensa y Lía se golpea contra la pared', [L('medica', 'alert', '¡Lía, aguanta!'), L('ing', 'hurt', 'Se me escapó la cuerda un momento.')]),
-  'la ventilación': TV('ventilador', 'Montan el ventilador y esperan a que el aire limpie la sala', [L('ing', 'talk', 'Conectado. Ya empieza a moverse el aire.'), L('medica', 'talk', 'Lía respira mejor. Un poco más.')], 'El ventilador falla y tienen que esperar con el aire viciado', [L('ing', 'alert', 'Se acabó la batería.'), L('medica', 'hurt', 'Me mareo. Hablen menos.')]),
-  'el sifón': TV('sifon', 'Nadan por el sifón bajo el agua helada', [L('guia', 'alert', 'Cuatro metros. Aguanten el aire.'), L('medica', 'alert', 'Yo llevo a Lía. ¡Ahora!')], 'Se quedan sin aire en el sifón y salen tosiendo, helados', [L('medica', 'hurt', 'No siento las manos.'), L('guia', 'alert', '¡Más rápido, que sale!')]),
-  'la cornisa': TV('cornisa', 'Avanzan pegados a la pared por la cornisa sobre el agua', [L('guia', 'talk', 'Pegados a la pared. Un pie y luego otro.'), L('ing', 'alert', 'No miren al agua.')], 'Un pie resbala en la cornisa y uno cae al agua', [L('guia', 'alert', '¡Resbalé!'), L('ing', 'hurt', 'Me mojé entero, pero sigo.')]),
-  'el bombeo': TV('bombeo', 'Bombean la galería hasta que baja el agua', [L('ing', 'talk', 'Las tres bombas funcionan. Baja el nivel.'), L('guia', 'talk', 'Ya se ve el suelo. Pasemos.')], 'Las bombas se atascan y el agua apenas baja', [L('ing', 'alert', '¡Otra vez atascada!'), L('guia', 'hurt', 'Pasamos con el agua a la cintura.')]),
-  'la repisa': TV('repisa', 'Suben por la repisa alta, rodeando la cámara por arriba', [L('guia', 'talk', 'Seco y estrecho. Tranquilos.'), L('medica', 'talk', 'Voy detrás de Lía.')], 'La repisa se desmorona y avanzan a rastras', [L('guia', 'alert', '¡Se rompe el borde!'), L('medica', 'hurt', 'Me raspé las rodillas.')]),
-  'la cuerda doble': TV('cuerda', 'Montan la cuerda doble con dos anclajes', [L('ing', 'talk', 'Dos anclajes, dos personas a la vez.'), L('guia', 'talk', 'Sube Lía. Despacio.')], 'Un anclaje cede y la cuerda doble queda floja', [L('ing', 'alert', '¡Uno se soltó!'), L('guia', 'hurt', 'Me quemó las manos, pero aguanta.')]),
-  'la compuerta': TV('compuerta', 'Fuerzan la compuerta atascada entre los tres', [L('ing', 'alert', 'A la una, a las dos... ¡ahora!'), L('guia', 'alert', 'Cede, ¡empujen!')], 'La compuerta se atasca y el agua entra a chorros', [L('ing', 'alert', '¡No cede!'), L('medica', 'hurt', 'Lía está empapada. Hay que salir ya.')])
-};
+const SHORT = { 'la galería alta': ['Galería alta', 'Camino largo, seco y con cuerdas'], 'el pozo': ['El pozo', 'Directo, pero con cuerdas viejas'], 'la balsa': ['La balsa', 'El río los lleva; gasta material'],
+  'el desvío seco': ['Desvío seco', 'Más largo, pero la roca es firme'], 'el paso estrecho': ['Paso estrecho', 'Hueco angosto con agua fría'], 'el refuerzo con maderos': ['Maderos', 'Puntales para pasar la camilla'],
+  'el corredor de cristal': ['Corredor cristal', 'Buen aire, pero hay cristales'], 'la sima': ['La sima', 'Bajada vertical de 40 metros'], 'la ventilación': ['Ventilador', 'Limpian el aire y esperan'],
+  'el sifón': ['El sifón', 'Cuatro metros bajo agua helada'], 'la cornisa': ['La cornisa', 'Repisa estrecha sobre el agua'], 'el bombeo': ['Bombeo', 'Bombas vacían la galería'],
+  'la repisa': ['La repisa', 'Camino alto, seco y estrecho'], 'la cuerda doble': ['Cuerda doble', 'Dos anclajes para subir a Lía'], 'la compuerta': ['La compuerta', 'Forzar la puerta atascada'] };
+// Cómo viajan: kind (7 tipos) manda; caption y líneas salen de KT para que casen con lo que se ve. anim = escena antigua.
+const L = (who, mood, text) => ({ who, mood, text });
+const KT = {
+  balsa: ['Navegan en balsa', [L('ing', 'talk', 'Remen despacio.'), L('guia', 'talk', 'Peso al centro.')], 'La balsa vuelca en el agua', [L('medica', 'alert', '¡Agarren a Lía!'), L('ing', 'hurt', 'Se mojó el material.')]],
+  pozo: ['Bajan por el pozo', [L('guia', 'talk', 'Uno a uno, despacio.'), L('ing', 'talk', 'Los anclajes aguantan.')], 'Un anclaje cede en el pozo', [L('ing', 'alert', '¡El anclaje se soltó!'), L('guia', 'hurt', 'Me quemó la cuerda.')]],
+  galeria: ['Caminan por la galería', [L('guia', 'talk', 'Paso a paso, sin prisa.'), L('medica', 'talk', 'Voy detrás de Lía.')], 'Resbalan en la galería', [L('guia', 'alert', '¡Cuidado, resbala!'), L('medica', 'hurt', 'Me torcí el pie.')]],
+  cuerda: ['Suben con cuerdas', [L('guia', 'talk', 'Sube Lía. Despacio.'), L('ing', 'talk', 'Aseguro la cuerda.')], 'Se suelta un anclaje', [L('ing', 'alert', '¡Uno se soltó!'), L('guia', 'hurt', 'Me quemó las manos.')]],
+  puente: ['Cruzan el puente', [L('guia', 'talk', 'De uno en uno.'), L('ing', 'talk', 'El puente aguanta.')], 'El puente se tambalea', [L('guia', 'alert', '¡Agárrense fuerte!'), L('ing', 'hurt', 'Casi caigo al agua.')]],
+  tunel: ['Gatean por el túnel', [L('guia', 'talk', 'De lado y sin mochila.'), L('ing', 'alert', 'Está helado. Sigan.')], 'Se atascan en el túnel', [L('ing', 'alert', '¡Estoy atascado!'), L('medica', 'hurt', 'Me raspé al salir.')]],
+  compuerta: ['Cruzan la compuerta', [L('ing', 'alert', 'Cede. ¡Pasen ya!'), L('guia', 'talk', 'Uno por uno.')], 'La compuerta suelta agua', [L('ing', 'alert', '¡No cede!'), L('medica', 'hurt', 'Lía está empapada.')]] };
+const K7 = { 'la galería alta': ['galeria', 'galeria'], 'el pozo': ['pozo', 'pozo'], 'la balsa': ['balsa', 'balsa'], 'el desvío seco': ['galeria', 'galeria'], 'el paso estrecho': ['tunel', 'paso'], 'el refuerzo con maderos': ['puente', 'puntales'],
+  'el corredor de cristal': ['galeria', 'corredor'], 'la sima': ['pozo', 'cuerda'], 'la ventilación': ['galeria', 'ventilador'], 'el sifón': ['tunel', 'sifon'], 'la cornisa': ['puente', 'cornisa'], 'el bombeo': ['galeria', 'bombeo'],
+  'la repisa': ['galeria', 'repisa'], 'la cuerda doble': ['cuerda', 'cuerda'], 'la compuerta': ['compuerta', 'compuerta'] };
+const TRAVEL = Object.fromEntries(Object.keys(K7).map(n => { const [k, anim] = K7[n], c = KT[k]; return [n, { kind: k, anim, caption: c[0], lines: c[1], bad: { caption: c[2], lines: c[3] } }]; }));
 // Cinemática de viaje: opción elegida + resultado real del tramo.
 function travelScene(st) {
   const hd = st.hid, rs = Object.keys(hd.resolved).map(Number).sort((a, b) => b - a)[0], res = rs && hd.resolved[rs]; if (!res || !res.plan || !res.plan.travel) return null;
   const t = res.plan.travel, ok = !!res.ok, v = ok ? t : t.bad;
-  return { kind: t.kind, caption: v.caption, lines: (ok ? t.lines : t.lines.slice(0, 1).concat(v.lines)).map(x => Object.assign({}, x)), toZone: Math.min(6, res.round + 1), outcome: ok ? 'bien' : 'mal' };
+  return { kind: t.kind, caption: v.caption, lines: v.lines.map(x => Object.assign({}, x)), anim: t.anim, toZone: Math.min(6, res.round + 1), outcome: ok ? 'bien' : 'mal' };
 }
 // gain + ', pero ' + risk  ->  «Rápido, pero el material baja mucho»
 const optGain = T => { const g = [], e = T.e; if (e[0] <= -5) g.push('Rápido'); else if (e[0] < 0) g.push('Algo más rápido'); if (e[1] >= 1) g.push('Cuida a Lía'); if (e[3] >= 3) g.push('Equipo tranquilo'); if (T.r < .2) g.push('Camino tranquilo'); return g.slice(0, 2).map((x, i) => i ? x.charAt(0).toLowerCase() + x.slice(1) : x).join(' y ') || 'Camino conocido'; };
@@ -2670,6 +2684,7 @@ function create(canvas, opts) {
     return { ok: false, reason: 'sitio' };
   }
   function gateTick() {
+    ROLES.forEach(function (r) { var g = bodies[r].goal; if (g && g.force && g.gate && !g.gate.open && tick - g.t0 > g.force) { var fc = g.cb; bodies[r].goal = null; if (fc) fc(false); } });
     GT.forEach(function (g0) {
       if (g0.pend > 0 && --g0.pend === 0) doOpen(g0, false);
       if (g0.open && !g0.solid && g0.n < g0.cells.length && tick % 3 === 0) {
@@ -2678,15 +2693,22 @@ function create(canvas, opts) {
       }
     });
   }
-  function botOpenGate(role, gateId, cb) {
+  function forceOpenGate(id) {   // v15: red de seguridad: camara a la puerta, el rol dueno (si es IA) aparece junto a ella con un fundido corto y abre; el cuerpo del jugador no se mueve
+    var g0 = GBY[id]; if (!g0 || !authority) return false; if (g0.open) return true;
+    var b = bodies[g0.role]; if (!b) return false;
+    if (b.bot) { puff(b.x, b.y, 6, 0); b.x = b.tx = g0.spot.x; b.y = b.ty = g0.spot.y; b.vx = b.vy = 0; b.climb = null; b.goal = b.mac = b.pe = null; b.busy = 50; b.csDone = false; puff(b.x, b.y, 8, 0); }
+    focus(g0.x, g0.y, { ms: 2200 }); startOpen(g0, b); return true;
+  }
+  function botOpenGate(role, gateId, cb) {   // v15: SIEMPRE abre: si no hay ruta, o la IA falla/tarda mas de 25 s, usa forceOpenGate
     var b = bodies[role], g0 = GBY[gateId];
-    function fail() { if (cb) setTimeout(function () { cb(false); }, 0); return false; }
-    if (!b || !g0 || g0.role !== role) return fail();
+    if (!b || !g0 || g0.role !== role) { if (cb) setTimeout(function () { cb(false); }, 0); return false; }
     if (g0.open) { if (cb) setTimeout(function () { cb(true); }, 0); return true; }
+    var done = false, fin = function (ok) { if (done) return; done = true; if (!ok) forceOpenGate(gateId); if (cb) setTimeout(function () { cb(true); }, 0); };
     ensureNav(g0.spot.x); ensureNav(b.x);
     var node = nid(Math.floor(g0.spot.x / T), Math.round(g0.spot.y / T)), cur = curNode(b);
-    if (!nav.out[node] || (cur >= 0 && fieldFor(node)[cur] === undefined)) return fail();
-    b.goal = { x: g0.spot.x, node: node, gate: g0, cb: cb, t0: tick }; b.bestDv = 1e9; b.progT = tick; b.stuckN = 0; b.idleT = 0; b.busy = 0; b.calm = 0;
+    if (!nav.out[node] || (cur >= 0 && fieldFor(node)[cur] === undefined)) { fin(false); return true; }
+    g0.cbs.push(function () { fin(true); });
+    b.goal = { x: g0.spot.x, node: node, gate: g0, cb: fin, t0: tick, force: 1500 }; b.bestDv = 1e9; b.progT = tick; b.stuckN = 0; b.idleT = 0; b.busy = 0; b.calm = 0;
     return true;
   }
   var AIR_BUBBLE = 0;
@@ -3205,7 +3227,7 @@ function create(canvas, opts) {
      destino; si no llegan al 62 % de la duracion, fundido y se colocan); los clientes solo ven la bandera `cs` del snapshot.
      ===================================================================== */
   var cs = null, rawIn = {}, csKeyFn = null, csZc = null;
-  var CS_TXT = { pozo: 'DESCENDIENDO POR EL POZO', balsa: 'CRUZANDO EN BALSA', galeria: 'AVANZANDO POR LA GALERIA', cuerda: 'ASEGURANDO LA CUERDA', puente: 'CRUZANDO EL PUENTE', tunel: 'ABRIENDO PASO', compuerta: 'ABRIENDO PASO' };
+  var CS_TXT = { pozo: 'DESCENDIENDO POR EL POZO', balsa: 'CRUZANDO EN BALSA', galeria: 'AVANZANDO POR LA GALERIA', cuerda: 'ASEGURANDO LA CUERDA', puente: 'CRUZANDO EL PUENTE', tunel: 'A GATAS POR EL TUNEL', compuerta: 'EMPUJANDO LA COMPUERTA' };
   function csZero() { ROLES.forEach(function (r) { inputs[r] = NOINP; }); }
   var CS_SHOT = ['salida', 'recorrido', 'llegada'];
   function playTravel(o, cb) {   // v13: 3 planos continuos (salida / recorrido real a 3x / llegada), 10-13 s; opts.onShot(i, nombre)
@@ -3228,18 +3250,13 @@ function create(canvas, opts) {
     cam.focus = null; snapCam();
   }
   function csShot(c, i) { if (c.shot === i) return; c.shot = i; if (c.onShot) { try { c.onShot(i, CS_SHOT[i]); } catch (e) { if (global.console) console.error(e); } } }
-  function csTick() {
-    var c = cs, all = c.go, n = c.n, lv = 0; c.t++;
-    if (!c.go && c.t >= c.tm) { c.go = true; all = true; ROLES.forEach(function (r) { var tg = c.tg[r]; if (!botGoto(r, { x: tg.x, y: tg.y, id: 'cs' })) c.bad = true; }); }
-    ROLES.forEach(function (r) { var b = bodies[r], tg = c.tg[r]; if (c.go && !b.csDone && b.grounded && Math.abs(b.x - tg.x) < 10 && Math.abs(b.y - tg.y) < 14) b.csDone = true; if (!b.csDone) all = false; lv += b.vx / 3; if (b.csDone && b.grounded && Math.abs(b.vx) < 0.4) b.face = 1; });   // los 3 acaban mirando adelante
-    if (c.go && all && c.e1 < 0) c.e1 = clamp(c.t + 24, Math.round(n * 0.5), Math.round(n * 0.8));
-    if (c.ft < 0 && !c.warped && (c.skip || (!all && c.t >= Math.round(n * (c.bad ? 0.5 : 0.82))))) c.ft = 0;   // fundido: ULTIMO recurso (ruta imposible/lenta) o salto del usuario
-    if (c.ft >= 0) { c.ft++; if (c.ft === 10) { csPlace(); c.s1 = Math.min(c.s1, c.t); c.e1 = c.e1 < 0 ? c.t : Math.min(c.e1, c.t); } if (c.ft >= 20) { c.ft = -1; c.warped = true; } }
-    c.spd = c.go ? (c.t > n * 0.6 && !all ? 4 : 3) : 1; c.acc += c.spd; c.sub = c.acc | 0; c.acc -= c.sub;   // ritmo cinematografico: ~3x (sub-pasos de fisica por tick)
-    c.lead += (clamp(lv * 12, -36, 36) - c.lead) * 0.04;
-    csShot(c, c.t < c.s1 ? 0 : (c.e1 < 0 || c.t < c.e1) ? 1 : 2);
-    var tgt = c.shot === 2 ? 1 + 0.07 * clamp(1 - (c.t - c.e1) / Math.max(1, n - c.e1), 0, 1) : 1;   // plano 1: zoom hacia fuera; 3: se asienta
-    c.zm = c.shot === 0 ? 1 + 0.45 * (1 - smooth(c.t / c.s1)) : c.zm + (tgt - c.zm) * 0.05;
+  function csTick() {   // v15: la cinematica es una escena propia (csScene); los cuerpos reales se colocan al empezar el fundido final
+    var c = cs, n = c.n; c.t++; c.go = true;
+    ROLES.forEach(function (r) { bodies[r].air = 100; });
+    if (c.ft < 0 && !c.warped && (c.skip || c.t >= n - 20)) c.ft = 0;
+    if (c.ft >= 0) { c.ft++; if (c.ft === 1) csPlace(); if (c.ft >= 20) { c.ft = -1; c.warped = true; } }
+    c.spd = 1; c.sub = 1; c.zm = 1.2; c.s1 = Math.round(n * 0.2); c.e1 = Math.round(n * 0.8);
+    csShot(c, c.t < c.s1 ? 0 : c.t < c.e1 ? 1 : 2);
     if ((c.skip && c.ft < 0) || c.t >= n) csEnd();
   }
   function csEnd(force) {
@@ -3274,22 +3291,89 @@ function create(canvas, opts) {
       if (t >= t2 && t < t2 + 40 && t % 2 === 0) addP({ k: 'drop', x: g.x + 26, y: g.y - 12, vx: -1.7 - rr() * 0.4, vy: -0.4 - rr() * 0.5, g: 0.1, life: 34, sz: 1, c: '170,225,255' });   // chorro de agua
     }
   }
-  function csDraw(cxr, cyr) {   // lo que va sobre la imagen: cuerdas/antorchas/anclajes, fundido, letterbox y rotulo (enteros, un solo pase de texto)
-    var c = cs, t = c.t, k = c.kind;
-    ROLES.forEach(function (r, i) {
-      var b = bodies[r], x = Math.round(b.x - cxr), y = Math.round(b.y - cyr), f = b.face || 1;
-      if (x < -20 || x > W + 20) return;
-      if (k === 'pozo') { for (var ry0 = 0; ry0 < y - 15; ry0 += 3) { var sw0 = Math.round(Math.sin(ry0 * 0.07 + t * 0.08 + i) * (ry0 / Math.max(1, y)) * 1.2); out.fillStyle = '#6a4a2a'; out.fillRect(x + 1 + sw0, ry0, 1, 3); out.fillStyle = '#d8b878'; out.fillRect(x + sw0, ry0, 1, 3); } }
-      else if (k === 'cuerda') { var ax = x + f * 12; out.fillStyle = '#d8b878'; out.fillRect(Math.min(ax, x), y - 18, Math.abs(ax - x), 1); out.fillStyle = '#10081c'; out.fillRect(ax - 1, y - 21, 4, 4); out.fillStyle = '#c8ccd8'; out.fillRect(ax, y - 20, 2, 2); }
-      else if (k === 'galeria') { var fx = x + f * 5; out.fillStyle = '#6a4a2a'; out.fillRect(fx, y - 15, 1, 5); out.fillStyle = ((t + i) >> 2) & 1 ? '#ffd24a' : '#ff8a3a'; out.fillRect(fx, y - 18, 2, 3); }
-      if (c.out === 'mal' && r === 'ing' && t >= Math.round(c.n * 0.5) && t < Math.round(c.n * 0.5) + 80) { var ry = y - 11 + (Math.round(t * 0.5) % 2 ? 1 : 0); out.fillStyle = '#f2c9a0'; out.fillRect(x + f * 3, ry, 2, 2); out.fillStyle = '#ff5a4a'; out.fillRect(x - f * 4 + (f < 0 ? -1 : 0), y - 28, 1, 3); out.fillRect(x - f * 4 + (f < 0 ? -1 : 0), y - 24, 1, 1); }
+  var csQ = null, CS_D = { balsa: 300, galeria: 300, puente: 260, tunel: 120, compuerta: 240, pozo: 300, cuerda: -220, generico: 300 };
+  function csChr(q, role, x, y, f, an, fi) {
+    var m = assets && assets.meta && assets.meta['player_' + role], a = m && m.anims && (m.anims[an] || m.anims.idle), sv = sc, ok = false;
+    if (a && sheet('player_' + role)) { sc = q; ok = drawSheetFrame('player_' + role, ((fi % a.frames) + a.frames) % a.frames, a.row, x, y, f < 0, m.fw, m.fh, m.feet_y || 22); sc = sv; }
+    if (!ok) { q.fillStyle = '#1a1424'; q.fillRect(x - 4, y - 15, 9, 16); q.fillStyle = { guia: '#d8402a', medica: '#e8f2f0', ing: '#f2c230' }[role]; q.fillRect(x - 3, y - 14, 7, 14); }
+  }
+  function csGlow(q, x, y, r, col, a) { var g = q.createRadialGradient(x, y, 1, x, y, r); g.addColorStop(0, 'rgba(' + col + ',' + a + ')'); g.addColorStop(1, 'rgba(' + col + ',0)'); q.globalCompositeOperation = 'lighter'; q.fillStyle = g; q.fillRect(x - r, y - r, 2 * r, 2 * r); q.globalCompositeOperation = 'source-over'; }
+  function csScene(c) {   // v15: diorama del viaje (opaco, bien iluminado); devuelve las posiciones de pantalla de los 3 cuerpos en c.scr
+    if (!csQ) csQ = canvasOf(W, H); var q = csQ.getContext('2d'), t = c.t, k = CS_D[c.kind] !== undefined ? c.kind : 'generico', n = c.n, p = clamp(t / (n - 20), 0, 1), vert = k === 'pozo' || k === 'cuerda', i, j, x, y;
+    var D = CS_D[k], U = D * smooth(p), GATE = 100;
+    if (k === 'compuerta') U = p < 0.3 ? -40 + 98 * smooth(p / 0.3) : p < 0.55 ? 58 : 58 + 182 * smooth((p - 0.55) / 0.45);
+    var cx = vert ? 0 : U * 0.9, cy = vert ? U * 0.9 : 0, SX = function (wx) { return Math.round(wx - cx + 160); }, SY = function (wy) { return Math.round(wy - cy); };
+    var gr = q.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, '#3e3158'); gr.addColorStop(1, '#2a2040'); q.fillStyle = gr; q.fillRect(0, 0, W, H);
+    // roca de fondo con paralaje
+    for (var ly = 0; ly < 2; ly++) { var par = ly ? 0.6 : 0.3, sp = ly ? 41 : 67, col = ly ? '#2c2240' : '#35294c';
+      var ox = vert ? 0 : cx * par, oy = vert ? cy * par : 0;
+      for (i = -2; i < 12; i++) for (j = -2; j < 8; j++) { var gx = vert ? i : Math.floor(ox / sp) + i, gy = vert ? Math.floor(oy / sp) + j : j, hv = hash(gx, gy, ly + 3);
+        if (hv < 0.45) { q.fillStyle = col; q.fillRect(Math.round((vert ? i * sp : gx * sp - ox) - 4), Math.round((vert ? gy * sp - oy : j * sp * 1.1 - 6)), 22 + (hv * 50 | 0), 14 + (hv * 60 | 0)); } } }
+    var fl = 126, wl = 122, fx = 0;
+    if (k === 'tunel') { q.fillStyle = '#241a34'; q.fillRect(0, 0, W, 96); q.fillRect(0, 128, W, H - 128); q.fillStyle = '#4a3a5e'; q.fillRect(0, 94, W, 2); q.fillRect(0, 128, W, 2); for (i = 0; i < 14; i++) { var hx = hash(Math.floor(cx / 30) + i, 1, 9); q.fillStyle = '#352848'; q.fillRect(SX((Math.floor(cx / 30) + i) * 30) - cx + cx - 0, 96, 10 + hx * 16, 4 + hx * 8); } }
+    if (k === 'galeria' || k === 'compuerta') { q.fillStyle = '#4a3a5a'; q.fillRect(0, fl, W, H - fl); q.fillStyle = '#6a5a7e'; q.fillRect(0, fl, W, 2); q.fillStyle = '#2a2038'; for (i = 0; i < 12; i++) q.fillRect(((Math.floor(cx / 24) + i) * 24 - Math.round(cx) + 160 - 160 + 0), fl + 4 + (i % 2) * 8, 22, 1);
+      q.fillStyle = '#241a34'; q.fillRect(0, 0, W, 34); for (i = -1; i < 14; i++) { var sx0 = (Math.floor(cx * 0.5 / 30) + i) * 30 - Math.round(cx * 0.5), hh = 8 + hash(Math.floor(cx * 0.5 / 30) + i, 5, 1) * 16; q.fillStyle = '#241a34'; q.beginPath(); q.moveTo(sx0, 33); q.lineTo(sx0 + 14, 33); q.lineTo(sx0 + 7, 33 + hh); q.fill(); }
+      for (i = -1; i < 5; i++) { var px0 = (Math.floor((cx + 40) / 120) + i) * 120 - Math.round(cx) + 160 - 40 + 40 - 40; q.fillStyle = '#5a3c24'; q.fillRect(px0, 34, 7, fl - 34); q.fillStyle = '#7a5434'; q.fillRect(px0, 34, 2, fl - 34); q.fillRect(px0 - 10, 34, 27, 5); } }
+    if (k === 'puente') { q.fillStyle = '#120c20'; q.fillRect(0, 124, W, H - 124); var mg = q.createLinearGradient(0, 124, 0, H); mg.addColorStop(0, 'rgba(120,150,200,0.35)'); mg.addColorStop(1, 'rgba(20,20,40,0)'); q.fillStyle = mg; q.fillRect(0, 124, W, H - 124);
+      for (i = -1; i < 6; i++) { var bx = (Math.floor((cx + 40) / 80) + i) * 80 - Math.round(cx) + 160 - 40; q.fillStyle = '#5a3c24'; q.fillRect(bx, 96, 5, 30); q.fillStyle = '#7a5434'; q.fillRect(bx, 96, 2, 30); q.fillStyle = '#c9a064'; q.fillRect(bx - 40, 96 + 0, 80, 1); }
+      q.fillStyle = '#c9a064'; q.fillRect(0, 118, W, 1); }
+    if (k === 'balsa') { var wg = q.createLinearGradient(0, wl, 0, H); wg.addColorStop(0, '#2b86a4'); wg.addColorStop(1, '#0f3050'); q.fillStyle = wg; q.fillRect(0, wl, W, H - wl); q.fillStyle = '#241a34'; q.fillRect(0, 0, W, 30); for (x = 0; x < W; x += 3) { q.fillStyle = '#a8e8f8'; q.fillRect(x, Math.round(wl + Math.sin((x + cx + t * 1.6) * 0.12) * 1.6), 3, 1); if (x % 9 === 0) { q.fillStyle = 'rgba(160,230,250,0.4)'; q.fillRect(x, Math.round(wl + 8 + Math.sin((x + cx * 1.3 + t) * 0.09) * 2), 5, 1); } } }
+    if (k === 'pozo') { q.fillStyle = '#1c1430'; q.fillRect(0, 0, 70, H); q.fillRect(250, 0, 70, H); for (i = -1; i < 8; i++) { var wy = (Math.floor(cy / 30) + i) * 30 - Math.round(cy) + 0; var h2 = hash(Math.floor(cy / 30) + i, 2, 4); q.fillStyle = '#34264a'; q.fillRect(0, wy, 62 + h2 * 24, 10 + h2 * 8); q.fillRect(258 - h2 * 24, wy + 12, 70, 10); } }
+    if (k === 'cuerda') { q.fillStyle = '#3a2c50'; q.fillRect(0, 0, W, H); for (i = -1; i < 9; i++) { var wy2 = (Math.floor(cy / 26) + i) * 26 - Math.round(cy); var h3 = hash(Math.floor(cy / 26) + i, 6, 4); q.fillStyle = '#2a2040'; q.fillRect(h3 * 40, wy2, 150 + h3 * 120, 8); q.fillStyle = '#4a3a64'; q.fillRect(h3 * 40, wy2, 150 + h3 * 120, 1); } }
+    // cuerpos
+    var by = [], bx = [], an = [], fi = [], rot = [], pos = {};
+    ROLES.forEach(function (r, ii) {
+      var dx = k === 'puente' ? 60 - 60 * ii : k === 'tunel' ? 50 - 50 * ii : k === 'pozo' || k === 'cuerda' ? -48 + 48 * ii : 40 - 40 * ii, wx = (vert ? 160 : U) + dx, wy0 = fl, a = 'idle', f = 0, ro = 0;
+      if (k === 'galeria' || k === 'puente') { a = 'run'; f = Math.floor(t * 0.13 + ii * 2); }
+      else if (k === 'tunel') { a = 'run'; f = Math.floor(t * 0.09 + ii * 2); ro = 1.2; wy0 = 126; }
+      else if (k === 'compuerta') { a = p > 0.3 && p < 0.55 ? 'interact' : 'run'; f = a === 'run' ? Math.floor(t * 0.13 + ii * 2) : Math.floor(t * 0.09 + ii); }
+      else if (k === 'balsa') { a = 'interact'; f = Math.floor(t * 0.07 + ii); wy0 = wl + 4; }
+      else if (k === 'pozo') { a = 'fall'; f = Math.floor(t / 22 + ii); wy0 = U + 96 + (ii === 1 ? 8 : ii ? -4 : 0); }
+      else if (k === 'cuerda') { a = 'interact'; f = Math.floor(t * 0.07 + ii * 2); wy0 = U + 100 + Math.sin(t * 0.1 + ii * 2) * 2; }
+      bx[ii] = vert ? wx : SX(wx); by[ii] = vert ? SY(wy0) : wy0 + (k === 'puente' ? Math.sin((wx + t * 0.5) * 0.05) * 1.2 : 0); an[ii] = a; fi[ii] = f; rot[ii] = ro;
     });
-    if (c.zm > 1.004) {   // v13: zoom de camara (plano 1 hacia fuera, plano 3 se asienta) alrededor del grupo
-      var gx = 0, gy = 0; ROLES.forEach(function (r) { gx += bodies[r].x - cxr; gy += bodies[r].y - cyr; }); gx = clamp(gx / 3, 0, W); gy = clamp(gy / 3 - 12, 0, H);
-      if (!csZc) csZc = canvasOf(W, H); var zx = csZc.getContext('2d'); zx.clearRect(0, 0, W, H); zx.drawImage(out.canvas, 0, 0);
-      out.imageSmoothingEnabled = true; out.drawImage(csZc, gx - gx / c.zm, gy - gy / c.zm, W / c.zm, H / c.zm, 0, 0, W, H); out.imageSmoothingEnabled = false;
+    var gxc = (bx[0] + bx[2]) / 2;
+    if (k === 'balsa') { var rx = gxc, ry = wl - 3 + Math.sin(t * 0.05) * 2, tl = Math.sin(t * 0.04) * 0.035;
+      q.save(); q.translate(rx, ry); q.rotate(tl);
+      q.fillStyle = '#4a2c16'; q.fillRect(-72, 6, 144, 4); q.fillStyle = '#6a4426'; q.fillRect(-62, 8, 12, 9); q.fillRect(-6, 8, 12, 9); q.fillRect(50, 8, 12, 9);   // barriles de flotacion
+      q.fillStyle = '#9a6a3a'; q.fillRect(-76, 0, 152, 6); q.fillStyle = '#5a3a1e'; for (i = -76; i < 76; i += 19) q.fillRect(i, 0, 1, 6); q.fillStyle = '#c89458'; q.fillRect(-76, 0, 152, 1);
+      q.fillStyle = '#7a4e28'; q.fillRect(-76, -12, 12, 13); q.fillRect(64, -12, 12, 13); q.fillStyle = '#2a2a34'; q.fillRect(-76, -9, 12, 1); q.fillRect(-76, -3, 12, 1); q.fillRect(64, -9, 12, 1); q.fillRect(64, -3, 12, 1); q.fillStyle = '#9a6a3a'; q.fillRect(-76, -12, 12, 1); q.fillRect(64, -12, 12, 1);
+      ROLES.forEach(function (r, ii) { var lx = bx[ii] - rx; csChr(q, r, lx, 6, 1, 'interact', fi[ii]); var ang = Math.sin(t * 0.1 + ii * 0.9) * 0.5 + 0.9, hx = lx + 5, hy = -7; q.strokeStyle = '#c89458'; q.lineWidth = 2; q.beginPath(); q.moveTo(hx - 6 * Math.sin(ang), hy - 8); q.lineTo(hx + 26 * Math.sin(ang), hy + 26 * Math.cos(ang)); q.stroke(); q.fillStyle = '#e0b070'; q.fillRect(Math.round(hx + 24 * Math.sin(ang)), Math.round(hy + 24 * Math.cos(ang)), 4, 5); });
+      q.fillStyle = '#7a4c26'; q.fillRect(-64, -2, 128, 4); q.fillStyle = '#c89458'; q.fillRect(-64, -2, 128, 1);
+      q.restore();
+      q.fillStyle = 'rgba(40,140,170,0.45)'; q.fillRect(0, Math.round(wl + 5), W, 4);
+      for (j = 0; j < 16; j++) { var ph = (t * 1.6 + j * 17) % 34, sxx = rx - 84 + (j * 37 % 168); q.fillStyle = 'rgba(235,250,255,' + (1 - ph / 34).toFixed(2) + ')'; q.fillRect(Math.round(sxx), Math.round(wl - Math.sin(ph / 34 * 3.14) * 9), 2, 2); }
+      q.fillStyle = 'rgba(235,250,255,0.8)'; q.fillRect(Math.round(rx + 78), Math.round(wl - 1 + Math.sin(t * 0.3)), 6, 2); q.fillRect(Math.round(rx - 82), Math.round(wl + Math.sin(t * 0.3 + 2)), 5, 2); }
+    else if (k === 'compuerta') {
+      var gx2 = SX(GATE), lift = 70 * smooth((p - 0.3) / 0.25); q.fillStyle = '#5a5a6a'; q.fillRect(gx2 - 7, 34, 7, fl - 34); q.fillRect(gx2 + 20, 34, 7, fl - 34); q.fillStyle = '#7a7a8a'; q.fillRect(gx2 - 7, 34, 2, fl - 34); q.fillRect(gx2 - 7, 34, 34, 6);
+      q.fillStyle = '#8a8a9a'; for (i = 0; i < 5; i++) q.fillRect(gx2 + i * 4 + 1, 40 - lift, 2, fl - 40 + 0);
+      ROLES.forEach(function (r, ii) { csChr(q, r, bx[ii], by[ii], 1, an[ii], fi[ii]); });
+    } else {
+      if (k === 'cuerda') { q.fillStyle = '#d8b878'; for (i = 0; i < 3; i++) { q.fillRect(bx[i] + 9, 0, 2, H); q.fillStyle = '#7a5a30'; for (j = -1; j < 8; j++) q.fillRect(bx[i] + 8, ((Math.floor(cy / 22) + j) * 22 - Math.round(cy)), 4, 3); q.fillStyle = '#d8b878'; } }
+      if (k === 'pozo') { q.fillStyle = '#d8b878'; for (i = 0; i < 3; i++) q.fillRect(bx[i] + 0, 0, 1, by[i] - 22); }
+      ROLES.forEach(function (r, ii) {
+        var x2 = bx[ii], y2 = by[ii];
+        if (k === 'pozo') { var sw = Math.sin(t * 0.03 + ii) * 0.08; q.save(); q.translate(x2, y2 - 24); q.rotate(sw); q.translate(-x2, -(y2 - 24)); csChr(q, r, x2, y2, 1, 'fall', fi[ii]); q.fillStyle = '#6a4a2a'; q.fillRect(x2 - 4, y2 - 10, 9, 2); q.fillStyle = '#d8b878'; q.fillRect(x2 - 3, y2 - 24, 1, 14); q.fillRect(x2 + 3, y2 - 24, 1, 14); q.restore(); }
+        else if (rot[ii]) { q.save(); q.translate(x2, y2 - 6); q.rotate(rot[ii]); q.translate(-x2, -(y2 - 6)); csChr(q, r, x2, y2 - 2, 1, an[ii], fi[ii]); q.restore(); }
+        else csChr(q, r, x2, y2, 1, an[ii], fi[ii]);
+        if ((k === 'galeria') && ii === 0) { q.fillStyle = '#6a4a2a'; q.fillRect(x2 + 7, y2 - 14, 2, 10); q.fillStyle = ((t >> 2) & 1) ? '#ffd24a' : '#ff8a3a'; q.fillRect(x2 + 6, y2 - 19, 4, 5); }
+      });
+      if (k === 'puente') { q.fillStyle = '#8a5a30'; q.fillRect(0, 126, W, 5); q.fillStyle = '#5a3a1e'; for (x = -Math.round(cx) % 9; x < W; x += 9) q.fillRect(x, 126, 1, 5); q.fillStyle = '#c89458'; q.fillRect(0, 126, W, 1); q.fillStyle = '#c9a064'; q.fillRect(0, 108, W, 1); }
     }
-    if (c.ft >= 0) { out.fillStyle = 'rgba(0,0,0,' + (1 - Math.abs(c.ft - 10) / 10).toFixed(2) + ')'; out.fillRect(0, 0, W, H); }
+    // luz: antorcha/lampara sobre el grupo, siempre
+    csGlow(q, gxc, (by[0] + by[2]) / 2 - 14, 130, k === 'balsa' ? '150,210,240' : '255,190,110', 0.5);
+    // particulas sin estado
+    for (j = 0; j < 14; j++) { var h4 = hash(j, 7, 2), mx = (h4 * W + (vert ? 0 : -cx * 0.7)) % W; if (mx < 0) mx += W; var my = k === 'pozo' ? (h4 * 997 - t * 1.1 + 2000) % H : k === 'cuerda' ? (h4 * 997 + t * 0.6) % H : 40 + (h4 * 811 + t * 0.4) % 80;
+      q.fillStyle = k === 'pozo' && j % 3 === 0 ? 'rgba(170,225,255,0.8)' : 'rgba(220,200,170,0.5)'; q.fillRect(Math.round(mx), Math.round(my < 0 ? my + H : my), 1, k === 'pozo' && j % 3 === 0 ? 3 : 1); }
+    // marco: zoom 1.2 centrado en el grupo (dentro del recuadro visible)
+    var z = 1.2, vw = W / z, vh = H / z, ccx = (VIS.x0 + VIS.x1) / 2, ccy = (VIS.y0 + VIS.y1) / 2, gcy = (by[0] + by[1] + by[2]) / 3 - 10;
+    var vx0 = clamp(gxc - vw / 2 + (VIS.x0 + VIS.x1 - W) / 2 / z, 0, W - vw), vy0 = clamp(gcy - vh / 2 + (ccy - H / 2) / z, 0, H - vh);
+    c.scr = ROLES.map(function (r, ii) { return [Math.round((bx[ii] - vx0) * z), Math.round((by[ii] - 10 - vy0) * z)]; });
+    return { v: [vx0, vy0, vw, vh] };
+  }
+  function csDraw() {
+    var c = cs, t = c.t, k = c.kind, al = c.ft >= 0 ? 1 - c.ft / 20 : 1;
+    if (al > 0.01) { var r = csScene(c).v; out.globalAlpha = al; out.imageSmoothingEnabled = true; out.drawImage(csQ, r[0], r[1], r[2], r[3], 0, 0, W, H); out.imageSmoothingEnabled = false; out.globalAlpha = 1; }
     var bh = Math.max(0, Math.round(Math.min(22, t * 0.8, (c.n - t) * 0.8)));
     if (bh) {
       out.fillStyle = '#000'; out.fillRect(0, 0, W, bh); out.fillRect(0, H - bh, W, bh);
@@ -3779,7 +3863,7 @@ function create(canvas, opts) {
 
   /* ---------- overlay: POI, prompt E, burbujas, avisos ---------- */
   var KEY_COL = { info: '#ffd24a', recurso: '#5ad2c8', secreto: '#c07aff' };
-  function clampIn(x, w) { var lo = VIS.x0 + 2, hi = VIS.x1 - w - 2; return Math.round(hi < lo ? lo : clamp(x, lo, hi)); }   // v10: cartel dentro del recuadro visible
+  function clampIn(x, w) { var lo = VIS.x0 + 2, hi = VIS.x1 - w - 8; return Math.round(hi < lo ? lo : clamp(x, lo, hi)); }   // v10: cartel dentro del recuadro visible
   function pill(x, y, w, h, fill, border) {
     out.fillStyle = '#10081c'; out.fillRect(x + 1, y - 1, w - 2, h + 2); out.fillRect(x - 1, y + 1, w + 2, h - 2);
     out.fillStyle = border; out.fillRect(x + 1, y, w - 2, h); out.fillRect(x, y + 1, w, h - 2);
@@ -3897,9 +3981,11 @@ function create(canvas, opts) {
       if (x < -20 || x > W + 20) return;
       if (id !== active && lb && Math.hypot(b.x - lb.x, b.y - lb.y) > 14 * T) return;   // v6: nombres solo del local y los companeros cercanos
       var nm = String(b.name || id).slice(0, 8), C = ROLE_COL[b.role] || ROLE_COL.guia, w = textW(nm), ny = y - 25 - (b.swim ? 6 : 0), guard = 0;
-      while (guard++ < 5 && placed.some(function (q) { return Math.abs(q.y - ny) < 8 && x - w / 2 < q.x1 + 2 && x + w / 2 > q.x0 - 2; })) ny -= 8;
-      placed.push({ x0: x - w / 2, x1: x + w / 2, y: ny });
-      drawText(out, nm, clampIn(x - Math.floor(w / 2) - 1, w + 2) + 1, Math.max(VIS.y0 + 8, ny), C.name, '#10081c');
+      var nx = clampIn(x - Math.floor(w / 2) - 1, w + 2) + 1;   // v15: se compara la posicion YA recortada al borde; si no cabe arriba, baja
+      while (guard++ < 5 && placed.some(function (q) { return Math.abs(q.y - ny) < 8 && nx < q.x1 + 2 && nx + w > q.x0 - 2; })) ny -= 8;
+      if (ny < VIS.y0 + 8) { ny = y - 25 + 10 * (placed.length); }
+      placed.push({ x0: nx, x1: nx + w, y: ny });
+      drawText(out, nm, nx, Math.max(VIS.y0 + 8, ny), C.name, '#10081c');
       var lift = y - 25 - ny;
       if (b.air < 99.5 && (id === active || b.air < 60)) {   // v6: barra de aire sobre la cabeza (grande y parpadeante para el local)
         var aw = id === active ? 22 : 14, ax2 = x - (aw >> 1), ay2 = ny - (id === active ? 10 : 8), fr2 = Math.max(0, b.air) / 100, low2 = b.air < 30;
@@ -3981,7 +4067,7 @@ function create(canvas, opts) {
     out.drawImage(arrowSprite(ai), Math.round(x) - 17, Math.round(y) - 17);
   }
   function guideLabel(text, cx2, y2, col) {
-    var w = textW(text) + 8, bx = clamp(Math.round(cx2 - w / 2), VIS.x0 + 2, VIS.x1 - w - 2), by = clamp(Math.round(y2), VIS.y0 + 2, VIS.y1 - 14);
+    var w = textW(text) + 8, bx = clamp(Math.round(cx2 - w / 2), VIS.x0 + 2, VIS.x1 - w - 8), by = clamp(Math.round(y2), VIS.y0 + 2, VIS.y1 - 14);
     pill(bx, by, w, 11, '#1a1228', col); drawText(out, text, bx + 4, by + 3, '#fff2d0');
   }
   function drawGuide(cxr, cyr, t) {
@@ -4250,8 +4336,8 @@ function create(canvas, opts) {
     setCameraFixed: function (x, y) { cam.mode = 'fixed'; cam.fx = x; cam.fy = y; }, setCameraFollow: function () { cam.mode = 'follow'; },
     setGuide: setGuide, getPoiPos: getPoiPos, getRoute: getRoute, focus: focus, setViewInsets: setViewInsets, drawMinimap: drawMinimap, setHint: function (t) { hintText = t ? String(t) : null; },
     setUnlocked: setUnlocked, getUnlocked: function () { return unlocked; }, getZone: function (role) { var b = bodies[role || active]; return b ? secOfX(b.x) + 1 : 1; },
-    swimNext: swimNext, findDry: findDry, fieldFor: fieldFor, getGates: getGates, openGate: openGate, stabilize: stabilize, commitInteract: commitInteract, actionShot: actionShot, floatText: floatText, nearGate: nearGate, useAbility: useAbility, botOpenGate: botOpenGate, getAir: getAir, setAir: function (role, v) { var b = bodies[role]; if (b) b.air = clamp(+v, 0, 100); }, setPoiHints: setPoiHints,
-    playTravel: playTravel, isCutscene: function () { return !!cs; }, skipCutscene: skipCutscene,
+    swimNext: swimNext, findDry: findDry, fieldFor: fieldFor, getGates: getGates, openGate: openGate, stabilize: stabilize, commitInteract: commitInteract, actionShot: actionShot, floatText: floatText, nearGate: nearGate, useAbility: useAbility, botOpenGate: botOpenGate, forceOpenGate: forceOpenGate, getAir: getAir, setAir: function (role, v) { var b = bodies[role]; if (b) b.air = clamp(+v, 0, 100); }, setPoiHints: setPoiHints,
+    playTravel: playTravel, isCutscene: function () { return !!cs; }, csScr: function () { return cs && cs.scr ? { scr: cs.scr, ft: cs.ft, vis: VIS, bh: Math.min(22, cs.t * 0.8, (cs.n - cs.t) * 0.8) } : null; }, skipCutscene: skipCutscene,
     bodies: bodies, cam: cam, zones: wd.zones, world: wd, tileAt: tileAt
   });
   Object.defineProperties(self, { water: { get: function () { return wlCur; } }, poiMap: { get: function () { return pois; } }, waterRate: { get: function () { return waterRate; } }, tick: { get: function () { return tick; } }, active: { get: function () { return active; } } });
@@ -4300,7 +4386,7 @@ global.Engine = { create: create, demoLoop: demoLoop, waterY: waterY, W: W, H: H
   pan: function (r) { if (this.current) this.current.pan(r); },
   fx: function (t, x, y) { if (this.current) this.current.fx(t, x, y); },
   camShake: function (a) { if (this.current) this.current.camShake(a); },
-  sectionOf: function (x) { return clamp(Math.floor(x / SPW), 0, NS - 1) + 1; }, version: '14.0',
+  sectionOf: function (x) { return clamp(Math.floor(x / SPW), 0, NS - 1) + 1; }, version: '15.0',
   setGuide: function (t, o) { if (this.current) this.current.setGuide(t, o); },
   getPoiPos: function (id) { return this.current ? this.current.getPoiPos(id) : null; },
   getRoute: function (id) { return this.current ? this.current.getRoute(id) : null; },
@@ -4310,6 +4396,7 @@ global.Engine = { create: create, demoLoop: demoLoop, waterY: waterY, W: W, H: H
   setUnlocked: function (n) { if (this.current) this.current.setUnlocked(n); }, getZone: function (r) { return this.current ? this.current.getZone(r) : 1; },
   getGates: function () { return this.current ? this.current.getGates() : []; }, openGate: function (id, now) { return this.current ? this.current.openGate(id, now) : false; },
   nearGate: function (r) { return this.current ? this.current.nearGate(r) : null; }, useAbility: function (r) { return this.current ? this.current.useAbility(r) : { ok: false, reason: 'sin motor' }; },
+  forceOpenGate: function (id) { return this.current ? this.current.forceOpenGate(id) : false; },
   botOpenGate: function (r, id, cb) { return this.current ? this.current.botOpenGate(r, id, cb) : false; }, getAir: function (r) { return this.current ? this.current.getAir(r) : 100; },
   setPoiHints: function (h) { if (this.current) this.current.setPoiHints(h); },
   playTravel: function (o, cb) { return this.current ? this.current.playTravel(o, cb) : false; }, isCutscene: function () { return this.current ? this.current.isCutscene() : false; }, skipCutscene: function () { return this.current ? this.current.skipCutscene() : false; } };
@@ -5578,9 +5665,9 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
   ];
   var PHASES = {
     briefing: { n: 'BRIEFING', i: 'Lee el evento del tramo', c: '#ff8a5c', e: '📜' },
-    explore: { n: 'EXPLORA', i: 'Camina por la cueva y presiona E junto a los iconos brillantes', c: '#3fd0c0', e: '🔍' },
-    plan: { n: 'PLAN', i: 'Debatan en el chat y voten el plan (1 · 2 · 3)', c: '#b58cff', e: '🗳️' },
-    secret: { n: 'ACCIÓN SECRETA', i: 'Elige en privado. Se revela al final del tramo', c: '#f2a93b', e: '🔒' },
+    explore: { n: 'EXPLORA', i: 'Busca iconos y pulsa E', c: '#3fd0c0', e: '🔍' },
+    plan: { n: 'PLAN', i: 'Vota el plan: 1, 2 o 3', c: '#b58cff', e: '🗳️' },
+    secret: { n: 'ACCIÓN SECRETA', i: 'Elige en privado', c: '#f2a93b', e: '🔒' },
     resolve: { n: 'RESOLUCIÓN', i: 'Mira qué pasó', c: '#ff6b6b', e: '🎲' },
     summary: { n: 'RESUMEN', i: 'Tus notas del tramo', c: '#5fe39a', e: '📊' },
     final: { n: 'FINAL', i: '', c: '#f2a93b', e: '🏁' }
@@ -6348,9 +6435,9 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
     el.phn.innerHTML = '<span class="t" style="color:' + info.c + '"><span>' + esc(info.n) + '</span></span>';
     var me = P.players && P.players[R], ap = V && V.ap != null ? V.ap : me && me.ap;
     var instr = info.i;
-    if (ph === 'explore') instr = 'Explora y habla con el equipo; decidan cuando estés listo';
-    if (ph === 'plan' && localVote) instr = 'Votaste ' + optLetter(localVote) + '. Puedes cambiar hasta que acabe el tiempo';
-    if (ph === 'secret' && secretSealed) instr = 'Decisión sellada. Espera a la resolución';
+    if (ph === 'explore') instr = 'Explora y habla';
+    if (ph === 'plan' && localVote) instr = 'Votaste ' + optLetter(localVote) + '. Puedes cambiar';
+    if (ph === 'secret' && secretSealed) instr = 'Sellada. Espera';
     el.phi.textContent = instr; el.phi.title = instr;
     el.evt.textContent = P.event && P.event.title && ph !== 'briefing' ? P.event.title : '';
     el.top.style.borderColor = ph === 'explore' && P.s && P.s.agua >= 80 ? 'var(--h-red)' : '';
@@ -6403,9 +6490,9 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
   function nowAuto(ph) {
     var o = {
       briefing: ['Escucha', '', 'info'],
-      explore: ['Explora la cueva', 'Icono brillante + E', 'explore'],
-      plan: ['Voten el plan', 'Vota: 1 · 2 · 3', 'plan'],
-      secret: ['Acción secreta', '1-3 elige, otra vez sella', 'secret'],
+      explore: ['Explora la cueva', 'Icono + E', 'explore'],
+      plan: ['Voten el plan', 'Vota 1, 2 o 3', 'plan'],
+      secret: ['Acción secreta', 'Elige 1, 2 o 3', 'secret'],
       summary: ['Tus puntos', '', 'done']
     }[ph];
     return o ? { text: o[0], sub: o[1], kind: o[2] } : null;
@@ -6414,14 +6501,14 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
   function paintNow() {
     if (!el.now || !P) return;
     var ph = P.phase, n = nowOv || nowAuto(ph);
-    if (!n || ph === 'final' || coachO || (ph === 'resolve' && panelName !== 'resolve') || panelName === 'plan' || panelName === 'secret') { el.now.style.display = 'none'; nowKey = ''; return; }
+    if (!n || ph === 'final' || coachO || (ph === 'resolve' && panelName !== 'resolve') || panelBusy()) { el.now.style.display = 'none'; nowKey = ''; return; }
     el.now.style.display = '';
     var pr = n.progress, why = n.why || n.sub || n.hint || '', sub = '', key = [n.text, why, sub, n.kind, pr && pr.done, pr && pr.total].join('|');
     if (key === nowKey) return;
     var changed = nowKey !== '' && n.text !== nowKey.split('|')[0]; nowKey = key;
     var k = NOW_IC[n.kind] ? n.kind : 'go';
     el.now.className = 'h-now ' + (n.kind === 'urgent' || n.kind === 'wait' || n.kind === 'danger' ? n.kind : '');
-    nowFull = { text: n.text, why: why }; el.now.innerHTML = '<div class="ic">' + icon(NOW_IC[k], 36) + '</div><div class="tx"><div class="t">' + esc(cut(n.text, 60)) + '</div>' + (why ? '<div class="w">↳ ' + esc(cut(why, 70)) + '</div>' : '') + (sub ? '<div class="s">' + esc(sub) + '</div>' : '') + '</div>' +
+    nowFull = { text: n.text, why: why }; el.now.innerHTML = '<div class="ic">' + icon(NOW_IC[k], 36) + '</div><div class="tx"><div class="t">' + esc(cut(n.text, 40)) + '</div>' + (why ? '<div class="w">↳ ' + esc(cut(why, 45)) + '</div>' : '') + (sub ? '<div class="s">' + esc(sub) + '</div>' : '') + '</div>' +
       (pr && pr.total ? '<div class="pg">' + (pr.done | 0) + '/' + (pr.total | 0) + '<span><i style="width:' + clamp((pr.done | 0) / pr.total * 100, 0, 100) + '%"></i></span></div>' : '');
     if (changed) { void el.now.offsetWidth; el.now.classList.add('chg'); snd('toast'); }
   }
@@ -6527,15 +6614,23 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
   function hideAllPanels() { closePanel(true); }
 
   var PTITLE = { event: 'EVENTO DEL TRAMO', plan: 'PLAN DEL EQUIPO', secret: 'ACCIÓN SECRETA', resolve: 'RESOLUCIÓN', summary: 'RESUMEN' };
+  var dlgHold = [], sayHold = [];
+  function panelBusy() { return panelName === 'plan' || panelName === 'secret' || panelName === 'resolve' || panelName === 'summary'; }
+  function decisionOpen() { return panelName === 'plan' || panelName === 'secret'; }
+  function flushHold() { // al cerrar el panel: lo de la fase actual sale, lo de fases pasadas se descarta
+    if (decisionOpen()) return; var ph = P && P.phase, d = dlgHold, y = sayHold; dlgHold = []; sayHold = [];
+    d.forEach(function (h) { if (h.ph === ph) dialogue(h.lines, h.o).then(h.done, h.done); else h.done(); });
+    y.forEach(function (h) { if (h.ph === ph) say(h.o, h.opt); });
+  }
   function openPanel(name, html, cls) {
     closePanel(true);
     var d = D.createElement('div'); d.className = 'h-pn ' + (img('ui_frame') && name !== 'event' ? 'fr ' : '') + (cls || ''); d.dataset.p = name; d.dataset.title = PTITLE[name] || name; d.innerHTML = html + '<button class="h-mn" data-act="minpanel" title="Minimizar para ver el mundo">▁</button>'; el.stage.dataset.p = name;
-    el.stage.appendChild(d); panel = d; panelName = name; root.classList.add('modal');
+    el.stage.appendChild(d); panel = d; panelName = name; root.classList.add('modal'); root.classList.toggle('dec', decisionOpen()); if (mounted) { paintCoach(); if (P) paintNow(); }
     return d;
   }
   function closePanel(now) {
-    if (!panel) { root.classList.remove('modal', 'pmin'); return; }
-    var p = panel; panel = null; panelName = null; root.classList.remove('modal', 'pmin'); el.stage.dataset.p = ''; if (p._abort) p._abort();
+    if (!panel) { root.classList.remove('modal', 'pmin', 'dec'); return; }
+    var p = panel; panel = null; panelName = null; root.classList.remove('modal', 'pmin', 'dec'); el.stage.dataset.p = ''; if (p._abort) p._abort(); setTimeout(function () { flushHold(); if (!panel) { paintCoach(); if (P) paintNow(); } }, 0);
     if (now) p.remove(); else { p.classList.add('out'); setTimeout(function () { p.remove(); }, 260); }
   }
 
@@ -6575,22 +6670,85 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
       return '<div>' + (ic ? icon(ic, 22) : '') + '<span class="' + (good ? 'u' : 'd') + '">' + (u ? '↑' : '↓') + '</span><span>' + esc(txt) + '</span></div>';
     }).join('');
   }
+  /* plan v15: 3 tarjetas grandes sin scroll */
+  var PAL = { k: '#1a1030', b: '#8a5a2b', B: '#c98a43', g: '#6f7690', G: '#b9c0d8', w: '#3aa0ff', W: '#a8dcff', r: '#e05a5a', R: '#8a2a2a', y: '#ffd24a', Y: '#c9951f', e: '#5fe39a', E: '#2f9c64', s: '#f1c9a0', o: '#f2a93b', f: '#f5f0ff', p: '#c8b8ff' };
+  var ART = {
+    pozo: ['............', '..GGGGGGGG..', '.GggggggggG.', 'GgkkkkkkkkgG', 'GgkkkkkkkkgG', 'GgkkkkkkkkgG', 'GgkkkkkkkkgG', 'GgkkkkkkkkgG', 'GgkkkkkkkkgG', '.Gggggggggg.', '..gggggggg..', '............'],
+    balsa: ['............', '.....y......', '....yyy.....', '...yyyyy....', '....yb......', '.bbbbbbbbbb.', '.BBBBBBBBBB.', 'wWwWwWwWwWwW', 'WwWwWwWwWwWw', 'wwwwwwwwwwww', '............', '............'],
+    galeria: ['..gggggggg..', '.gGGGGGGGGg.', 'gGgkkkkkkgGg', 'gGkkkkkkkkGg', 'gGkkkkkkkkGg', 'gGkkkkkkkkGg', 'gGkkkkkkkkGg', 'gGkkkkkkkkGg', 'bbbbbbbbbbbb', 'BBBBBBBBBBBB', 'bBbBbBbBbBbB', '............'],
+    tunel: ['..gggggggg..', '.gGGGGGGGGg.', 'gGgggggggGGg', 'gGgkkkkkkGgg', 'gGgkkyykkGgg', 'gGgkkyykkGgg', 'gGgkkkkkkGgg', 'gGgkkkkkkGgg', 'gGgggggggGGg', 'BBBBBBBBBBBB', 'bbbbbbbbbbbb', '............'],
+    cuerda: ['gggggggggggg', 'gGGGGGGGGGGg', '....Yr......', '....rY......', '....Yr......', '.....rY.....', '.....Yr.....', '....rY......', '....Yr......', '....rrrr....', '...rYYYYr...', '....rrrr....'],
+    puente: ['gg........gg', 'gG........Gg', 'gg........gg', 'gbBbBbBbBbbg', 'gBbBbBbBbBBg', 'gR.R.R.R.R.g', 'gg........gg', 'gk........kg', 'gkk......kkg', 'gkkk....kkkg', 'gkkkkkkkkkkg', 'gkkkkkkkkkkg'],
+    compuerta: ['gggggggggggg', 'gGGGGGGGGGGg', 'gkGkGkGkGkgg', 'gkGkGkGkGkgg', 'gkGkGkGkGkgg', 'gkGkGkGkGkgg', 'gkGkGkGkGkgg', 'gbbbbbbbbbbg', 'wWwWwWwWwWwW', 'WwWwWwWwWwWw', 'wwwwwwwwwwww', '............'],
+    team: ['............', '..ss....ss..', '..ss....ss..', '.eeee..eeee.', '.eeee..eeee.', '.eeee..eeee.', '.EEEE..EEEE.', '.EE.E..EE.E.', '.EE.E..EE.E.', '.EE.E..EE.E.', '............', '............'],
+    goal: ['.....yy.....', '.....yy.....', '....yyyy....', 'yyyyyyyyyyyy', '.yyyyyyyyyy.', '..yyyyyyyy..', '...yyyyyy...', '..yyyyyyyy..', '..yyy..yyy..', '.yyy....yyy.', '.yy......yy.', '............'],
+    risk: ['............', '.RRRRRRRRRR.', '.RWWRRRRWWR.', '.RWWRRRRWWR.', '.RRRRRRRRRR.', '.RRRRWWRRRR.', '.RRRRWWRRRR.', '.RRRRRRRRRR.', '.RWWRRRRWWR.', '.RWWRRRRWWR.', '.RRRRRRRRRR.', '............'],
+    clock: ['..ffffff..', '.ffkkkkff.', 'ffkkykkkff', 'fkkkykkkkf', 'fkkkykkkkf', 'fkkkyyykkf', 'ffkkkkkkff', '.ffkkkkff.', '..ffffff..'],
+    skull: ['.ffffffff.', 'ffffffffff', 'fkkffffkkf', 'fkkffffkkf', 'ffffkkffff', '.ffffffff.', '..fkfkfkf.', '..ffffff..'],
+    bulb: ['..yyyy..', '.yyyyyy.', 'yyyYYyyy', 'yyyyyyyy', '.yyyyyy.', '..yyyy..', '..gggg..', '...gg...']
+  };
+  var KIND_ART = { galeria: 'galeria', pozo: 'pozo', balsa: 'balsa', cuerda: 'cuerda', puente: 'puente', tunel: 'tunel', compuerta: 'compuerta', paso: 'tunel', puntales: 'puente', corredor: 'galeria', bombeo: 'compuerta', cornisa: 'puente', repisa: 'puente', sifon: 'tunel', ventilador: 'compuerta' };
+  function pxArt(rows, size, cls) {
+    var w = 0, s = ''; rows.forEach(function (r) { w = Math.max(w, r.length); });
+    rows.forEach(function (r, y) { for (var x = 0, c, x0; x < r.length;) { c = r[x]; x0 = x; while (r[x] === c) x++; if (PAL[c]) s += '<rect x="' + x0 + '" y="' + y + '" width="' + (x - x0) + '" height="1" fill="' + PAL[c] + '"/>'; } });
+    return '<svg class="h-px ' + (cls || '') + '" viewBox="0 0 ' + w + ' ' + rows.length + '" width="' + size + '" height="' + Math.round(size * rows.length / w) + '" shape-rendering="crispEdges" aria-hidden="true">' + s + '</svg>';
+  }
+  function dots(n, cls, art, label) {
+    var h = ''; for (var j = 1; j <= 3; j++) h += '<i class="' + (j <= n ? 'on' : '') + '"></i>';
+    return '<span class="h-dt ' + cls + '" title="' + label + ' ' + n + '/3" aria-label="' + label + ' ' + n + ' de 3">' + pxArt(ART[art], 22) + '<span class="d">' + h + '</span></span>';
+  }
+  function lvl3(v) { // 1..3 desde numero (0..1 o 1..3), texto bajo/medio/alto o lento/normal/rapido
+    if (typeof v === 'number') return v >= 1 ? clamp(Math.round(v), 1, 3) : (v < .2 ? 1 : v < .4 ? 2 : 3);
+    var m = { bajo: 1, medio: 2, alto: 3, lento: 1, normal: 2, 'rápido': 3, rapido: 3 }[String(v).toLowerCase()]; return m || null;
+  }
+  function planSpeed(o) {
+    if (o.speed != null) return lvl3(typeof o.speed === 'number' ? Math.round(o.speed) : o.speed);
+    var g = typeof o.gain === 'string' ? o.gain : ''; return /algo más rápid/i.test(g) ? 2 : /rápid/i.test(g) ? 3 : /lent/i.test(g) ? 1 : null;
+  }
+  function planRisk(o) {
+    if (o.risk == null) return null; if (typeof o.risk === 'number') return lvl3(o.risk);
+    var t = String(o.risk); if (lvl3(t)) return lvl3(t);
+    return /riesgo alto/i.test(t) ? 3 : /riesgo medio|sufre|sube el agua|mucho material/i.test(t) ? 2 : /sin pegas/i.test(t) ? 1 : (t ? 2 : null);
+  }
+  function chipList(o) { // [{stat,up,good}]
+    var out = [], e = o.effects || o.known_effects;
+    function add(stat, n) { if (!n || out.some(function (x) { return x.stat === stat; })) return; var st = STATS.filter(function (z) { return z.k === stat; })[0]; if (!st) return; out.push({ stat: stat, up: n > 0, good: st.bad ? n < 0 : n > 0 }); }
+    if (Array.isArray(e)) e.forEach(function (x) { if (x && typeof x === 'object') add(x.stat || x.icon, typeof x.n === 'number' ? x.n : +x.n); });
+    else if (e && typeof e === 'object') Object.keys(e).forEach(function (k) { add(k, +e[k]); });
+    if (!out.length) {
+      var t = (typeof o.risk === 'string' ? o.risk : '') + ' | ' + (typeof o.gain === 'string' ? o.gain : '');
+      if (/material/i.test(t)) add('material', -1); if (/sube el agua/i.test(t)) add('agua', 1); if (/Lía sufre/i.test(t)) add('salud', -1); if (/Cuida a Lía/i.test(t)) add('salud', 1); if (/Equipo tranquilo/i.test(t)) add('confianza', 1);
+    }
+    return out.slice(0, 4);
+  }
+  function chipHtml(l) {
+    return l.map(function (c) { return '<span class="h-ch2 ' + (c.good ? 'g' : 'b') + '" title="' + esc((STATS.filter(function (z) { return z.k === c.stat; })[0] || {}).label || c.stat) + '">' + icon(c.stat, 20) + '<b>' + (c.up ? '↑' : '↓') + '</b></span>'; }).join('');
+  }
+  function shortTitle(o) {
+    var t = String(o.n || o.title || o.id || '').replace(/^(la|el|los|las|un|una)\s+/i, '').split(/\s+/).slice(0, 3);
+    while (t.length > 1 && /^(de|del|por|la|el|en|y|a)$/i.test(t[t.length - 1])) t.pop();
+    t = t.join(' '); return t.charAt(0).toUpperCase() + t.slice(1);
+  }
   function openPlan(data) {
     var plan = P.plan || { options: [] }, opts_ = plan.options || [];
     var intel = (V && V.intel || []).filter(function (c) { return c.round === P.round; });
     var cards = opts_.map(function (o, i) {
-      var hint = (V && V.planHints && V.planHints[o.id]) || '';
-      var rel = intel.filter(function (c) { return c.about && [].concat(c.about).indexOf(o.id) >= 0; }).map(function (c) { return c.title + ' (' + relInfo(c.reliability).v + '%)'; }).join(' · ');
-      var eff = (o.gain || o.risk) ? effHtml(o.gain, true) + effHtml(o.risk, false) : effHtml(o.effects || o.known_effects, null);
-      return '<button class="h-opt" data-act="vote" data-id="' + esc(o.id) + '"><span class="k"><kbd>' + (i + 1) + '</kbd></span><h3>' + esc(o.title) + '</h3><p>' + esc(o.what || o.text || '') + '</p>' +
-        (eff ? '<div class="h-eff">' + eff + '</div>' : '') +
-        (o.known ? '<div class="kn"><b>Se sabe:</b> ' + esc(o.known) + '</div>' : '') +
-        (hint || rel ? '<div class="pv"><b>Tú sabes:</b> ' + esc(hint || rel) + '</div>' : '') +
-        '<div class="h-votes"><span class="c"></span></div></button>';
+      var hints = [], hv = V && V.planHints && V.planHints[o.id];
+      if (hv) hints.push(hv); if (Array.isArray(o.hints)) o.hints.forEach(function (h) { hints.push(typeof h === 'string' ? h : (h && (h.text || h.title)) || ''); });
+      intel.forEach(function (c) { if (c.about && [].concat(c.about).indexOf(o.id) >= 0) hints.push(c.title + ' (' + relInfo(c.reliability).v + '%)'); });
+      hints = hints.filter(Boolean);
+      var ka = KIND_ART[(o.travel && o.travel.kind) || o.kind] || (/pozo|balsa|cuerda|puente|tunel|compuerta/.exec(String(o.title || '').toLowerCase()) || ['galeria'])[0];
+      var sp = planSpeed(o), rk = planRisk(o), ch = chipHtml(chipList(o));
+      return '<button class="h-opt" data-act="vote" data-id="' + esc(o.id) + '" title="' + esc(o.title || '') + '"><span class="h-votes"></span>' +
+        '<span class="top"><kbd class="num">' + (i + 1) + '</kbd>' + pxArt(ART[ART[ka] ? ka : 'galeria'], 64, 'big') + '</span>' +
+        '<h3>' + esc(shortTitle(o)) + '</h3>' +
+        '<span class="ind">' + (sp ? dots(sp, 'sp', 'clock', 'Velocidad') : '') + (rk ? dots(rk, 'rk', 'skull', 'Riesgo') : '') + '</span>' +
+        '<span class="rowc"><span class="chs">' + ch + '</span>' + (hints.length ? '<span class="h-bulb" tabindex="-1">' + pxArt(ART.bulb, 20) + '<b>' + hints.length + '</b><span class="tp"><em>Tu pista</em>' + esc(cut(hints[0], 60)) + '</span></span>' : '') + '</span>' +
+        '<span class="vbtn">VOTAR <kbd>' + (i + 1) + '</kbd></span></button>';
     }).join('');
-    openPanel('plan', '<div class="h-ph1"><div class="q">' + esc(plan.ask || '¿Qué hacemos ahora?') + '</div><div class="hv">Vota con <b>1</b>, <b>2</b> o <b>3</b>. Gana la mayoría.</div></div>' +
-      (plan.brief ? '<div class="h-brief"><b>Lo que saben / lo que no</b>' + esc(Array.isArray(plan.brief) ? plan.brief.join(' ') : plan.brief) + '</div>' : '') +
-      '<div class="h-pb"><div class="h-opts">' + cards + '</div></div><div class="h-foot"><span class="l h-pstat"></span><button class="h-btn alt" data-act="chatfocus">' + icon('chat', 14) + ' HABLAR EN EL CHAT <kbd>T</kbd></button></div>');
+    var br = plan.brief ? (Array.isArray(plan.brief) ? plan.brief.join(' ') : String(plan.brief)) : '';
+    openPanel('plan', '<div class="h-ph1"><div class="q">' + esc(cut(plan.ask || '¿Qué hacemos?', 40)) + '</div><div class="hv">Vota <b>1</b>, <b>2</b> o <b>3</b></div></div>' +
+      '<div class="h-pb">' + (br ? '<div class="h-brief1" title="' + esc(br) + '">' + icon('info', 16) + '<span>' + esc(cut(br, 60)) + '</span></div>' : '') + '<div class="h-opts">' + cards + '</div></div><div class="h-foot"><span class="l h-pstat"></span><button class="h-btn alt" data-act="chatfocus">' + icon('chat', 14) + ' CHAT <kbd>T</kbd></button></div>');
     updatePlan(); clockTick(); if (P.plan && P.plan.chosen) showChosen();
   }
   function updatePlan() {
@@ -6602,12 +6760,13 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
       var id = n.dataset.id, vs = by[id] || [], box = n.querySelector('.h-votes');
       var sig = vs.join(',') + (votes[R] === id ? 'm' : '');
       n.classList.toggle('sel', votes[R] === id);
+      var vb = n.querySelector('.vbtn'); if (vb) vb.firstChild.nodeValue = votes[R] === id ? '✔ VOTADO ' : 'VOTAR ';
       if (box.dataset.s !== sig) { box.dataset.s = sig; if (vs.length > (box.dataset.n | 0)) snd('vote'); box.dataset.n = vs.length;
-        box.innerHTML = vs.map(function (r) { return portrait(r, 'neutral', 30); }).join('') + '<span class="c">' + (vs.length ? vs.length + (vs.length > 1 ? ' VOTOS' : ' VOTO') : 'SIN VOTOS') + '</span>'; }
+        box.innerHTML = vs.map(function (r) { return portrait(r, 'neutral', 32); }).join(''); }
       if (plan.chosen) { n.classList.toggle('win', plan.chosen === id); n.classList.toggle('lose', plan.chosen !== id); }
     });
     var falta = PLAYER_ROLES.filter(function (r) { return !votes[r]; }).map(function (r) { return roleInfo(r).name; });
-    var st = panel.querySelector('.h-pstat'); if (st) st.innerHTML = falta.length ? 'Faltan por votar: <b style="color:var(--h-amber2)">' + esc(falta.join(', ')) + '</b>' : '<b style="color:var(--h-green)">Todos votaron</b>';
+    var st = panel.querySelector('.h-pstat'); if (st) st.innerHTML = falta.length ? 'Faltan: <b style="color:var(--h-amber2)">' + esc(falta.join(', ')) + '</b>' : '<b style="color:var(--h-green)">Todos votaron</b>';
   }
   function showChosen() {
     if (!panel || panelName !== 'plan') return;
@@ -6624,20 +6783,20 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
     if (cb.vote) cb.vote(id);
   }
 
-  /* secreta */
+  /* secreta v15 */
+  var SKIND = { team: ['AYUDAR', '#5fe39a', 'team', 1], confess: ['AYUDAR', '#5fe39a', 'team', 1], goal: ['PARA MÍ', '#f2a93b', 'goal', 2], risky: ['ARRIESGAR', '#ff5d5d', 'risk', 3], risk: ['ARRIESGAR', '#ff5d5d', 'risk', 3] };
+  function secKind(o, i) { return SKIND[o.kind || o.tag] || SKIND[['team', 'goal', 'risky'][i]] || SKIND.team; }
   function openSecret() {
-    var opts2 = (V && V.secretOptions) || [];
+    var opts2 = (V && V.secretOptions) || [], hasFx = false;
     var pick = V && V.secretPick != null ? V.secretPick : null; if (pick != null) { secretSealed = true; secretSel = pick; }
-    var kinds = ['team', 'goal', 'risk'], kname = { team: 'PRO-EQUIPO', goal: 'PRO-OBJETIVO', risk: 'ARRIESGADA' };
     var cards = opts2.map(function (o, i) {
-      var k = o.kind || kinds[i] || 'team', risk = typeof o.risk === 'number' ? o.risk : ({ bajo: 1, medio: 2, alto: 3 }[o.risk] || (k === 'risk' ? 3 : k === 'goal' ? 2 : 1));
-      var pips = ''; for (var j = 1; j <= 3; j++) pips += '<i class="' + (j <= risk ? 'on' : '') + '"></i>';
-      return '<button class="h-so" data-act="secret" data-i="' + i + '"><span class="k"><kbd>' + (i + 1) + '</kbd></span><span class="h-kind ' + k + '">' + kname[k] + '</span>' +
-        (o.title ? '<b style="font-size:15px">' + esc(o.title) + '</b>' : '') + '<p>' + esc(o.text) + '</p>' + (o.hint ? '<p style="font-size:12px;color:var(--h-dim)">' + esc(o.hint) + '</p>' : '') +
-        '<div class="h-risk">RIESGO <span class="p r' + risk + '">' + pips + '</span>' + (o.reward ? '<span style="margin-left:auto;color:var(--h-green)">' + esc(o.reward) + '</span>' : '') + '</div></button>';
-    }).join('') || '<div class="h-empty">Esperando tus opciones…</div>';
-    openPanel('secret', '<div class="h-ph1"><div class="q">Ahora decide en secreto qué haces tú.</div><div class="hv">Nadie lo verá hasta el final.</div></div>' +
-      '<div class="h-pb"><div class="h-sopts">' + cards + '</div></div><div class="h-foot"><span class="l h-sstat">Elige con 1, 2 o 3 y presiona SELLAR.</span><button class="h-btn red" data-act="seal" disabled>' + icon('candado', 14) + ' SELLAR DECISIÓN</button></div>');
+      var k = secKind(o, i), rk = o.risk != null ? lvl3(o.risk) : null; rk = rk || k[3];
+      var ch = chipList(o); if (ch.length || o.reward) hasFx = true;
+      return '<button class="h-so" data-act="secret" data-i="' + i + '" style="--kc:' + k[1] + '" title="' + esc(o.text || o.title || '') + '"><kbd class="num">' + (i + 1) + '</kbd>' + pxArt(ART[k[2]], 64, 'big') +
+        '<b class="vb">' + k[0] + '</b><span class="tt">' + esc(cut(o.title || o.text || '', 28)) + '</span><span class="chs">' + chipHtml(ch) + '</span>' + dots(rk, 'rk', 'skull', 'Riesgo') + '</button>';
+    }).join('') || '<div class="h-empty">Esperando…</div>';
+    openPanel('secret', '<div class="h-ph1"><div class="q">Tu decisión secreta</div><div class="hv">Solo tú lo sabes</div></div>' +
+      '<div class="h-pb"><div class="h-sopts">' + cards + '</div>' + (hasFx ? '<div class="h-when">Se aplica al final del tramo</div>' : '') + '</div><div class="h-foot"><span class="l h-sstat">1, 2 o 3</span><button class="h-btn red" data-act="seal" disabled>' + icon('candado', 14) + ' SELLAR</button></div>');
     updateSecret(); clockTick();
   }
   function updateSecret() {
@@ -6647,7 +6806,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
     var b = panel.querySelector('[data-act=seal]'); if (b) b.disabled = secretSel == null || secretSealed;
     if (secretSealed && !panel.querySelector('.h-seal')) {
       var o = ((V && V.secretOptions) || [])[secretSel]; var d = D.createElement('div'); d.className = 'h-seal';
-      d.innerHTML = '<div><div class="s">' + icon('candado', 36) + '</div><div class="a">DECISIÓN SELLADA</div><div class="b">' + (o ? esc(o.title || o.text) : '') + '<br>Nadie la verá hasta la resolución.</div></div>';
+      d.innerHTML = '<div><div class="s">' + icon('candado', 36) + '</div><div class="a">SELLADA</div><div class="b">' + (o ? esc(cut(o.title || o.text, 28)) : '') + '<br>Espera el resultado.</div></div>';
       panel.appendChild(d);
     }
   }
@@ -6938,6 +7097,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
       l = l || {}; return { who: l.who || l.role || l.from || 'director', mood: l.mood || 'neutral', text: String(l.text == null ? '' : l.text), name: l.name, title: l.title, radio: l.radio };
     }).filter(function (l) { return l.text; });
     if (!lines.length) return Promise.resolve();
+    if (decisionOpen() && o.skipIfPanel !== false) return new Promise(function (done) { dlgHold.push({ lines: lines, o: o, ph: P && P.phase, done: done }); });
     var go = function () { return runDialogue(lines, o); };
     var pr = (dlgQ || Promise.resolve()).then(go, go); dlgQ = pr; return pr;
   }
@@ -7110,6 +7270,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
   /* popup de un compañero que habla (retrato + 1-2 líneas), abajo-centro; máx 2 a la vez */
   function say(o, opt) {
     if (!mounted) mount(); if (!o || !o.text || o.who === 'sys' || dlgOpen || paused) return;
+    if (decisionOpen() && !(opt && opt.skipIfPanel === false)) { sayHold.push({ o: o, opt: opt, ph: P && P.phase }); if (sayHold.length > 2) sayHold.shift(); return; }
     var ms = (opt && opt.ms) || 4500, who = o.who || o.from || 'director', mood = o.mood || 'talk', b = roleInfo(who), txt = String(o.text);
     var n = D.createElement('div'); n.className = 'h-sp'; n.style.setProperty('--c', b.color);
     var sc = 96, shown = txt.length > 150 ? txt.slice(0, 147) + '…' : txt, parts = hlParts(shown);
@@ -7126,7 +7287,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
     if (!c) { el.coach.className = 'h-coach'; el.coach.innerHTML = ''; if (pv && pv.total && pv.step >= pv.total) celebrate(); if (mounted && P) paintNow(); return; }
     var step = c.step | 0, total = c.total | 0;
     el.coach.innerHTML = (total ? '<div class="st">PASO ' + step + ' DE ' + total + '</div>' : '') + '<div class="tx">' + esc(c.text) + '</div><div class="ar">▼</div>';
-    el.coach.className = 'h-coach on';
+    el.coach.className = 'h-coach on' + (panelBusy() && panelName !== 'summary' ? ' hold' : '');
     if (pv && pv.step !== c.step) { celebrate(); void el.coach.offsetWidth; el.coach.classList.add('done'); }
     if (mounted && P) paintNow();
   }
@@ -7216,8 +7377,8 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
   var blkO = null, blkSentUntil = 0, blkEl = null;
   function setBlocked(o) { blkO = o && o.role ? { role: o.role, gateId: o.gateId, text: o.text || '' } : null; blkSentUntil = 0; if (mounted) paintBlk(true); }
   function blkLabel() {
-    var t = String(blkO.text || '').trim(); if (/^pedir/i.test(t)) return t.toUpperCase();
-    return 'PEDIR A ' + roleInfo(blkO.role).name.toUpperCase() + (t ? ': ' + t.toUpperCase() : '');
+    var t = String(blkO.text || '').trim(); if (/^pedir/i.test(t)) return cut(t, 36);
+    return cut('Pedir a ' + roleInfo(blkO.role).name + (t ? ': ' + t : ''), 36);
   }
   function paintBlk(force) {
     if (!blkEl) return; var sent = Date.now() < blkSentUntil, key = blkO ? (sent ? 's' : 'b') + blkO.role + blkO.gateId + blkO.text : '';
@@ -7225,8 +7386,8 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
     blkEl.classList.toggle('on', show);
     if (blkEl.dataset.k === key && !force) return; blkEl.dataset.k = key;
     if (!blkO) { blkEl.innerHTML = ''; return; }
-    if (sent) blkEl.innerHTML = '<div class="h-blksent">✔ Mensaje enviado</div>';
-    else blkEl.innerHTML = '<button class="h-bigask" data-act="blkask" style="--rc:' + roleInfo(blkO.role).color + '"><span class="fc">' + portrait(blkO.role, 'preocupado', 48) + '</span><span class="tx"><small>TE BLOQUEA UNA PUERTA DE ' + esc(roleInfo(blkO.role).name.toUpperCase()) + '</small><b>' + esc(blkLabel()) + '</b></span><i class="pl">▶</i></button>';
+    if (sent) blkEl.innerHTML = '<div class="h-blksent">✔ Enviado</div>';
+    else blkEl.innerHTML = '<button class="h-bigask" data-act="blkask" style="--rc:' + roleInfo(blkO.role).color + '" title="' + esc(blkO.text || '') + '"><span class="fc">' + portrait(blkO.role, 'preocupado', 32) + '</span><b>' + esc(blkLabel()) + '</b><i class="pl">▶</i></button>';
   }
   function blkClick() {
     if (!blkO || Date.now() < blkSentUntil) return; blkSentUntil = Date.now() + 5000; snd('chat_send'); if (cb.ask) cb.ask(blkO.role, blkO.gateId); paintBlk(true);
@@ -7235,6 +7396,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
   function wheelZoom(which) { return function (e) { e.preventDefault(); zoomBy(which, e.deltaY < 0 ? .5 : -.5); }; }
   function x13mount() {
     if (!D.getElementById('h13css')) { var st = D.createElement('style'); st.id = 'h13css'; st.textContent = CSS13; D.head.appendChild(st); }
+    if (!D.getElementById('h15css')) { var st5 = D.createElement('style'); st5.id = 'h15css'; st5.textContent = CSS15; D.head.appendChild(st5); }
     if (!D.getElementById('h14css')) { var st4 = D.createElement('style'); st4.id = 'h14css'; st4.textContent = CSS14; D.head.appendChild(st4); }
     var th = D.createElement('div'); th.className = 'h-tabh'; th.innerHTML = '<kbd>TAB</kbd>: mapa'; root.appendChild(th);
     blkEl = D.createElement('div'); blkEl.className = 'h-blk'; el.mid.appendChild(blkEl);
@@ -7385,6 +7547,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
       })(t0);
     });
   }
+  var CSS15 = '.h-pn[data-p=plan],.h-pn[data-p=secret]{overflow:hidden;max-height:100%;width:min(940px,100%)}\n.h-pn[data-p=plan] .h-ph1,.h-pn[data-p=secret] .h-ph1{flex-direction:row;align-items:baseline;justify-content:space-between;padding:8px 52px 6px 16px;gap:12px}\n.h-pn[data-p=plan] .h-ph1 .q,.h-pn[data-p=secret] .h-ph1 .q{font-size:calc(22px*var(--h-fs))}.h-pn[data-p=plan] .h-ph1 .hv,.h-pn[data-p=secret] .h-ph1 .hv{display:block;font-size:calc(16px*var(--h-fs));color:var(--h-amber2);white-space:nowrap}\n.h-brief1{display:flex;align-items:center;gap:8px;margin:0 0 6px;padding:4px 10px;background:#0e0a1d;border-left:4px solid var(--h-amber);font-size:calc(14px*var(--h-fs));white-space:nowrap;overflow:hidden}.h-brief1 span{overflow:hidden;text-overflow:ellipsis}\n.h-pn[data-p=plan] .h-pb,.h-pn[data-p=secret] .h-pb{padding:6px 12px 4px}\n.h-pn[data-p=plan] .h-opts,.h-pn[data-p=secret] .h-sopts{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding-top:16px}.h-pn[data-p=secret] .h-sopts{padding-top:4px}\n.h-pn[data-p=plan] .h-opt,.h-pn[data-p=secret] .h-so{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 8px 8px;min-height:0;text-align:center;cursor:pointer}\n.h-pn[data-p=secret] .h-so{border-color:var(--kc);background:linear-gradient(#2c2352,#1d1640)}.h-pn[data-p=secret] .h-so.sel{box-shadow:0 5px 0 #0008,0 0 24px var(--kc);transform:translateY(-3px)}.h-so.dim{opacity:.4}\n.h-opt .top{display:flex;align-items:center;justify-content:center;gap:12px;width:100%}.h-opt .num,.h-so .num{font-family:var(--h-px);font-size:calc(30px*var(--h-fs));line-height:1;color:#2a1606;background:var(--h-amber2);border:3px solid #000;border-radius:8px;padding:6px 10px;box-shadow:0 3px 0 #7a4308}\n.h-so .num{position:absolute;left:8px;top:8px;font-size:calc(22px*var(--h-fs));padding:4px 8px}\n.h-px{display:block;image-rendering:pixelated;flex:none}\n.h-pn[data-p=plan] .h-opt h3{margin:0;padding:0;font-size:calc(22px*var(--h-fs));line-height:1.15;min-height:2.3em;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--h-amber2)}\n.h-opt .ind{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;min-height:24px}.h-dt{display:inline-flex;align-items:center;gap:6px}.h-dt .d{display:inline-flex;gap:3px}.h-dt .d i{width:10px;height:10px;border-radius:50%;background:#ffffff26;border:2px solid #0008}.h-dt.sp .d i.on{background:#3fd0c0}.h-dt.rk .d i.on{background:#ff5d5d}\n.h-opt .rowc{display:flex;align-items:center;justify-content:center;gap:10px;min-height:26px}.chs{display:inline-flex;gap:6px;flex-wrap:wrap;justify-content:center;min-height:26px}\n.h-ch2{display:inline-flex;align-items:center;gap:2px;padding:2px 6px 2px 3px;border-radius:12px;background:#0d0a1d;border:2px solid #0008}.h-ch2 b{font-size:calc(17px*var(--h-fs));line-height:1}.h-ch2.g{border-color:#2f9c64}.h-ch2.g b{color:var(--h-green)}.h-ch2.b{border-color:#a33}.h-ch2.b b{color:var(--h-red)}\n.h-bulb{position:relative;display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:12px;background:#3a2f0a;border:2px solid #c9951f;cursor:help}.h-bulb b{color:#ffd24a;font-size:calc(14px*var(--h-fs))}\n.h-bulb .tp{display:none;position:absolute;right:-6px;bottom:calc(100% + 6px);width:200px;padding:8px 10px;background:#0f3a3d;border:2px solid var(--h-teal);border-radius:6px;color:#fff;font-size:calc(14px*var(--h-fs));text-align:left;z-index:6;box-shadow:0 4px 0 #000a}.h-bulb .tp em{display:block;font-style:normal;font-weight:800;color:#6ff0df;font-size:.8em}.h-bulb:hover .tp{display:block}\n.h-opt .vbtn{margin-top:auto;font-weight:800;font-size:calc(17px*var(--h-fs));padding:7px 18px;border-radius:8px;background:linear-gradient(#ffd27a,#f2a93b);color:#2a1606;border:3px solid #000;box-shadow:0 3px 0 #7a4308}.h-opt .vbtn kbd{background:#2a1606;color:#ffd27a;border-radius:4px;padding:1px 6px;margin-left:4px}.h-opt.sel .vbtn{background:linear-gradient(#8ff0b5,#3dbd78);box-shadow:0 3px 0 #1b6b3f}\n.h-opt .h-votes{position:absolute;right:6px;top:-20px;display:flex;gap:4px;min-height:0;padding:0;border:0;margin:0;z-index:2}\n.h-so .vb{font-family:var(--h-ui);font-weight:900;font-size:calc(24px*var(--h-fs));color:var(--kc);letter-spacing:1px;text-shadow:0 2px 0 #000}.h-so .tt{font-size:calc(13px*var(--h-fs));color:var(--h-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}\n.h-when{text-align:center;margin-top:6px;font-size:calc(15px*var(--h-fs));color:var(--h-amber2)}\n.hud.dec .h-fl,.hud.dec .h-fl2,.hud.dec .h-tst,.hud.dec .h-fcard,.hud.dec .h-sy,.hud.dec .h-coach,.hud.dec .h-fx .h-fl{display:none!important}.h-coach.hold{display:none!important}\n@media (max-height:720px){.h-opt .top .big{width:48px!important;height:48px!important}.h-so>.big{width:44px!important;height:44px!important}.h-pn[data-p=plan] .h-opt h3{font-size:calc(19px*var(--h-fs));min-height:2.3em}.h-opt .num{font-size:calc(22px*var(--h-fs));padding:4px 8px}.h-pn[data-p=plan] .h-opt,.h-pn[data-p=secret] .h-so{gap:4px;padding:6px}.h-opt .vbtn{padding:4px 14px}}\n.h-blk{left:calc(284px + (100% - var(--h-chatw) - 284px)/2);bottom:72px;max-width:calc(100% - var(--h-chatw) - 300px)}\n.h-bigask{gap:8px;min-height:0;padding:4px 14px 4px 6px;border:2px solid #f2a93b;border-radius:999px;background:#120e26ee;color:#fff;box-shadow:0 3px 0 #000a;animation:h-blkp2 2s ease-in-out infinite;font-family:var(--h-ui)}\n.h-bigask b{font-size:calc(15px*var(--h-fs));font-weight:700;color:#fff;white-space:nowrap}.h-bigask .pl{color:#f2a93b;font-size:calc(14px*var(--h-fs))}.h-bigask .fc{border-radius:50%;overflow:hidden}.h-bigask:hover{filter:brightness(1.2)}\n@keyframes h-blkp2{50%{box-shadow:0 3px 0 #000a,0 0 16px #f2a93b99}}\n.h-blksent{min-height:0;padding:6px 16px;border-radius:999px;border-width:2px;font-size:calc(12px*var(--h-fs))}\n';
   var CSS14 = [
     '.h-mg{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);width:min(360px,94vw);min-height:200px;box-sizing:border-box;padding:10px 14px 8px;z-index:60;background:rgba(14,10,32,.88);border:3px solid var(--h-amber);border-radius:12px;box-shadow:0 0 0 3px #000,0 6px 0 #07040f;pointer-events:auto;user-select:none;touch-action:none;animation:mgin .18s ease-out;display:flex;flex-direction:column;gap:6px;font-family:var(--h-ui)}',
     '@keyframes mgin{from{opacity:0;transform:translate(-50%,-46%) scale(.92)}}',
@@ -7430,7 +7593,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
     openDossier: openDossier, closeDossier: closeDossier, help: function () { helpFor(cur.phase, false); }, shake: shake, flash: flash, floatCard: floatCard, sparks: sparks, note: note,
     openPause: function () { if (!paused) openPause(); }, closePause: closePause,
     closePanel: function () { closePanel(true); }, isTyping: typingNow, resetHelp: function () { helpSeen = {}; lsSet('rcv3_hudhelp', helpSeen); },
-    reset: function () { setBlocked(null); this.chat.clear(); closePanel(true); closeDossier(); cur = { phase: null, round: 0 }; dispInit = false; waterLevelHit = 0; lastIntelLen = 0; intelSeen = 0; localReady = false; localVote = null; secretSel = null; secretSealed = false; P = null; V = null; nowOv = misOv = readyOv = null; nowKey = ''; airV = null; abilO = helpO = quickO = null; if (this.skipDialogue) this.skipDialogue(); setAir(null); paintAbil(); coachO = null; miniUser = true; sayQ = []; if (el.sy) el.sy.innerHTML = ''; paintCoach(); },
+    reset: function () { setBlocked(null); this.chat.clear(); closePanel(true); closeDossier(); cur = { phase: null, round: 0 }; dispInit = false; waterLevelHit = 0; lastIntelLen = 0; intelSeen = 0; localReady = false; localVote = null; secretSel = null; secretSealed = false; P = null; V = null; nowOv = misOv = readyOv = null; nowKey = ''; airV = null; abilO = helpO = quickO = null; if (this.skipDialogue) this.skipDialogue(); setAir(null); paintAbil(); coachO = null; miniUser = true; sayQ = []; dlgHold = []; sayHold = []; if (el.sy) el.sy.innerHTML = ''; paintCoach(); },
     say: say, setCoach: setCoach,
     onChat: function (f) { cb.chat = f; }, onShare: function (f) { cb.share = f; }, onVote: function (f) { cb.vote = f; }, onSecret: function (f) { cb.secret = f; },
     onReady: function (f) { cb.ready = f; }, onExit: function (f) { cb.exit = f; }, onSettings: function (f) { cb.settings = f; }, onPause: function (f) { cb.pause = f; },
@@ -7464,11 +7627,6 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
     cv = document.createElement('canvas'); cv.width = 320; cv.height = 180; cv.style.imageRendering = 'pixelated';
     gameEl.appendChild(cv); document.body.appendChild(gameEl);
     addEventListener('resize', () => eng && eng.fit(innerWidth, innerHeight));
-    { const o = document.createElement('style'); o.textContent = '.h-pn[data-p=plan] .h-brief,.h-pn[data-p=plan] .h-opt .kn{display:none!important}'
-      + '.h-pn[data-p=plan] .h-opt .h-eff{display:flex;gap:10px;flex-wrap:wrap}.h-pn[data-p=plan] .h-opt .h-eff>div{display:flex;align-items:center;gap:2px}.h-pn[data-p=plan] .h-opt .h-eff{flex-direction:column;gap:4px}.h-pn[data-p=plan] .h-opt .h-eff>div>span:last-child{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;font-size:13px}'
-      + '.h-pn[data-p=plan] .h-opt p,.h-pn[data-p=plan] .h-opt .pv{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}'
-      + '.h-pn[data-p=plan]{max-height:none!important;overflow:hidden!important}.h-pn[data-p=plan] .h-opt .h-eff>div{min-width:0;max-width:100%}.h-pn[data-p=plan] .h-opt{min-width:0;overflow:hidden}.h-pn[data-p=plan] .h-pb{overflow:visible!important;max-height:none!important}';
-      document.head.appendChild(o); }
     Hud.mount(gameEl);
     Hud.onChat(onChat); Hud.onShare(onShare); Hud.onVote(onVote); Hud.onSecret(onSecret); Hud.onReady(onReady);
     Hud.onAsk && Hud.onAsk(onAsk); Hud.onAbility && Hud.onAbility(() => { if (!isClient() && eng) { const o = eng.useAbility(myRole); if (o && !o.ok) Hud.floatText(o.reason === 'rol' ? 'Esa puerta la abre otro compañero: pídeselo por radio' : 'Aquí no puedes usar tu habilidad', 'bad'); } });

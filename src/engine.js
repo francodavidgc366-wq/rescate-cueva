@@ -886,6 +886,7 @@ function create(canvas, opts) {
     return { ok: false, reason: 'sitio' };
   }
   function gateTick() {
+    ROLES.forEach(function (r) { var g = bodies[r].goal; if (g && g.force && g.gate && !g.gate.open && tick - g.t0 > g.force) { var fc = g.cb; bodies[r].goal = null; if (fc) fc(false); } });
     GT.forEach(function (g0) {
       if (g0.pend > 0 && --g0.pend === 0) doOpen(g0, false);
       if (g0.open && !g0.solid && g0.n < g0.cells.length && tick % 3 === 0) {
@@ -894,15 +895,22 @@ function create(canvas, opts) {
       }
     });
   }
-  function botOpenGate(role, gateId, cb) {
+  function forceOpenGate(id) {   // v15: red de seguridad: camara a la puerta, el rol dueno (si es IA) aparece junto a ella con un fundido corto y abre; el cuerpo del jugador no se mueve
+    var g0 = GBY[id]; if (!g0 || !authority) return false; if (g0.open) return true;
+    var b = bodies[g0.role]; if (!b) return false;
+    if (b.bot) { puff(b.x, b.y, 6, 0); b.x = b.tx = g0.spot.x; b.y = b.ty = g0.spot.y; b.vx = b.vy = 0; b.climb = null; b.goal = b.mac = b.pe = null; b.busy = 50; b.csDone = false; puff(b.x, b.y, 8, 0); }
+    focus(g0.x, g0.y, { ms: 2200 }); startOpen(g0, b); return true;
+  }
+  function botOpenGate(role, gateId, cb) {   // v15: SIEMPRE abre: si no hay ruta, o la IA falla/tarda mas de 25 s, usa forceOpenGate
     var b = bodies[role], g0 = GBY[gateId];
-    function fail() { if (cb) setTimeout(function () { cb(false); }, 0); return false; }
-    if (!b || !g0 || g0.role !== role) return fail();
+    if (!b || !g0 || g0.role !== role) { if (cb) setTimeout(function () { cb(false); }, 0); return false; }
     if (g0.open) { if (cb) setTimeout(function () { cb(true); }, 0); return true; }
+    var done = false, fin = function (ok) { if (done) return; done = true; if (!ok) forceOpenGate(gateId); if (cb) setTimeout(function () { cb(true); }, 0); };
     ensureNav(g0.spot.x); ensureNav(b.x);
     var node = nid(Math.floor(g0.spot.x / T), Math.round(g0.spot.y / T)), cur = curNode(b);
-    if (!nav.out[node] || (cur >= 0 && fieldFor(node)[cur] === undefined)) return fail();
-    b.goal = { x: g0.spot.x, node: node, gate: g0, cb: cb, t0: tick }; b.bestDv = 1e9; b.progT = tick; b.stuckN = 0; b.idleT = 0; b.busy = 0; b.calm = 0;
+    if (!nav.out[node] || (cur >= 0 && fieldFor(node)[cur] === undefined)) { fin(false); return true; }
+    g0.cbs.push(function () { fin(true); });
+    b.goal = { x: g0.spot.x, node: node, gate: g0, cb: fin, t0: tick, force: 1500 }; b.bestDv = 1e9; b.progT = tick; b.stuckN = 0; b.idleT = 0; b.busy = 0; b.calm = 0;
     return true;
   }
   var AIR_BUBBLE = 0;
@@ -1421,7 +1429,7 @@ function create(canvas, opts) {
      destino; si no llegan al 62 % de la duracion, fundido y se colocan); los clientes solo ven la bandera `cs` del snapshot.
      ===================================================================== */
   var cs = null, rawIn = {}, csKeyFn = null, csZc = null;
-  var CS_TXT = { pozo: 'DESCENDIENDO POR EL POZO', balsa: 'CRUZANDO EN BALSA', galeria: 'AVANZANDO POR LA GALERIA', cuerda: 'ASEGURANDO LA CUERDA', puente: 'CRUZANDO EL PUENTE', tunel: 'ABRIENDO PASO', compuerta: 'ABRIENDO PASO' };
+  var CS_TXT = { pozo: 'DESCENDIENDO POR EL POZO', balsa: 'CRUZANDO EN BALSA', galeria: 'AVANZANDO POR LA GALERIA', cuerda: 'ASEGURANDO LA CUERDA', puente: 'CRUZANDO EL PUENTE', tunel: 'A GATAS POR EL TUNEL', compuerta: 'EMPUJANDO LA COMPUERTA' };
   function csZero() { ROLES.forEach(function (r) { inputs[r] = NOINP; }); }
   var CS_SHOT = ['salida', 'recorrido', 'llegada'];
   function playTravel(o, cb) {   // v13: 3 planos continuos (salida / recorrido real a 3x / llegada), 10-13 s; opts.onShot(i, nombre)
@@ -1444,18 +1452,13 @@ function create(canvas, opts) {
     cam.focus = null; snapCam();
   }
   function csShot(c, i) { if (c.shot === i) return; c.shot = i; if (c.onShot) { try { c.onShot(i, CS_SHOT[i]); } catch (e) { if (global.console) console.error(e); } } }
-  function csTick() {
-    var c = cs, all = c.go, n = c.n, lv = 0; c.t++;
-    if (!c.go && c.t >= c.tm) { c.go = true; all = true; ROLES.forEach(function (r) { var tg = c.tg[r]; if (!botGoto(r, { x: tg.x, y: tg.y, id: 'cs' })) c.bad = true; }); }
-    ROLES.forEach(function (r) { var b = bodies[r], tg = c.tg[r]; if (c.go && !b.csDone && b.grounded && Math.abs(b.x - tg.x) < 10 && Math.abs(b.y - tg.y) < 14) b.csDone = true; if (!b.csDone) all = false; lv += b.vx / 3; if (b.csDone && b.grounded && Math.abs(b.vx) < 0.4) b.face = 1; });   // los 3 acaban mirando adelante
-    if (c.go && all && c.e1 < 0) c.e1 = clamp(c.t + 24, Math.round(n * 0.5), Math.round(n * 0.8));
-    if (c.ft < 0 && !c.warped && (c.skip || (!all && c.t >= Math.round(n * (c.bad ? 0.5 : 0.82))))) c.ft = 0;   // fundido: ULTIMO recurso (ruta imposible/lenta) o salto del usuario
-    if (c.ft >= 0) { c.ft++; if (c.ft === 10) { csPlace(); c.s1 = Math.min(c.s1, c.t); c.e1 = c.e1 < 0 ? c.t : Math.min(c.e1, c.t); } if (c.ft >= 20) { c.ft = -1; c.warped = true; } }
-    c.spd = c.go ? (c.t > n * 0.6 && !all ? 4 : 3) : 1; c.acc += c.spd; c.sub = c.acc | 0; c.acc -= c.sub;   // ritmo cinematografico: ~3x (sub-pasos de fisica por tick)
-    c.lead += (clamp(lv * 12, -36, 36) - c.lead) * 0.04;
-    csShot(c, c.t < c.s1 ? 0 : (c.e1 < 0 || c.t < c.e1) ? 1 : 2);
-    var tgt = c.shot === 2 ? 1 + 0.07 * clamp(1 - (c.t - c.e1) / Math.max(1, n - c.e1), 0, 1) : 1;   // plano 1: zoom hacia fuera; 3: se asienta
-    c.zm = c.shot === 0 ? 1 + 0.45 * (1 - smooth(c.t / c.s1)) : c.zm + (tgt - c.zm) * 0.05;
+  function csTick() {   // v15: la cinematica es una escena propia (csScene); los cuerpos reales se colocan al empezar el fundido final
+    var c = cs, n = c.n; c.t++; c.go = true;
+    ROLES.forEach(function (r) { bodies[r].air = 100; });
+    if (c.ft < 0 && !c.warped && (c.skip || c.t >= n - 20)) c.ft = 0;
+    if (c.ft >= 0) { c.ft++; if (c.ft === 1) csPlace(); if (c.ft >= 20) { c.ft = -1; c.warped = true; } }
+    c.spd = 1; c.sub = 1; c.zm = 1.2; c.s1 = Math.round(n * 0.2); c.e1 = Math.round(n * 0.8);
+    csShot(c, c.t < c.s1 ? 0 : c.t < c.e1 ? 1 : 2);
     if ((c.skip && c.ft < 0) || c.t >= n) csEnd();
   }
   function csEnd(force) {
@@ -1490,22 +1493,89 @@ function create(canvas, opts) {
       if (t >= t2 && t < t2 + 40 && t % 2 === 0) addP({ k: 'drop', x: g.x + 26, y: g.y - 12, vx: -1.7 - rr() * 0.4, vy: -0.4 - rr() * 0.5, g: 0.1, life: 34, sz: 1, c: '170,225,255' });   // chorro de agua
     }
   }
-  function csDraw(cxr, cyr) {   // lo que va sobre la imagen: cuerdas/antorchas/anclajes, fundido, letterbox y rotulo (enteros, un solo pase de texto)
-    var c = cs, t = c.t, k = c.kind;
-    ROLES.forEach(function (r, i) {
-      var b = bodies[r], x = Math.round(b.x - cxr), y = Math.round(b.y - cyr), f = b.face || 1;
-      if (x < -20 || x > W + 20) return;
-      if (k === 'pozo') { for (var ry0 = 0; ry0 < y - 15; ry0 += 3) { var sw0 = Math.round(Math.sin(ry0 * 0.07 + t * 0.08 + i) * (ry0 / Math.max(1, y)) * 1.2); out.fillStyle = '#6a4a2a'; out.fillRect(x + 1 + sw0, ry0, 1, 3); out.fillStyle = '#d8b878'; out.fillRect(x + sw0, ry0, 1, 3); } }
-      else if (k === 'cuerda') { var ax = x + f * 12; out.fillStyle = '#d8b878'; out.fillRect(Math.min(ax, x), y - 18, Math.abs(ax - x), 1); out.fillStyle = '#10081c'; out.fillRect(ax - 1, y - 21, 4, 4); out.fillStyle = '#c8ccd8'; out.fillRect(ax, y - 20, 2, 2); }
-      else if (k === 'galeria') { var fx = x + f * 5; out.fillStyle = '#6a4a2a'; out.fillRect(fx, y - 15, 1, 5); out.fillStyle = ((t + i) >> 2) & 1 ? '#ffd24a' : '#ff8a3a'; out.fillRect(fx, y - 18, 2, 3); }
-      if (c.out === 'mal' && r === 'ing' && t >= Math.round(c.n * 0.5) && t < Math.round(c.n * 0.5) + 80) { var ry = y - 11 + (Math.round(t * 0.5) % 2 ? 1 : 0); out.fillStyle = '#f2c9a0'; out.fillRect(x + f * 3, ry, 2, 2); out.fillStyle = '#ff5a4a'; out.fillRect(x - f * 4 + (f < 0 ? -1 : 0), y - 28, 1, 3); out.fillRect(x - f * 4 + (f < 0 ? -1 : 0), y - 24, 1, 1); }
+  var csQ = null, CS_D = { balsa: 300, galeria: 300, puente: 260, tunel: 120, compuerta: 240, pozo: 300, cuerda: -220, generico: 300 };
+  function csChr(q, role, x, y, f, an, fi) {
+    var m = assets && assets.meta && assets.meta['player_' + role], a = m && m.anims && (m.anims[an] || m.anims.idle), sv = sc, ok = false;
+    if (a && sheet('player_' + role)) { sc = q; ok = drawSheetFrame('player_' + role, ((fi % a.frames) + a.frames) % a.frames, a.row, x, y, f < 0, m.fw, m.fh, m.feet_y || 22); sc = sv; }
+    if (!ok) { q.fillStyle = '#1a1424'; q.fillRect(x - 4, y - 15, 9, 16); q.fillStyle = { guia: '#d8402a', medica: '#e8f2f0', ing: '#f2c230' }[role]; q.fillRect(x - 3, y - 14, 7, 14); }
+  }
+  function csGlow(q, x, y, r, col, a) { var g = q.createRadialGradient(x, y, 1, x, y, r); g.addColorStop(0, 'rgba(' + col + ',' + a + ')'); g.addColorStop(1, 'rgba(' + col + ',0)'); q.globalCompositeOperation = 'lighter'; q.fillStyle = g; q.fillRect(x - r, y - r, 2 * r, 2 * r); q.globalCompositeOperation = 'source-over'; }
+  function csScene(c) {   // v15: diorama del viaje (opaco, bien iluminado); devuelve las posiciones de pantalla de los 3 cuerpos en c.scr
+    if (!csQ) csQ = canvasOf(W, H); var q = csQ.getContext('2d'), t = c.t, k = CS_D[c.kind] !== undefined ? c.kind : 'generico', n = c.n, p = clamp(t / (n - 20), 0, 1), vert = k === 'pozo' || k === 'cuerda', i, j, x, y;
+    var D = CS_D[k], U = D * smooth(p), GATE = 100;
+    if (k === 'compuerta') U = p < 0.3 ? -40 + 98 * smooth(p / 0.3) : p < 0.55 ? 58 : 58 + 182 * smooth((p - 0.55) / 0.45);
+    var cx = vert ? 0 : U * 0.9, cy = vert ? U * 0.9 : 0, SX = function (wx) { return Math.round(wx - cx + 160); }, SY = function (wy) { return Math.round(wy - cy); };
+    var gr = q.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, '#3e3158'); gr.addColorStop(1, '#2a2040'); q.fillStyle = gr; q.fillRect(0, 0, W, H);
+    // roca de fondo con paralaje
+    for (var ly = 0; ly < 2; ly++) { var par = ly ? 0.6 : 0.3, sp = ly ? 41 : 67, col = ly ? '#2c2240' : '#35294c';
+      var ox = vert ? 0 : cx * par, oy = vert ? cy * par : 0;
+      for (i = -2; i < 12; i++) for (j = -2; j < 8; j++) { var gx = vert ? i : Math.floor(ox / sp) + i, gy = vert ? Math.floor(oy / sp) + j : j, hv = hash(gx, gy, ly + 3);
+        if (hv < 0.45) { q.fillStyle = col; q.fillRect(Math.round((vert ? i * sp : gx * sp - ox) - 4), Math.round((vert ? gy * sp - oy : j * sp * 1.1 - 6)), 22 + (hv * 50 | 0), 14 + (hv * 60 | 0)); } } }
+    var fl = 126, wl = 122, fx = 0;
+    if (k === 'tunel') { q.fillStyle = '#241a34'; q.fillRect(0, 0, W, 96); q.fillRect(0, 128, W, H - 128); q.fillStyle = '#4a3a5e'; q.fillRect(0, 94, W, 2); q.fillRect(0, 128, W, 2); for (i = 0; i < 14; i++) { var hx = hash(Math.floor(cx / 30) + i, 1, 9); q.fillStyle = '#352848'; q.fillRect(SX((Math.floor(cx / 30) + i) * 30) - cx + cx - 0, 96, 10 + hx * 16, 4 + hx * 8); } }
+    if (k === 'galeria' || k === 'compuerta') { q.fillStyle = '#4a3a5a'; q.fillRect(0, fl, W, H - fl); q.fillStyle = '#6a5a7e'; q.fillRect(0, fl, W, 2); q.fillStyle = '#2a2038'; for (i = 0; i < 12; i++) q.fillRect(((Math.floor(cx / 24) + i) * 24 - Math.round(cx) + 160 - 160 + 0), fl + 4 + (i % 2) * 8, 22, 1);
+      q.fillStyle = '#241a34'; q.fillRect(0, 0, W, 34); for (i = -1; i < 14; i++) { var sx0 = (Math.floor(cx * 0.5 / 30) + i) * 30 - Math.round(cx * 0.5), hh = 8 + hash(Math.floor(cx * 0.5 / 30) + i, 5, 1) * 16; q.fillStyle = '#241a34'; q.beginPath(); q.moveTo(sx0, 33); q.lineTo(sx0 + 14, 33); q.lineTo(sx0 + 7, 33 + hh); q.fill(); }
+      for (i = -1; i < 5; i++) { var px0 = (Math.floor((cx + 40) / 120) + i) * 120 - Math.round(cx) + 160 - 40 + 40 - 40; q.fillStyle = '#5a3c24'; q.fillRect(px0, 34, 7, fl - 34); q.fillStyle = '#7a5434'; q.fillRect(px0, 34, 2, fl - 34); q.fillRect(px0 - 10, 34, 27, 5); } }
+    if (k === 'puente') { q.fillStyle = '#120c20'; q.fillRect(0, 124, W, H - 124); var mg = q.createLinearGradient(0, 124, 0, H); mg.addColorStop(0, 'rgba(120,150,200,0.35)'); mg.addColorStop(1, 'rgba(20,20,40,0)'); q.fillStyle = mg; q.fillRect(0, 124, W, H - 124);
+      for (i = -1; i < 6; i++) { var bx = (Math.floor((cx + 40) / 80) + i) * 80 - Math.round(cx) + 160 - 40; q.fillStyle = '#5a3c24'; q.fillRect(bx, 96, 5, 30); q.fillStyle = '#7a5434'; q.fillRect(bx, 96, 2, 30); q.fillStyle = '#c9a064'; q.fillRect(bx - 40, 96 + 0, 80, 1); }
+      q.fillStyle = '#c9a064'; q.fillRect(0, 118, W, 1); }
+    if (k === 'balsa') { var wg = q.createLinearGradient(0, wl, 0, H); wg.addColorStop(0, '#2b86a4'); wg.addColorStop(1, '#0f3050'); q.fillStyle = wg; q.fillRect(0, wl, W, H - wl); q.fillStyle = '#241a34'; q.fillRect(0, 0, W, 30); for (x = 0; x < W; x += 3) { q.fillStyle = '#a8e8f8'; q.fillRect(x, Math.round(wl + Math.sin((x + cx + t * 1.6) * 0.12) * 1.6), 3, 1); if (x % 9 === 0) { q.fillStyle = 'rgba(160,230,250,0.4)'; q.fillRect(x, Math.round(wl + 8 + Math.sin((x + cx * 1.3 + t) * 0.09) * 2), 5, 1); } } }
+    if (k === 'pozo') { q.fillStyle = '#1c1430'; q.fillRect(0, 0, 70, H); q.fillRect(250, 0, 70, H); for (i = -1; i < 8; i++) { var wy = (Math.floor(cy / 30) + i) * 30 - Math.round(cy) + 0; var h2 = hash(Math.floor(cy / 30) + i, 2, 4); q.fillStyle = '#34264a'; q.fillRect(0, wy, 62 + h2 * 24, 10 + h2 * 8); q.fillRect(258 - h2 * 24, wy + 12, 70, 10); } }
+    if (k === 'cuerda') { q.fillStyle = '#3a2c50'; q.fillRect(0, 0, W, H); for (i = -1; i < 9; i++) { var wy2 = (Math.floor(cy / 26) + i) * 26 - Math.round(cy); var h3 = hash(Math.floor(cy / 26) + i, 6, 4); q.fillStyle = '#2a2040'; q.fillRect(h3 * 40, wy2, 150 + h3 * 120, 8); q.fillStyle = '#4a3a64'; q.fillRect(h3 * 40, wy2, 150 + h3 * 120, 1); } }
+    // cuerpos
+    var by = [], bx = [], an = [], fi = [], rot = [], pos = {};
+    ROLES.forEach(function (r, ii) {
+      var dx = k === 'puente' ? 60 - 60 * ii : k === 'tunel' ? 50 - 50 * ii : k === 'pozo' || k === 'cuerda' ? -48 + 48 * ii : 40 - 40 * ii, wx = (vert ? 160 : U) + dx, wy0 = fl, a = 'idle', f = 0, ro = 0;
+      if (k === 'galeria' || k === 'puente') { a = 'run'; f = Math.floor(t * 0.13 + ii * 2); }
+      else if (k === 'tunel') { a = 'run'; f = Math.floor(t * 0.09 + ii * 2); ro = 1.2; wy0 = 126; }
+      else if (k === 'compuerta') { a = p > 0.3 && p < 0.55 ? 'interact' : 'run'; f = a === 'run' ? Math.floor(t * 0.13 + ii * 2) : Math.floor(t * 0.09 + ii); }
+      else if (k === 'balsa') { a = 'interact'; f = Math.floor(t * 0.07 + ii); wy0 = wl + 4; }
+      else if (k === 'pozo') { a = 'fall'; f = Math.floor(t / 22 + ii); wy0 = U + 96 + (ii === 1 ? 8 : ii ? -4 : 0); }
+      else if (k === 'cuerda') { a = 'interact'; f = Math.floor(t * 0.07 + ii * 2); wy0 = U + 100 + Math.sin(t * 0.1 + ii * 2) * 2; }
+      bx[ii] = vert ? wx : SX(wx); by[ii] = vert ? SY(wy0) : wy0 + (k === 'puente' ? Math.sin((wx + t * 0.5) * 0.05) * 1.2 : 0); an[ii] = a; fi[ii] = f; rot[ii] = ro;
     });
-    if (c.zm > 1.004) {   // v13: zoom de camara (plano 1 hacia fuera, plano 3 se asienta) alrededor del grupo
-      var gx = 0, gy = 0; ROLES.forEach(function (r) { gx += bodies[r].x - cxr; gy += bodies[r].y - cyr; }); gx = clamp(gx / 3, 0, W); gy = clamp(gy / 3 - 12, 0, H);
-      if (!csZc) csZc = canvasOf(W, H); var zx = csZc.getContext('2d'); zx.clearRect(0, 0, W, H); zx.drawImage(out.canvas, 0, 0);
-      out.imageSmoothingEnabled = true; out.drawImage(csZc, gx - gx / c.zm, gy - gy / c.zm, W / c.zm, H / c.zm, 0, 0, W, H); out.imageSmoothingEnabled = false;
+    var gxc = (bx[0] + bx[2]) / 2;
+    if (k === 'balsa') { var rx = gxc, ry = wl - 3 + Math.sin(t * 0.05) * 2, tl = Math.sin(t * 0.04) * 0.035;
+      q.save(); q.translate(rx, ry); q.rotate(tl);
+      q.fillStyle = '#4a2c16'; q.fillRect(-72, 6, 144, 4); q.fillStyle = '#6a4426'; q.fillRect(-62, 8, 12, 9); q.fillRect(-6, 8, 12, 9); q.fillRect(50, 8, 12, 9);   // barriles de flotacion
+      q.fillStyle = '#9a6a3a'; q.fillRect(-76, 0, 152, 6); q.fillStyle = '#5a3a1e'; for (i = -76; i < 76; i += 19) q.fillRect(i, 0, 1, 6); q.fillStyle = '#c89458'; q.fillRect(-76, 0, 152, 1);
+      q.fillStyle = '#7a4e28'; q.fillRect(-76, -12, 12, 13); q.fillRect(64, -12, 12, 13); q.fillStyle = '#2a2a34'; q.fillRect(-76, -9, 12, 1); q.fillRect(-76, -3, 12, 1); q.fillRect(64, -9, 12, 1); q.fillRect(64, -3, 12, 1); q.fillStyle = '#9a6a3a'; q.fillRect(-76, -12, 12, 1); q.fillRect(64, -12, 12, 1);
+      ROLES.forEach(function (r, ii) { var lx = bx[ii] - rx; csChr(q, r, lx, 6, 1, 'interact', fi[ii]); var ang = Math.sin(t * 0.1 + ii * 0.9) * 0.5 + 0.9, hx = lx + 5, hy = -7; q.strokeStyle = '#c89458'; q.lineWidth = 2; q.beginPath(); q.moveTo(hx - 6 * Math.sin(ang), hy - 8); q.lineTo(hx + 26 * Math.sin(ang), hy + 26 * Math.cos(ang)); q.stroke(); q.fillStyle = '#e0b070'; q.fillRect(Math.round(hx + 24 * Math.sin(ang)), Math.round(hy + 24 * Math.cos(ang)), 4, 5); });
+      q.fillStyle = '#7a4c26'; q.fillRect(-64, -2, 128, 4); q.fillStyle = '#c89458'; q.fillRect(-64, -2, 128, 1);
+      q.restore();
+      q.fillStyle = 'rgba(40,140,170,0.45)'; q.fillRect(0, Math.round(wl + 5), W, 4);
+      for (j = 0; j < 16; j++) { var ph = (t * 1.6 + j * 17) % 34, sxx = rx - 84 + (j * 37 % 168); q.fillStyle = 'rgba(235,250,255,' + (1 - ph / 34).toFixed(2) + ')'; q.fillRect(Math.round(sxx), Math.round(wl - Math.sin(ph / 34 * 3.14) * 9), 2, 2); }
+      q.fillStyle = 'rgba(235,250,255,0.8)'; q.fillRect(Math.round(rx + 78), Math.round(wl - 1 + Math.sin(t * 0.3)), 6, 2); q.fillRect(Math.round(rx - 82), Math.round(wl + Math.sin(t * 0.3 + 2)), 5, 2); }
+    else if (k === 'compuerta') {
+      var gx2 = SX(GATE), lift = 70 * smooth((p - 0.3) / 0.25); q.fillStyle = '#5a5a6a'; q.fillRect(gx2 - 7, 34, 7, fl - 34); q.fillRect(gx2 + 20, 34, 7, fl - 34); q.fillStyle = '#7a7a8a'; q.fillRect(gx2 - 7, 34, 2, fl - 34); q.fillRect(gx2 - 7, 34, 34, 6);
+      q.fillStyle = '#8a8a9a'; for (i = 0; i < 5; i++) q.fillRect(gx2 + i * 4 + 1, 40 - lift, 2, fl - 40 + 0);
+      ROLES.forEach(function (r, ii) { csChr(q, r, bx[ii], by[ii], 1, an[ii], fi[ii]); });
+    } else {
+      if (k === 'cuerda') { q.fillStyle = '#d8b878'; for (i = 0; i < 3; i++) { q.fillRect(bx[i] + 9, 0, 2, H); q.fillStyle = '#7a5a30'; for (j = -1; j < 8; j++) q.fillRect(bx[i] + 8, ((Math.floor(cy / 22) + j) * 22 - Math.round(cy)), 4, 3); q.fillStyle = '#d8b878'; } }
+      if (k === 'pozo') { q.fillStyle = '#d8b878'; for (i = 0; i < 3; i++) q.fillRect(bx[i] + 0, 0, 1, by[i] - 22); }
+      ROLES.forEach(function (r, ii) {
+        var x2 = bx[ii], y2 = by[ii];
+        if (k === 'pozo') { var sw = Math.sin(t * 0.03 + ii) * 0.08; q.save(); q.translate(x2, y2 - 24); q.rotate(sw); q.translate(-x2, -(y2 - 24)); csChr(q, r, x2, y2, 1, 'fall', fi[ii]); q.fillStyle = '#6a4a2a'; q.fillRect(x2 - 4, y2 - 10, 9, 2); q.fillStyle = '#d8b878'; q.fillRect(x2 - 3, y2 - 24, 1, 14); q.fillRect(x2 + 3, y2 - 24, 1, 14); q.restore(); }
+        else if (rot[ii]) { q.save(); q.translate(x2, y2 - 6); q.rotate(rot[ii]); q.translate(-x2, -(y2 - 6)); csChr(q, r, x2, y2 - 2, 1, an[ii], fi[ii]); q.restore(); }
+        else csChr(q, r, x2, y2, 1, an[ii], fi[ii]);
+        if ((k === 'galeria') && ii === 0) { q.fillStyle = '#6a4a2a'; q.fillRect(x2 + 7, y2 - 14, 2, 10); q.fillStyle = ((t >> 2) & 1) ? '#ffd24a' : '#ff8a3a'; q.fillRect(x2 + 6, y2 - 19, 4, 5); }
+      });
+      if (k === 'puente') { q.fillStyle = '#8a5a30'; q.fillRect(0, 126, W, 5); q.fillStyle = '#5a3a1e'; for (x = -Math.round(cx) % 9; x < W; x += 9) q.fillRect(x, 126, 1, 5); q.fillStyle = '#c89458'; q.fillRect(0, 126, W, 1); q.fillStyle = '#c9a064'; q.fillRect(0, 108, W, 1); }
     }
-    if (c.ft >= 0) { out.fillStyle = 'rgba(0,0,0,' + (1 - Math.abs(c.ft - 10) / 10).toFixed(2) + ')'; out.fillRect(0, 0, W, H); }
+    // luz: antorcha/lampara sobre el grupo, siempre
+    csGlow(q, gxc, (by[0] + by[2]) / 2 - 14, 130, k === 'balsa' ? '150,210,240' : '255,190,110', 0.5);
+    // particulas sin estado
+    for (j = 0; j < 14; j++) { var h4 = hash(j, 7, 2), mx = (h4 * W + (vert ? 0 : -cx * 0.7)) % W; if (mx < 0) mx += W; var my = k === 'pozo' ? (h4 * 997 - t * 1.1 + 2000) % H : k === 'cuerda' ? (h4 * 997 + t * 0.6) % H : 40 + (h4 * 811 + t * 0.4) % 80;
+      q.fillStyle = k === 'pozo' && j % 3 === 0 ? 'rgba(170,225,255,0.8)' : 'rgba(220,200,170,0.5)'; q.fillRect(Math.round(mx), Math.round(my < 0 ? my + H : my), 1, k === 'pozo' && j % 3 === 0 ? 3 : 1); }
+    // marco: zoom 1.2 centrado en el grupo (dentro del recuadro visible)
+    var z = 1.2, vw = W / z, vh = H / z, ccx = (VIS.x0 + VIS.x1) / 2, ccy = (VIS.y0 + VIS.y1) / 2, gcy = (by[0] + by[1] + by[2]) / 3 - 10;
+    var vx0 = clamp(gxc - vw / 2 + (VIS.x0 + VIS.x1 - W) / 2 / z, 0, W - vw), vy0 = clamp(gcy - vh / 2 + (ccy - H / 2) / z, 0, H - vh);
+    c.scr = ROLES.map(function (r, ii) { return [Math.round((bx[ii] - vx0) * z), Math.round((by[ii] - 10 - vy0) * z)]; });
+    return { v: [vx0, vy0, vw, vh] };
+  }
+  function csDraw() {
+    var c = cs, t = c.t, k = c.kind, al = c.ft >= 0 ? 1 - c.ft / 20 : 1;
+    if (al > 0.01) { var r = csScene(c).v; out.globalAlpha = al; out.imageSmoothingEnabled = true; out.drawImage(csQ, r[0], r[1], r[2], r[3], 0, 0, W, H); out.imageSmoothingEnabled = false; out.globalAlpha = 1; }
     var bh = Math.max(0, Math.round(Math.min(22, t * 0.8, (c.n - t) * 0.8)));
     if (bh) {
       out.fillStyle = '#000'; out.fillRect(0, 0, W, bh); out.fillRect(0, H - bh, W, bh);
@@ -1995,7 +2065,7 @@ function create(canvas, opts) {
 
   /* ---------- overlay: POI, prompt E, burbujas, avisos ---------- */
   var KEY_COL = { info: '#ffd24a', recurso: '#5ad2c8', secreto: '#c07aff' };
-  function clampIn(x, w) { var lo = VIS.x0 + 2, hi = VIS.x1 - w - 2; return Math.round(hi < lo ? lo : clamp(x, lo, hi)); }   // v10: cartel dentro del recuadro visible
+  function clampIn(x, w) { var lo = VIS.x0 + 2, hi = VIS.x1 - w - 8; return Math.round(hi < lo ? lo : clamp(x, lo, hi)); }   // v10: cartel dentro del recuadro visible
   function pill(x, y, w, h, fill, border) {
     out.fillStyle = '#10081c'; out.fillRect(x + 1, y - 1, w - 2, h + 2); out.fillRect(x - 1, y + 1, w + 2, h - 2);
     out.fillStyle = border; out.fillRect(x + 1, y, w - 2, h); out.fillRect(x, y + 1, w, h - 2);
@@ -2113,9 +2183,11 @@ function create(canvas, opts) {
       if (x < -20 || x > W + 20) return;
       if (id !== active && lb && Math.hypot(b.x - lb.x, b.y - lb.y) > 14 * T) return;   // v6: nombres solo del local y los companeros cercanos
       var nm = String(b.name || id).slice(0, 8), C = ROLE_COL[b.role] || ROLE_COL.guia, w = textW(nm), ny = y - 25 - (b.swim ? 6 : 0), guard = 0;
-      while (guard++ < 5 && placed.some(function (q) { return Math.abs(q.y - ny) < 8 && x - w / 2 < q.x1 + 2 && x + w / 2 > q.x0 - 2; })) ny -= 8;
-      placed.push({ x0: x - w / 2, x1: x + w / 2, y: ny });
-      drawText(out, nm, clampIn(x - Math.floor(w / 2) - 1, w + 2) + 1, Math.max(VIS.y0 + 8, ny), C.name, '#10081c');
+      var nx = clampIn(x - Math.floor(w / 2) - 1, w + 2) + 1;   // v15: se compara la posicion YA recortada al borde; si no cabe arriba, baja
+      while (guard++ < 5 && placed.some(function (q) { return Math.abs(q.y - ny) < 8 && nx < q.x1 + 2 && nx + w > q.x0 - 2; })) ny -= 8;
+      if (ny < VIS.y0 + 8) { ny = y - 25 + 10 * (placed.length); }
+      placed.push({ x0: nx, x1: nx + w, y: ny });
+      drawText(out, nm, nx, Math.max(VIS.y0 + 8, ny), C.name, '#10081c');
       var lift = y - 25 - ny;
       if (b.air < 99.5 && (id === active || b.air < 60)) {   // v6: barra de aire sobre la cabeza (grande y parpadeante para el local)
         var aw = id === active ? 22 : 14, ax2 = x - (aw >> 1), ay2 = ny - (id === active ? 10 : 8), fr2 = Math.max(0, b.air) / 100, low2 = b.air < 30;
@@ -2197,7 +2269,7 @@ function create(canvas, opts) {
     out.drawImage(arrowSprite(ai), Math.round(x) - 17, Math.round(y) - 17);
   }
   function guideLabel(text, cx2, y2, col) {
-    var w = textW(text) + 8, bx = clamp(Math.round(cx2 - w / 2), VIS.x0 + 2, VIS.x1 - w - 2), by = clamp(Math.round(y2), VIS.y0 + 2, VIS.y1 - 14);
+    var w = textW(text) + 8, bx = clamp(Math.round(cx2 - w / 2), VIS.x0 + 2, VIS.x1 - w - 8), by = clamp(Math.round(y2), VIS.y0 + 2, VIS.y1 - 14);
     pill(bx, by, w, 11, '#1a1228', col); drawText(out, text, bx + 4, by + 3, '#fff2d0');
   }
   function drawGuide(cxr, cyr, t) {
@@ -2466,8 +2538,8 @@ function create(canvas, opts) {
     setCameraFixed: function (x, y) { cam.mode = 'fixed'; cam.fx = x; cam.fy = y; }, setCameraFollow: function () { cam.mode = 'follow'; },
     setGuide: setGuide, getPoiPos: getPoiPos, getRoute: getRoute, focus: focus, setViewInsets: setViewInsets, drawMinimap: drawMinimap, setHint: function (t) { hintText = t ? String(t) : null; },
     setUnlocked: setUnlocked, getUnlocked: function () { return unlocked; }, getZone: function (role) { var b = bodies[role || active]; return b ? secOfX(b.x) + 1 : 1; },
-    swimNext: swimNext, findDry: findDry, fieldFor: fieldFor, getGates: getGates, openGate: openGate, stabilize: stabilize, commitInteract: commitInteract, actionShot: actionShot, floatText: floatText, nearGate: nearGate, useAbility: useAbility, botOpenGate: botOpenGate, getAir: getAir, setAir: function (role, v) { var b = bodies[role]; if (b) b.air = clamp(+v, 0, 100); }, setPoiHints: setPoiHints,
-    playTravel: playTravel, isCutscene: function () { return !!cs; }, skipCutscene: skipCutscene,
+    swimNext: swimNext, findDry: findDry, fieldFor: fieldFor, getGates: getGates, openGate: openGate, stabilize: stabilize, commitInteract: commitInteract, actionShot: actionShot, floatText: floatText, nearGate: nearGate, useAbility: useAbility, botOpenGate: botOpenGate, forceOpenGate: forceOpenGate, getAir: getAir, setAir: function (role, v) { var b = bodies[role]; if (b) b.air = clamp(+v, 0, 100); }, setPoiHints: setPoiHints,
+    playTravel: playTravel, isCutscene: function () { return !!cs; }, csScr: function () { return cs && cs.scr ? { scr: cs.scr, ft: cs.ft, vis: VIS, bh: Math.min(22, cs.t * 0.8, (cs.n - cs.t) * 0.8) } : null; }, skipCutscene: skipCutscene,
     bodies: bodies, cam: cam, zones: wd.zones, world: wd, tileAt: tileAt
   });
   Object.defineProperties(self, { water: { get: function () { return wlCur; } }, poiMap: { get: function () { return pois; } }, waterRate: { get: function () { return waterRate; } }, tick: { get: function () { return tick; } }, active: { get: function () { return active; } } });
@@ -2516,7 +2588,7 @@ global.Engine = { create: create, demoLoop: demoLoop, waterY: waterY, W: W, H: H
   pan: function (r) { if (this.current) this.current.pan(r); },
   fx: function (t, x, y) { if (this.current) this.current.fx(t, x, y); },
   camShake: function (a) { if (this.current) this.current.camShake(a); },
-  sectionOf: function (x) { return clamp(Math.floor(x / SPW), 0, NS - 1) + 1; }, version: '14.0',
+  sectionOf: function (x) { return clamp(Math.floor(x / SPW), 0, NS - 1) + 1; }, version: '15.0',
   setGuide: function (t, o) { if (this.current) this.current.setGuide(t, o); },
   getPoiPos: function (id) { return this.current ? this.current.getPoiPos(id) : null; },
   getRoute: function (id) { return this.current ? this.current.getRoute(id) : null; },
@@ -2526,6 +2598,7 @@ global.Engine = { create: create, demoLoop: demoLoop, waterY: waterY, W: W, H: H
   setUnlocked: function (n) { if (this.current) this.current.setUnlocked(n); }, getZone: function (r) { return this.current ? this.current.getZone(r) : 1; },
   getGates: function () { return this.current ? this.current.getGates() : []; }, openGate: function (id, now) { return this.current ? this.current.openGate(id, now) : false; },
   nearGate: function (r) { return this.current ? this.current.nearGate(r) : null; }, useAbility: function (r) { return this.current ? this.current.useAbility(r) : { ok: false, reason: 'sin motor' }; },
+  forceOpenGate: function (id) { return this.current ? this.current.forceOpenGate(id) : false; },
   botOpenGate: function (r, id, cb) { return this.current ? this.current.botOpenGate(r, id, cb) : false; }, getAir: function (r) { return this.current ? this.current.getAir(r) : 100; },
   setPoiHints: function (h) { if (this.current) this.current.setPoiHints(h); },
   playTravel: function (o, cb) { return this.current ? this.current.playTravel(o, cb) : false; }, isCutscene: function () { return this.current ? this.current.isCutscene() : false; }, skipCutscene: function () { return this.current ? this.current.skipCutscene() : false; } };

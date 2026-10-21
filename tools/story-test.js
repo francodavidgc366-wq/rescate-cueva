@@ -215,19 +215,19 @@ const strip = x => JSON.stringify(x, (k, v) => k === 't' ? undefined : v);
     for (const dif of ['facil', 'everest']) for (const seed of [1, 2, 3]) {
       const st = Story.newGame({ seed, difficulty: dif, demo: true });
       for (let r = 1; r <= 5; r++) { st.round = r; await Story.roundStart(st); Story.setPhase(st, 'explore');
-        lim('event.text', st.event.text, 90); st.pois.forEach(p => { lim('poi.name', p.name, 28); lim('poi.label', p.label, 28); lim('poi.give', p.give, 70); lim('poi.act', p.act, 70); lim('poi.why', p.why, 65); });
-        st.plan.options.forEach(o => { lim('title', o.title, 28); lim('what', o.what, 60); lim('gain', o.gain, 35); lim('risk', o.risk, 35); lim('opt.text', o.text, 90); });
-        for (const k of RK) { const m = Story.mission(st, k); lim('now.text', m.now.text, 55); lim('now.why', m.now.why, 65); lim('now.hint', m.now.hint, 70); lim('now.short', m.now.short, 28); lim('desc', m.desc, 70); m.steps.forEach(x => lim('step', x.text, 70)); }
+        lim('event.text', st.event.text, 90); st.pois.forEach(p => { lim('poi.name', p.name, 22); lim('poi.label', p.label, 28); lim('poi.give', p.give, 70); lim('poi.act', p.act, 70); lim('poi.why', p.why, 65); });
+        st.plan.options.forEach(o => { lim('title', o.title, 18); lim('what', o.what, 35); lim('ask', st.plan.ask, 35); lim('brief', st.plan.brief, 55); lim('gain', o.gain, 35); lim('risk', o.risk, 35); lim('opt.text', o.text, 90); });
+        for (const k of RK) { const m = Story.mission(st, k); lim('now.text', m.now.text, 40); lim('now.why', m.now.why, 45); lim('now.hint', m.now.hint, 70); lim('now.short', m.now.short, 28); lim('desc', m.desc, 70); m.steps.forEach(x => lim('step', x.text, 70)); }
         for (let it = 0; it < 40; it++) { let any = false; for (const k of RK) { const a = await Story.botAct(st, k, 'explore'); if (a) { any = true; Story.exec(st, k, a); } } if (!any) break; }
-        RK.forEach(k => st.priv[k].intel.forEach(c => { lim('card.text', c.text, 85); lim('card.uses', c.uses, 70); }));
+        RK.forEach(k => st.priv[k].intel.forEach(c => { lim('card.text', c.text, 60); lim('card.uses', c.uses, 70); }));
         st.chat.forEach(m => { if (m.kind === 'sys' || m.kind === 'event') lim('sys', m.text, 70); });
         Story.setPhase(st, 'plan'); for (const k of RK) { const a = await Story.botAct(st, k, 'plan'); if (a) Story.exec(st, k, a); } Story.tally(st); Story.setPhase(st, 'secret'); for (const k of RK) { const a = await Story.botAct(st, k, 'secret'); if (a) Story.exec(st, k, a); }
-        Story.resolve(st); ['event', 'lia', 'plan', 'resolve'].forEach(kd => Story.scene(st, kd).forEach(l => lim('scene', l.text, 70)));
-        const tr = Story.travelScene(st); if (tr) { lim('travel', tr.caption, 60); tr.lines.forEach(l => lim('travel', l.text, 60)); }
-        const j = Story.journal(st); j.entries.forEach(e => { lim('journal', e.text, 80); lim('journal.use', e.use, 50); }); lim('journal.decision', j.decision.text, 80); lim('journal.note', j.note, 80); lim('journal.intro', j.intro, 80);
-        const e = Story.explainResult(st); lim('headline', e.headline, 70); e.lines.forEach(l => lim('explain', l.text, 70)); e.why.forEach(w => lim('explain.why', w, 70));
+        Story.resolve(st); ['event', 'lia', 'plan', 'resolve'].forEach(kd => Story.scene(st, kd).forEach(l => lim('scene', l.text, 55)));
+        const tr = Story.travelScene(st); if (tr) { lim('travel', tr.caption, 45); assert(tr.lines.length <= 2); tr.lines.forEach(l => lim('travel', l.text, 45)); }
+        const j = Story.journal(st); j.entries.forEach(e => { lim('journal', e.text, 60); lim('journal.use', e.use, 50); }); lim('journal.decision', j.decision.text, 80); lim('journal.note', j.note, 80); lim('journal.intro', j.intro, 80);
+        const e = Story.explainResult(st); lim('headline', e.headline, 70); e.lines.forEach(l => lim('explain', l.text, 55)); e.why.forEach(w => lim('explain.why', w, 55));
         if (Story.isOver(st)) break; Story.advance(st); }
-      Story.scene(st, 'final').forEach(l => lim('scene final', l.text, 70)); Story.endingPanels(st).panels.forEach(p => lim('panel', p.text, 90)); }
+      Story.scene(st, 'final').forEach(l => lim('scene final', l.text, 55)); Story.endingPanels(st).panels.forEach(p => lim('panel', p.text, 90)); }
     assert(/55 caracteres/.test(Story.PROMPTS.bot) && /200 caracteres/.test(Story.PROMPTS.judge), 'prompts piden respuestas cortas'); }
   // ===== v14: recompensas de minijuego y logros =====
   { const mk = async (seed, round) => { const g = Story.newGame({ seed, humans: ['guia'] }); g.round = round || 1; await Story.roundStart(g); Story.setPhase(g, 'explore'); return g; };

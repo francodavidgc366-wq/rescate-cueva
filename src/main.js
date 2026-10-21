@@ -19,11 +19,6 @@
     cv = document.createElement('canvas'); cv.width = 320; cv.height = 180; cv.style.imageRendering = 'pixelated';
     gameEl.appendChild(cv); document.body.appendChild(gameEl);
     addEventListener('resize', () => eng && eng.fit(innerWidth, innerHeight));
-    { const o = document.createElement('style'); o.textContent = '.h-pn[data-p=plan] .h-brief,.h-pn[data-p=plan] .h-opt .kn{display:none!important}'
-      + '.h-pn[data-p=plan] .h-opt .h-eff{display:flex;gap:10px;flex-wrap:wrap}.h-pn[data-p=plan] .h-opt .h-eff>div{display:flex;align-items:center;gap:2px}.h-pn[data-p=plan] .h-opt .h-eff{flex-direction:column;gap:4px}.h-pn[data-p=plan] .h-opt .h-eff>div>span:last-child{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;font-size:13px}'
-      + '.h-pn[data-p=plan] .h-opt p,.h-pn[data-p=plan] .h-opt .pv{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}'
-      + '.h-pn[data-p=plan]{max-height:none!important;overflow:hidden!important}.h-pn[data-p=plan] .h-opt .h-eff>div{min-width:0;max-width:100%}.h-pn[data-p=plan] .h-opt{min-width:0;overflow:hidden}.h-pn[data-p=plan] .h-pb{overflow:visible!important;max-height:none!important}';
-      document.head.appendChild(o); }
     Hud.mount(gameEl);
     Hud.onChat(onChat); Hud.onShare(onShare); Hud.onVote(onVote); Hud.onSecret(onSecret); Hud.onReady(onReady);
     Hud.onAsk && Hud.onAsk(onAsk); Hud.onAbility && Hud.onAbility(() => { if (!isClient() && eng) { const o = eng.useAbility(myRole); if (o && !o.ok) Hud.floatText(o.reason === 'rol' ? 'Esa puerta la abre otro compañero: pídeselo por radio' : 'Aquí no puedes usar tu habilidad', 'bad'); } });
