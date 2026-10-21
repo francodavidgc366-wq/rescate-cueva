@@ -22,7 +22,7 @@
   ];
   var PHASES = {
     briefing: { n: 'BRIEFING', i: 'Lee el evento del tramo', c: '#ff8a5c', e: '📜' },
-    explore: { n: 'EXPLORA', i: 'Busca información: pulsa E junto a los iconos brillantes', c: '#3fd0c0', e: '🔍' },
+    explore: { n: 'EXPLORA', i: 'Camina por la cueva y pulsa E junto a los iconos brillantes', c: '#3fd0c0', e: '🔍' },
     plan: { n: 'PLAN', i: 'Debatid en el chat y votad el plan (1 · 2 · 3)', c: '#b58cff', e: '🗳️' },
     secret: { n: 'ACCIÓN SECRETA', i: 'Elige en privado. Se revela al final del tramo', c: '#f2a93b', e: '🔒' },
     resolve: { n: 'RESOLUCIÓN', i: 'Mira qué ha pasado', c: '#ff6b6b', e: '🎲' },
@@ -31,11 +31,11 @@
   };
   var HELP = {
     briefing: ['Nuevo tramo', 'Lee el evento: marca el ambiente del tramo. Lía te habla por radio. En unos segundos empieza la exploración.'],
-    explore: ['Explora y recoge información', 'Camina con WASD o flechas y pulsa E junto a un icono brillante: gasta 1 acción (los puntos de arriba a la izquierda) y te da una tarjeta de Intel PRIVADA. Tus compañeros no la ven si no se la cuentas. Habla en el chat (T) y comparte lo que sepas desde el cuaderno (J). Cuando termines, pulsa «Terminar exploración» (R).'],
+    explore: ['Explora y recoge información', 'Camina con WASD o flechas y pulsa E junto a un icono brillante: te da una tarjeta de información PRIVADA. Tus compañeros no la ven si no se la cuentas. Habla en el chat (T) y comparte lo que sepas desde el cuaderno (J). Con Q usas la habilidad de tu rol. Cuando hayas investigado algo, pulsa «Convocar reunión» (R) para adelantar la crisis.'],
     plan: ['Elegid el plan del equipo', 'Cada opción tiene información parcial. Lo que tú sabes en privado está resaltado. Convence a los demás en el chat y vota con 1, 2 o 3. Gana la mayoría.'],
     secret: ['Tu acción secreta', 'Elige una de las 3: una ayuda al equipo, otra a tu objetivo secreto y otra es arriesgada. Nadie ve tu elección hasta la resolución. Pulsa la misma tecla otra vez, o SELLAR, para confirmar.'],
     resolve: ['Resolución', 'Se tiran los dados del riesgo según el plan, la información compartida y las acciones secretas. Los secretos y las mentiras salen a la luz.'],
-    summary: ['Resumen del tramo', 'Puntos por trabajo en equipo, información compartida, honestidad y riesgo bien calculado.']
+    summary: ['Resumen del tramo', 'Aquí sí se cuentan los puntos: por trabajo en equipo, información compartida, honestidad y riesgo bien calculado.']
   };
   var CHIPS = {
     explore: ['Os cuento lo que he visto', '¿Qué habéis encontrado?', 'No me fío de eso', 'Necesito material'],
@@ -99,17 +99,34 @@
       return '<i class="h-ic" style="width:' + size + 'px;height:' + size + 'px;background:url(' + src + ') ' + (-(i % cols) * cell * s) + 'px ' + (-Math.floor(i / cols) * cell * s) + 'px/' + (m.w * s) + 'px ' + (m.h * s) + 'px"></i>'; } }
     return icon(EMOJI[name] ? name : 'info', size);
   }
-  function portrait(role, expr, size) { // marco con gradiente por rol; usa meta real (w/h/fw/fh) -> vale cualquier resolucion de hoja
+  /* mood -> imagen. Hoja portrait_<rol> (fw=64): 0 neutral,1 preocupado,2 enfadado,3 feliz; sueltas _alert/_hurt/_talk (si faltan, cae a la hoja).
+     Moods de Story: neutral|alert|hurt|angry|happy|talk. Se aceptan también los nombres de la hoja (preocupado/enfadado/feliz). */
+  var MOODIDX = { neutral: 0, calma: 0, talk: 0, preocupado: 1, worried: 1, alert: 1, tension: 1, hurt: 1, enfadado: 2, angry: 2, feliz: 3, happy: 3 };
+  var MOODSUF = { alert: '_alert', hurt: '_hurt', talk: '_talk' };
+  function faceInfo(role, mood) {
+    mood = mood || 'neutral';
+    var suf = MOODSUF[mood], n = 'portrait_' + role + (suf || ''), src = suf && img(n);
+    if (src) { var m1 = meta(n) || {}; return { src: src, fw: m1.fw || m1.w || 64, fh: m1.fh || m1.h || 64, W: m1.w || 64, H: m1.h || 64, x: 0, y: 0 }; }
+    src = img('portrait_' + role); var m = meta('portrait_' + role); if (!src || !m) return null;
+    var fw = m.fw || m.cell || 48, fh = m.fh || fw, cols = m.cols || Math.max(1, Math.floor((m.w || fw * 4) / fw)), ei = MOODIDX[mood] || 0;
+    return { src: src, fw: fw, fh: fh, W: m.w || cols * fw, H: m.h || fh, x: (ei % cols) * fw, y: Math.floor(ei / cols) * fh };
+  }
+  function faceCss(f, scale) { return 'width:' + Math.round(f.fw * scale) + 'px;height:' + Math.round(f.fh * scale) + 'px;background:url(' + f.src + ') ' + (-f.x * scale) + 'px ' + (-f.y * scale) + 'px/' + (f.W * scale) + 'px ' + (f.H * scale) + 'px no-repeat'; }
+  function portrait(role, expr, size) { // marco con gradiente por rol; usa meta real -> vale cualquier resolucion de hoja
     size = size || 56;
-    var b = ROLES[role] || ROLES.sys, src = img('portrait_' + role), m = meta('portrait_' + role), col = b.color;
+    var b = ROLES[role] || ROLES.sys, f = faceInfo(role, expr), col = b.color;
     var grad = 'linear-gradient(160deg,' + col + '66,#120e26 85%)';
-    if (src && m) {
-      var fw = m.fw || m.cell || 48, fh = m.fh || fw, cols = m.cols || Math.max(1, Math.floor((m.w || fw * 4) / fw)), W_ = m.w || cols * fw, H_ = m.h || fh;
-      var ei = Math.max(0, EXPR.indexOf(expr || 'neutral')), s_ = size / fw, hh = Math.round(size * fh / fw);
-      var x = (ei % cols) * fw, y = Math.floor(ei / cols) * fh;
-      return '<i class="h-por" style="width:' + size + 'px;height:' + hh + 'px;border-color:' + col + ';background:url(' + src + ') ' + (-x * s_) + 'px ' + (-y * s_) + 'px/' + (W_ * s_) + 'px ' + (H_ * s_) + 'px no-repeat,' + grad + '"></i>';
+    if (f) {
+      var s_ = size / f.fw, hh = Math.round(size * f.fh / f.fw);
+      return '<i class="h-por" style="width:' + size + 'px;height:' + hh + 'px;border-color:' + col + ';background:url(' + f.src + ') ' + (-f.x * s_) + 'px ' + (-f.y * s_) + 'px/' + (f.W * s_) + 'px ' + (f.H * s_) + 'px no-repeat,' + grad + '"></i>';
     }
     return '<i class="h-por fb" style="width:' + size + 'px;height:' + size + 'px;border-color:' + col + ';background:' + grad + ';font-size:' + Math.round(size * .55) + 'px;line-height:' + (size - 6) + 'px">' + b.emoji + '</i>';
+  }
+  /* retrato grande SIN marco (diálogo / «hablando ahora»); scale = factor sobre el tamaño nativo (entero en el diálogo) */
+  function bigFace(role, mood, scale) {
+    var f = faceInfo(role, mood), b = ROLES[role] || ROLES.sys;
+    if (!f) return '<i class="h-big fb" style="width:' + Math.round(64 * scale) + 'px;height:' + Math.round(64 * scale) + 'px;font-size:' + Math.round(40 * scale) + 'px;line-height:' + Math.round(64 * scale) + 'px">' + b.emoji + '</i>';
+    return '<i class="h-big" style="' + faceCss(f, scale) + '"></i>';
   }
   function trophy(id, size) {
     var src = img('trophies'), m = meta('trophies'), idx = -1;
@@ -124,7 +141,7 @@
   /* ---------- estado interno ---------- */
   var pinned = true, P = null, V = null, R = null;           // público, privado, mi rol
   var root = null, el = {}, mounted = false, hidden = false;
-  var cb = { chat: null, share: null, vote: null, secret: null, ready: null, exit: null, settings: null, pause: null, fx: null, focus: null, typing: null, insets: null };
+  var cb = { ability: null, ask: null, dialogue: null, chat: null, share: null, vote: null, secret: null, ready: null, exit: null, settings: null, pause: null, fx: null, focus: null, typing: null, insets: null };
   var disp = { agua: 0, salud: 0, material: 0, confianza: 0, score: 0 }, tgt = { agua: 0, salud: 0, material: 0, confianza: 0, score: 0 }, dispInit = false;
   var cur = { phase: null, round: 0 }, phaseMax = 1;
   var clock = { left: 0, at: 0, lastShown: -1 };
@@ -137,6 +154,7 @@
   var intelSeen = 0, lastIntelLen = 0, waterLevelHit = 0, chosenShown = null, lastResult = null;
   var customChips = null, dossierTab = 'intel', editing = null, paused = false;
   var toastQ = [], toastBusy = false, resolving = false, rafOn = false;
+  var airV = null, airWarned = false, abilO = null, helpO = null, quickO = null, dlgQ = null, dlgOpen = false;
   var nowOv = null, misOv = null, readyOv = null, nowKey = '', miniFn = null, miniTimer = 0, ro = null;
 
   /* ---------- CSS ---------- */
@@ -415,6 +433,52 @@
     ".h-tc u{text-decoration:none;font-family:var(--h-px);font-size:6px;padding:3px 5px 2px;border-radius:3px;background:#2d2250;margin-top:2px}.h-tc u.ai{background:#1d3a52;color:#8fd0ff}.h-tc u.hu{background:#1d4a30;color:#9affc0}",
     ".h-tc .pc{position:relative}.h-tc .ok{position:absolute;top:-6px;right:-6px;background:var(--h-green);color:#06301a;border-radius:50%;width:16px;height:16px;font-size:10px;display:grid;place-items:center;font-weight:700}",
     ".h-tc .td{position:absolute;left:50%;bottom:-3px;transform:translateX(-50%);display:none;gap:2px;background:#0e0a1df0;padding:4px 6px;border-radius:8px;border:1px solid var(--h-line)}.h-tc.typ .td{display:flex}.h-tc .td i{width:4px;height:4px;background:var(--h-amber);border-radius:50%;animation:h-dot 1s infinite}.h-tc .td i:nth-child(2){animation-delay:.15s}.h-tc .td i:nth-child(3){animation-delay:.3s}",
+    `/* ===== v5 ===== */
+.h-top{z-index:30}.h-sc{display:none!important}
+.h-st{cursor:help;outline:0}.h-st .tip{display:none;position:absolute;top:100%;left:0;margin-top:9px;width:max-content;max-width:min(250px,80vw);z-index:60;padding:9px 11px;background:#0e0a1d;border:2px solid var(--h-amber);border-radius:6px;box-shadow:0 5px 0 #07040f,0 0 20px #000c;font-size:calc(13px*var(--h-fs));line-height:1.4;color:var(--h-ink);pointer-events:none;text-align:left}
+.h-st .tip b{display:block;font-family:var(--h-px);font-weight:400;font-size:calc(9px*var(--h-fs));color:var(--c);margin-bottom:5px}
+.h-st:hover .tip,.h-st:focus .tip{display:block}.h-st:nth-child(n+3) .tip{left:auto;right:0}
+.h-now{max-width:min(720px,100%)}.h-now .t{font-size:calc(13px*var(--h-fs));overflow-wrap:anywhere;text-transform:none}
+.h-now .k{font-family:var(--h-px);font-size:calc(7px*var(--h-fs));color:var(--h-teal);letter-spacing:1px}
+.h-now .w{font-size:calc(14px*var(--h-fs));color:#d9f5ff;line-height:1.35}.h-now .w b{color:var(--h-teal)}.h-now .s{color:var(--h-dim);font-size:calc(12.5px*var(--h-fs))}
+.h-air{display:none;align-items:center;gap:8px;padding:5px 14px;background:#0e1a2cf2;border:2px solid var(--h-water);border-radius:20px;box-shadow:0 3px 0 #07040f;pointer-events:auto;max-width:100%}
+.h-air .l{display:flex;align-items:center;gap:5px;font-family:var(--h-px);font-size:calc(8px*var(--h-fs));color:#bfe3ff}.h-air .b{width:clamp(90px,14vw,160px);height:12px;background:#0a0716;border:2px solid #000;border-radius:3px;overflow:hidden;position:relative;box-shadow:0 0 0 1px var(--h-line)}
+.h-air .b i{position:absolute;left:0;top:0;bottom:0;background:var(--h-water);box-shadow:inset 0 3px 0 #ffffff40;transition:width .2s}.h-air b{font-family:var(--h-px);font-weight:400;font-size:calc(11px*var(--h-fs))}
+.h-air em{display:none;font-style:normal;font-weight:700;font-size:calc(12px*var(--h-fs));color:#ffd0d0}
+.h-air.low{border-color:var(--h-red);animation:h-nowurg .8s ease-in-out infinite}.h-air.low .b i{background:var(--h-red)}.h-air.low em{display:inline}.h-air.low b{color:var(--h-red)}
+.h-abil{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;pointer-events:none}.h-abil:empty{display:none}
+.h-ab{display:flex;flex-direction:column;align-items:flex-start;gap:3px}.h-ab small{font-size:calc(12px*var(--h-fs));color:var(--h-ink);text-shadow:0 1px 3px #000,0 0 6px #000;max-width:240px}
+.h-ab .h-btn{display:flex;align-items:center;gap:8px;white-space:normal;text-align:left;line-height:1.4}.h-ab .h-btn.alt{opacity:.75}
+.h-ask{display:flex;flex-wrap:wrap;align-items:center;gap:6px}.h-ask .l{font-family:var(--h-px);font-size:calc(7px*var(--h-fs));color:var(--h-ink);text-shadow:0 1px 3px #000,0 0 6px #000}
+.h-ask .h-btn{text-transform:none;font-family:var(--h-ui);font-weight:700;font-size:calc(13px*var(--h-fs));letter-spacing:0;padding:7px 11px;border-left:5px solid var(--rc,var(--h-line));white-space:normal;text-align:left}
+.h-say{display:none;flex:none;gap:10px;align-items:center;padding:8px 10px;border-bottom:2px solid var(--h-line);background:linear-gradient(90deg,#241c46,#150f2a)}
+.h-say .fc{flex:none;border:3px solid var(--c,var(--h-line));border-radius:8px;overflow:hidden;line-height:0;background:radial-gradient(circle at 50% 100%,#ffffff22,#120e26 75%);box-shadow:0 0 0 2px #000}
+.h-say.pop .fc{animation:h-pop .3s}.h-big{display:block;image-rendering:pixelated;background-repeat:no-repeat;text-align:center;font-style:normal}
+.h-say .sb{min-width:0;flex:1;align-self:stretch;display:flex;flex-direction:column;gap:4px}.h-say .nm{font-weight:700;font-size:calc(14px*var(--h-fs));display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 7px}.h-say .nm i{font-style:normal;font-weight:400;color:var(--h-dim);font-size:.85em}
+.h-say .nm span{font-family:var(--h-px);font-weight:400;font-size:6px;color:var(--h-teal);margin-left:auto}.h-say .sx{font-size:calc(14px*var(--h-fs));line-height:1.4;max-height:6.4em;overflow:auto;overflow-wrap:anywhere;scrollbar-width:thin;user-select:text}
+.h-say.on{display:flex}.h-chat.min .h-say{visibility:hidden}@media (max-width:820px),(max-height:520px){.h-chat:not(.open) .h-say{display:none}}
+@media (max-height:720px){.h-say{padding:5px 8px}.h-say .sx{max-height:5.6em}}
+.h-g .av,.h-m .av{width:48px;flex:none}.h-g .bd{max-width:calc(100% - 58px)}.h-m.radio{display:flex;gap:8px;align-items:flex-start}.h-m.radio .bd{min-width:0;flex:1}.h-m.radio .tx{overflow-wrap:anywhere}
+.h-chips{flex-wrap:wrap;overflow-x:hidden;overflow-y:auto;max-height:116px}.h-chips button{white-space:normal;text-align:left;max-width:100%;line-height:1.25}
+.h-mlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}.h-mlist li{display:flex;gap:8px;align-items:flex-start;font-size:calc(14px*var(--h-fs));line-height:1.4;padding:6px 9px;background:#0e0a1d;border:1px solid var(--h-line);border-radius:6px}
+.h-mlist li i{flex:none;width:18px;height:18px;border:2px solid var(--h-amber);border-radius:4px;display:grid;place-items:center;font-style:normal;font-size:12px;color:transparent;margin-top:1px}.h-mlist li.done{color:var(--h-dim)}.h-mlist li.done i{background:var(--h-green);border-color:var(--h-green);color:#06301a}
+.h-dlg{position:absolute;left:12px;right:calc(var(--h-chatw) + 16px);bottom:10px;z-index:36;display:none;pointer-events:auto;cursor:pointer}
+.h-dlg.on{display:block;animation:dl-up .25s ease-out}.h-dlg.out{animation:dl-down .2s forwards}
+@keyframes dl-up{from{opacity:0;transform:translateY(40px)}}@keyframes dl-down{to{opacity:0;transform:translateY(30px)}}
+.dl-wrap{position:relative;--pw:192px;--ph:192px;--c:#f2a93b;--cg:#f2a93b44}
+.dl-box{position:relative;min-height:clamp(140px,22vh,240px);padding:clamp(24px,3.4vh,36px) 26px clamp(30px,4.2vh,40px) calc(var(--pw) + 46px);background:linear-gradient(#10224ff2,#07112efa);border:3px solid #d8a640;border-radius:6px;box-shadow:inset 0 0 0 3px #07112e,inset 0 0 0 5px #7a622c,0 0 0 3px #000,0 10px 30px #000a;color:#f4f1e6;font-family:var(--h-ui)}
+.dl-box:before{content:"";position:absolute;left:0;top:0;bottom:0;width:calc(var(--pw) + 70px);background:radial-gradient(ellipse at 45% 100%,var(--cg),transparent 70%);pointer-events:none;border-radius:4px}
+.dl-por{position:absolute;left:20px;bottom:3px;z-index:2;line-height:0;filter:drop-shadow(0 6px 0 #0007)}.dl-por.pop{animation:dl-pop .3s ease-out}
+@keyframes dl-pop{from{transform:translateY(14px) scale(.97);opacity:.5}}
+.dl-name{position:absolute;left:calc(var(--pw) + 40px);top:-16px;z-index:3;display:flex;align-items:baseline;gap:9px;padding:6px 13px 5px;background:#07112e;border:3px solid var(--c);border-radius:4px;box-shadow:0 0 0 2px #000;max-width:calc(100% - var(--pw) - 60px)}
+.dl-name b{font-family:var(--h-px);font-weight:400;font-size:clamp(10px,1.5vh,14px);color:var(--c);white-space:nowrap}.dl-name i{font-style:normal;font-size:clamp(11px,1.5vh,14px);color:#b8c2e0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dl-text{position:relative;font-size:calc(clamp(15px,2.3vh,24px)*var(--h-fs));line-height:1.5;min-height:4.5em;max-height:46vh;overflow:auto;text-shadow:0 2px 0 #000;overflow-wrap:anywhere}.dl-text .b{visibility:hidden}
+.dl-foot{position:absolute;right:18px;bottom:9px;z-index:3;display:flex;align-items:center;gap:14px;font-size:12px;color:#b8c2e0}.dl-foot .arr{font-size:18px;color:var(--h-amber2);animation:dl-bl .8s steps(2) infinite}@keyframes dl-bl{50%{opacity:.15}}
+.dl-foot .sk{background:none;border:0;color:#b8c2e0;font-size:12px;cursor:pointer;padding:2px 4px}.dl-foot .sk:hover{color:#fff}
+.h-dlg.radio .dl-box{background:linear-gradient(#06231af2,#031410fa);border-color:#3da56d;box-shadow:inset 0 0 0 3px #031410,inset 0 0 0 5px #1d5a3c,0 0 0 3px #000,0 10px 30px #000a}.h-dlg.radio .dl-text{color:var(--h-radio);font-family:ui-monospace,Menlo,Consolas,monospace}
+.h-dlg.radio .dl-name{background:#031410}
+.hud.dlg .h-act{visibility:hidden}
+@media (max-width:820px),(max-height:520px){.h-dlg{left:4px;right:4px;bottom:4px}.dl-box{padding-left:calc(var(--pw) + 30px);padding-right:14px}.dl-por{left:10px}.dl-name{left:calc(var(--pw) + 22px)}.dl-foot .sk kbd{display:none}}`,
     "@media (max-width:820px),(max-height:520px){",
     ":root{--h-chatw:0px}",
     ".hud{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;grid-template-areas:\"top\" \"mid\" \"bar\"}",
@@ -429,6 +493,18 @@
     "}"
   ].join('\n');
 
+  var STAT_TIPS = {
+    agua: 'Nivel del agua en la cueva. Sube con el tiempo. Si llega a 100, la cueva se inunda y perdéis.',
+    salud: 'Salud de Lía y del equipo. Si llega a 0, el rescate fracasa. Ahogarse o equivocarse la baja.',
+    material: 'Cuerdas, baterías y botiquín del equipo. Cada plan gasta algo. Con 0 no podéis hacer nada que lo necesite.',
+    confianza: 'Lo que os fiáis unos de otros. Mentir y callar la bajan; compartir bien la sube. A 0 nadie colabora.'
+  };
+  function statTip(s) {
+    var L = null; try { L = W.Story && W.Story.statusLabels && W.Story.statusLabels[s.k]; } catch (e) { }
+    var t = L && typeof L === 'object' ? (L.tip || L.desc || L.text || L.help) : L;
+    return typeof t === 'string' && t.length > 25 ? t : STAT_TIPS[s.k];
+  }
+
   /* ---------- montaje ---------- */
   function mount(host) {
     if (mounted) { if (host && root.parentNode !== host) host.appendChild(root); return root; }
@@ -441,31 +517,31 @@
     root = D.createElement('div'); root.className = 'hud'; root.id = 'hud';
     var pips = ''; for (var i = 1; i <= 5; i++) pips += '<div class="h-pip" data-r="' + i + '">' + i + '</div>';
     var stats = STATS.map(function (s) {
-      return '<div class="h-st" data-k="' + s.k + '" style="--c:' + s.color + '"><div class="l">' + icon(s.k, 14) + '<span class="lt">' + s.label + '</span><b>0</b></div><div class="h-bar"><i class="ghost"></i><i class="fill"></i></div></div>';
+      var tp = statTip(s);
+      return '<div class="h-st" data-k="' + s.k + '" style="--c:' + s.color + '" tabindex="0" title="' + esc(s.label + ': ' + tp) + '"><div class="l">' + icon(s.k, 14) + '<span class="lt">' + s.label + '</span><b>0</b></div><div class="h-bar"><i class="ghost"></i><i class="fill"></i></div><div class="tip"><b>' + s.label + '</b>' + esc(tp) + '</div></div>';
     }).join('');
     root.innerHTML =
       '<div class="h-top"><div class="h-rnd"><div class="h-rlab">TRAMO <b class="rn">1/5</b></div><div class="h-pips">' + pips + '</div></div>' +
       '<div class="h-ph"><div class="h-phn"></div><div class="h-phi"></div><div class="h-evt"></div></div>' +
       '<div class="h-tm"><div class="h-time">0:00</div><div class="h-tbar"><i></i></div></div>' +
-      '<div class="h-sts">' + stats + '</div>' +
-      '<div class="h-sc"><div class="l">PUNTOS</div><b>0</b></div></div>' +
+      '<div class="h-sts">' + stats + '</div></div>' +
       '<div class="h-left"><div class="h-lh" data-act="leftmin">' + icon('mapa', 14) + ' OBJETIVOS<span class="x">▾</span></div><div class="h-lb"></div></div>' +
-      '<div class="h-mid"><div class="h-gd"><div class="h-now"></div><div class="h-mis"></div></div><div class="h-tst"></div><div class="h-stage"></div>' +
+      '<div class="h-mid"><div class="h-gd"><div class="h-now"></div><div class="h-air"></div></div><div class="h-tst"></div><div class="h-stage"></div>' +
         '<div class="h-help"></div><div class="h-dos"></div><canvas class="h-mini" width="160" height="64"></canvas></div>' +
-      '<div class="h-act"><div class="h-bot"></div><div class="h-dock">' +
+      '<div class="h-act"><div class="h-abil"></div><div class="h-bot"></div><div class="h-dock">' +
         '<button class="h-btn alt" data-act="dossier" title="Cuaderno de Intel (J)">' + icon('ojo', 14) + ' CUADERNO <kbd>J</kbd><span class="h-badge" style="display:none"></span></button>' +
         '<button class="h-btn alt" data-act="goals" title="Mostrar/ocultar panel de objetivos (O)">' + icon('mapa', 14) + ' OBJETIVOS <kbd>O</kbd></button>' +
         '<button class="h-btn alt" data-act="help" title="Ayuda (H)">? AYUDA <kbd>H</kbd></button>' +
         '<button class="h-btn alt" data-act="pause" title="Pausa (Esc)">II <kbd>ESC</kbd></button></div></div>' +
       '<div class="h-chat"><div class="h-ch" data-act="chatmin">' + icon('chat', 14) + '<span class="ttl"> CHAT DEL EQUIPO</span><span class="tg"><kbd>T</kbd><span class="cv"></span><span class="h-badge" style="display:none;position:static"></span></span></div>' +
-        '<div class="h-logw"><div class="h-log" role="log" aria-live="polite"></div><button type="button" class="h-newmsg" data-act="newmsg">Mensajes nuevos ↓</button></div><div class="h-typ"></div><div class="h-chips"></div>' +
+        '<div class="h-say"></div><div class="h-logw"><div class="h-log" role="log" aria-live="polite"></div><button type="button" class="h-newmsg" data-act="newmsg">Mensajes nuevos ↓</button></div><div class="h-typ"></div><div class="h-chips"></div>' +
         '<form class="h-in" autocomplete="off"><input type="text" maxlength="220" placeholder="Escribe al equipo…" aria-label="Mensaje al equipo"><button class="h-btn teal" type="submit">ENVIAR</button></form></div>' +
-      '<div class="h-fx"></div><div class="h-pause"></div>';
+      '<div class="h-fx"></div><div class="h-dlg"></div><div class="h-pause"></div>';
     host.appendChild(root);
     var fr = img('ui_frame'); if (fr) root.style.setProperty('--h-frame', 'url(' + fr + ')');
     var q = function (s) { return root.querySelector(s); };
-    el = { top: q('.h-top'), rn: q('.rn'), pips: root.querySelectorAll('.h-pip'), phn: q('.h-phn'), phi: q('.h-phi'), evt: q('.h-evt'), time: q('.h-time'), tbar: q('.h-tbar'), score: q('.h-sc b'),
-      left: q('.h-left'), lb: q('.h-lb'), stage: q('.h-stage'), bot: q('.h-bot'), help: q('.h-help'), dock: q('.h-dock'), now: q('.h-now'), mis: q('.h-mis'), gd: q('.h-gd'), mid: q('.h-mid'), bar: q('.h-act'), mini: q('.h-mini'), newmsg: q('.h-newmsg'), chat: q('.h-chat'), log: q('.h-log'), typ: q('.h-typ'), chips: q('.h-chips'),
+    el = { top: q('.h-top'), rn: q('.rn'), pips: root.querySelectorAll('.h-pip'), phn: q('.h-phn'), phi: q('.h-phi'), evt: q('.h-evt'), time: q('.h-time'), tbar: q('.h-tbar'),
+      left: q('.h-left'), lb: q('.h-lb'), stage: q('.h-stage'), bot: q('.h-bot'), help: q('.h-help'), dock: q('.h-dock'), now: q('.h-now'), air: q('.h-air'), abil: q('.h-abil'), say: q('.h-say'), dlg: q('.h-dlg'), gd: q('.h-gd'), mid: q('.h-mid'), bar: q('.h-act'), mini: q('.h-mini'), newmsg: q('.h-newmsg'), chat: q('.h-chat'), log: q('.h-log'), typ: q('.h-typ'), chips: q('.h-chips'),
       form: q('.h-in'), input: q('.h-in input'), dos: q('.h-dos'), tst: q('.h-tst'), fx: q('.h-fx'), pause: q('.h-pause'), dbadge: q('.h-dock .h-badge'), cbadge: q('.h-ch .h-badge') };
     el.sts = {}; STATS.forEach(function (s) { el.sts[s.k] = q('.h-st[data-k=' + s.k + ']'); });
     root.addEventListener('click', onClick);
@@ -484,7 +560,7 @@
     applyOpts(); mounted = true;
     if (!rafOn) { rafOn = true; requestAnimationFrame(loop); }
     setInterval(clockTick, 200);
-    renderChips(); setChat(!isMobile());
+    renderChips(); setChat(!isMobile()); setAir(airV); paintAbil();
     return root;
   }
   function isMobile() { return W.matchMedia && W.matchMedia('(max-width:820px),(max-height:520px)').matches; }
@@ -518,7 +594,6 @@
       var c = s.color; if (s.bad) c = t >= 80 ? '#ff5d5d' : t >= 55 ? '#f2a93b' : s.color;
       n.style.setProperty('--c', c);
     });
-    el.score.textContent = Math.round(disp.score);
   }
   function clockTick() {
     if (!mounted || !P) return;
@@ -565,7 +640,7 @@
     if (newPh) { cur.phase = ph; cur.round = P.round; onPhase(ph, null); }
     else livePanels();
     if (P.players && P.players[R]) { if (localReady && !P.players[R].ready && P.phase === 'explore') { /* servidor lo ignoró: mantiene local */ } }
-    paintBottom(); paintNow(); paintMission();
+    paintBottom(); paintNow();
     // cuaderno: eventos de dificultad de agua
     waterWarn();
   }
@@ -592,7 +667,7 @@
     el.phn.innerHTML = '<span class="t" style="color:' + info.c + '"><span>' + info.e + ' ' + esc(info.n) + '</span></span>';
     var me = P.players && P.players[R], ap = V && V.ap != null ? V.ap : me && me.ap;
     var instr = info.i;
-    if (ph === 'explore') instr = (ap === 0 ? 'Sin acciones: habla con el equipo y pulsa Terminar exploración' : 'Pulsa E junto a un icono brillante · te quedan ' + (ap == null ? '?' : ap) + ' acciones');
+    if (ph === 'explore') instr = 'Explora, habla con el equipo y convoca la reunión cuando quieras';
     if (ph === 'plan' && localVote) instr = 'Has votado ' + optLetter(localVote) + '. Puedes cambiar hasta que acabe el tiempo';
     if (ph === 'secret' && secretSealed) instr = 'Decisión sellada. Espera a la resolución';
     el.phi.textContent = instr; el.phi.title = instr;
@@ -609,7 +684,7 @@
   }
   function paintLeft() {
     if (!R) return;
-    var b = roleInfo(R), me = (P.players && P.players[R]) || {}, ap = V && V.ap != null ? V.ap : (me.ap != null ? me.ap : 0);
+    var b = roleInfo(R), me = (P.players && P.players[R]) || {}, ap = V && V.ap != null ? V.ap : me.ap;
     var apH = ''; for (var i = 0; i < 3; i++) apH += '<i class="' + (i < ap ? '' : 'off') + '"></i>';
     var goal = V && V.goal, gh = '', gbar = '';
     if (goal) {
@@ -620,7 +695,7 @@
     }
     var team = PLAYER_ROLES.map(teamCard).join('');
     el.lb.innerHTML =
-      '<div class="h-me">' + portrait(R, 'neutral', 56) + '<div class="nm"><div class="n" style="color:' + b.color + '">' + esc(b.name) + '</div><div class="r">' + esc(b.title) + '</div></div><div class="h-ap">ACCIONES<div title="Acciones restantes">' + apH + '</div></div></div>' +
+      '<div class="h-me">' + portrait(R, P.s && P.s.salud < 30 ? 'hurt' : 'neutral', 56) + '<div class="nm"><div class="n" style="color:' + b.color + '">' + esc(b.name) + '</div><div class="r">' + esc(b.title) + '</div></div>' + (ap != null ? '<div class="h-ap">ACCIONES<div title="Acciones restantes">' + apH + '</div></div>' : '') + '</div>' +
       (gh ? '<div>' + gh + '</div>' : '') +
       '<div class="h-more">' + gbar +
       '<div><div class="h-sec">' + icon('estrella', 12) + ' MISIÓN DEL EQUIPO</div><div class="h-txt">' + esc(P.mission || 'Sacad a Lía con vida antes de que el agua llegue a 100.') + '</div></div>' +
@@ -628,68 +703,81 @@
   }
   function curAp() { var me = P && P.players && P.players[R]; return V && V.ap != null ? V.ap : me && me.ap; }
   function readyCfg() {
-    var d = { label: 'Terminar exploración → ir al plan', tip: 'Pulsa cuando hayas acabado de explorar. Cuando todos terminen, pasamos al plan: ahí debatís y votáis la ruta. Los compañeros IA terminan solos.', after: 'Cuando todos terminen, pasamos al plan', pulse: curAp() === 0, disabled: false };
+    var d = { label: 'Convocar reunión', tip: 'Adelanta la crisis: el equipo se reúne y se debate el plan. No es obligatorio ni bloquea el juego: puedes seguir explorando hasta que arranque. Los compañeros IA convocan cuando acaban.', after: '', pulse: false, disabled: false };
     if (readyOv) Object.keys(readyOv).forEach(function (k) { if (readyOv[k] != null) d[k] = readyOv[k]; });
     return d;
   }
   function paintBottom() {
     var ph = P.phase, me = P.players && P.players[R], ready = !!((me && me.ready) || localReady);
     if (ph !== 'explore') { el.bot.innerHTML = ''; el.bot.dataset.k = ''; return; }
-    var left = PLAYER_ROLES.filter(function (r) { return r !== R && P.players && P.players[r] && !P.players[r].ready; }).map(function (r) { return roleInfo(r).name; });
-    var c = readyCfg(), key = JSON.stringify(c) + ready + left.join(',');
+    var done = PLAYER_ROLES.filter(function (r) { return r !== R && P.players && P.players[r] && P.players[r].ready; }).map(function (r) { return roleInfo(r).name; });
+    var c = readyCfg(), key = JSON.stringify(c) + ready + done.join(',');
     if (el.bot.dataset.k === key) return; el.bot.dataset.k = key;
-    el.bot.innerHTML = ready ? '<div class="h-hint"><b>✔ Listo.</b> ' + (left.length ? 'Esperamos a ' + esc(left.join(', ')) + '. Cuando todos terminen, pasamos al plan.' : 'Todos listos: pasamos al plan.') + '</div>'
-      : '<div class="h-rdy"><button class="h-btn teal ' + (c.pulse ? 'pulse glow' : '') + '" data-act="ready" title="' + esc(c.tip) + '"' + (c.disabled ? ' disabled' : '') + '>✔ ' + esc(c.label) + ' <kbd>R</kbd></button><small>' + esc(c.after) + '</small></div>';
+    el.bot.innerHTML = ready ? '<div class="h-hint"><b>✔ Reunión convocada.</b> ' + (done.length ? 'También la piden: ' + esc(done.join(', ')) + '. ' : '') + 'Sigue explorando hasta que arranque.</div>'
+      : '<div class="h-rdy"><button class="h-btn teal ' + (c.pulse ? 'pulse glow' : '') + '" data-act="ready" title="' + esc(c.tip) + '"' + (c.disabled ? ' disabled' : '') + '>📣 ' + esc(c.label) + ' <kbd>R</kbd></button>' + (c.after ? '<small>' + esc(c.after) + '</small>' : '') + '</div>';
   }
 
-  /* ---------- guiado: QUÉ HACER AHORA + pasos de la misión ---------- */
+  /* ---------- guiado: UN solo objetivo (con su porqué) ---------- */
   var NOW_IC = { explore: 'ojo', go: 'mapa', plan: 'voto', wait: 'reloj', danger: 'alerta', done: 'estrella', urgent: 'reloj', info: 'chat', secret: 'candado' };
-  function nowAuto(ph, ap) {
+  function nowAuto(ph) {
     var o = {
-      briefing: ['Lee el evento del tramo', 'Marca el ambiente; enseguida empieza la exploración.', 'info'],
-      explore: ap === 0 ? ['Habla con el equipo', 'Sin acciones: cuéntales lo que sabes y termina la exploración.', 'wait'] : ['Explora la cueva', 'Camina hasta un icono brillante y pulsa E. Te quedan ' + (ap == null ? '?' : ap) + ' acciones.', 'explore'],
+      briefing: ['Escucha lo que pasa', 'Marca el ambiente; enseguida sigues explorando.', 'info'],
+      explore: ['Explora la cueva', 'Camina hasta un icono brillante y pulsa E.', 'explore'],
       plan: ['Votad el plan', 'Debate en el chat y vota con 1 · 2 · 3. Gana la mayoría.', 'plan'],
       secret: ['Elige tu acción secreta', 'Nadie la ve hasta la resolución. 1-3 elige, otra vez sella.', 'secret'],
-      resolve: ['Mira qué ha pasado', 'Se tiran los dados del tramo.', 'info'],
-      summary: ['Revisa tus puntos', 'Cuando quieras, pasa al siguiente tramo.', 'done']
+      resolve: ['Mira qué ha pasado', 'Se tiran los dados de la crisis.', 'info'],
+      summary: ['Revisa tus puntos', 'Cuando quieras, sigue adelante.', 'done']
     }[ph];
     return o ? { text: o[0], sub: o[1], kind: o[2] } : null;
   }
   function paintNow() {
     if (!el.now || !P) return;
-    var ph = P.phase, me = P.players && P.players[R], ap = curAp(), ready = !!((me && me.ready) || localReady);
-    var n = nowOv || nowAuto(ph, ap);
-    if (ph === 'explore' && ready) n = { text: 'Esperando al equipo', sub: 'Cuando todos terminen, pasamos al plan.', kind: 'wait' };
-    else if (ph === 'explore' && ap === 0) n = { text: 'Terminar exploración → ir al plan', sub: 'Ya no te quedan acciones: pulsa el botón brillante de abajo (R).', kind: 'urgent', progress: n && n.progress };
+    var ph = P.phase, n = nowOv || nowAuto(ph);
     if (!n || ph === 'final') { el.now.style.display = 'none'; nowKey = ''; return; }
     el.now.style.display = '';
-    var pr = n.progress, key = [n.text, n.sub, n.kind, pr && pr.done, pr && pr.total].join('|');
+    var pr = n.progress, why = n.why || '', sub = n.sub || n.hint || '', key = [n.text, why, sub, n.kind, pr && pr.done, pr && pr.total].join('|');
     if (key === nowKey) return;
     var changed = nowKey !== '' && n.text !== nowKey.split('|')[0]; nowKey = key;
     var k = NOW_IC[n.kind] ? n.kind : 'go';
     el.now.className = 'h-now ' + (n.kind === 'urgent' || n.kind === 'wait' || n.kind === 'danger' ? n.kind : '');
-    el.now.innerHTML = '<div class="ic">' + icon(NOW_IC[k], 36) + '</div><div class="tx"><div class="t">' + esc(n.text) + '</div>' + (n.sub ? '<div class="s">' + esc(n.sub) + '</div>' : '') + '</div>' +
+    el.now.innerHTML = '<div class="ic">' + icon(NOW_IC[k], 36) + '</div><div class="tx"><div class="k">AHORA</div><div class="t">' + esc(n.text) + '</div>' + (why ? '<div class="w"><b>Por qué:</b> ' + esc(why) + '</div>' : '') + (sub ? '<div class="s">' + esc(sub) + '</div>' : '') + '</div>' +
       (pr && pr.total ? '<div class="pg">' + (pr.done | 0) + '/' + (pr.total | 0) + '<span><i style="width:' + clamp((pr.done | 0) / pr.total * 100, 0, 100) + '%"></i></span></div>' : '');
     if (changed) { void el.now.offsetWidth; el.now.classList.add('chg'); snd('toast'); }
   }
-  function paintMission() {
-    if (!el.mis || !P) return;
-    var m = misOv;
-    if (!m && P.phase === 'explore' && P.pois && P.pois.length) m = { title: 'Puntos de interés', steps: P.pois.map(function (p) { return { text: p.kind === 'secreto' && !p.used ? '???' : p.label, done: !!p.used }; }) };
-    if (!m || !m.steps || !m.steps.length || P.phase === 'final') { el.mis.innerHTML = ''; el.mis.style.display = 'none'; el.mis.dataset.k = ''; return; }
-    var key = JSON.stringify(m); if (el.mis.dataset.k === key) return; el.mis.dataset.k = key; el.mis.style.display = '';
-    el.mis.innerHTML = (m.title ? '<div class="ttl">' + esc(m.title).toUpperCase() + ' ' + m.steps.filter(function (x) { return x.done; }).length + '/' + m.steps.length + '</div>' : '') +
-      m.steps.map(function (x) { return '<span class="h-stp ' + (x.done ? 'done' : '') + '"><i>✔</i>' + esc(x.text) + '</span>'; }).join('');
-  }
   function setNow(o) { nowOv = o && o.text ? o : null; if (mounted && P) paintNow(); }
-  function setMission(o) { misOv = o || null; if (mounted && P) paintMission(); }
-  function setReady(o) { readyOv = o || null; if (mounted && P) { el.bot.dataset.k = ''; paintBottom(); paintNow(); } }
+  function setMission(o) { misOv = o || null; if (mounted && el.dos && el.dos.classList.contains('open') && !editing) { var prev = el.db ? el.db.scrollTop : 0; renderDossier(); if (el.db) el.db.scrollTop = prev; } }
+  function setReady(o) { readyOv = o || null; if (mounted && P) { el.bot.dataset.k = ''; paintBottom(); } }
+
+  /* aire (0..100 | null) */
+  function setAir(v) {
+    airV = v == null || isNaN(+v) ? null : clamp(+v, 0, 100);
+    if (!mounted) return; var a = el.air;
+    if (airV == null) { a.style.display = 'none'; a.innerHTML = ''; a.classList.remove('low'); return; }
+    var low = airV < 25;
+    if (!a.firstChild) a.innerHTML = '<span class="l">' + icon('agua', 14) + ' AIRE</span><span class="b"><i></i></span><b></b><em>¡SIN AIRE! Sal del agua</em>';
+    a.style.display = 'flex'; a.classList.toggle('low', low);
+    a.querySelector('.b i').style.width = airV + '%'; a.querySelector('b').textContent = Math.round(airV);
+    a.title = 'Aire: bajo el agua se gasta rápido. A 0 te ahogas y el equipo pierde salud. Sal a respirar o busca una bolsa de aire.';
+    if (low && !airWarned) { airWarned = true; snd('water_warn'); } if (!low) airWarned = false;
+  }
+  /* habilidad del rol (tecla Q) y fila «Pedir ayuda» */
+  function paintAbil() {
+    if (!el.abil) return; var ab = abilO, hp = helpO, h = '';
+    if (ab) h += '<div class="h-ab"><button class="h-btn ' + (ab.ready ? 'teal glow' : 'alt') + '" data-act="ability" title="' + esc(ab.hint || '') + '"' + (ab.ready ? '' : ' aria-disabled="true"') + '><kbd>' + esc(ab.key || 'Q') + '</kbd> ' + esc(ab.label || 'Habilidad') + '</button>' + (ab.hint ? '<small>' + esc(ab.hint) + '</small>' : '') + '</div>';
+    if (hp && hp.length) h += '<div class="h-ask"><span class="l">PEDIR AYUDA</span>' + hp.map(function (x, i) {
+      var b = roleInfo(x.role);
+      return '<button class="h-btn alt" data-act="ask" data-i="' + i + '" style="--rc:' + b.color + '" title="' + esc(x.hint || '') + '"' + (x.enabled === false ? ' disabled' : '') + '>' + esc(x.label || ('Pedir a ' + b.name)) + '</button>'; }).join('') + '</div>';
+    var key = h; if (el.abil.dataset.k === key) return; el.abil.dataset.k = key; el.abil.innerHTML = h; el.abil.style.display = h ? '' : 'none';
+  }
+  function setAbilities(o) { abilO = o && typeof o === 'object' ? o : null; if (mounted) paintAbil(); }
+  function setHelp(l) { helpO = Array.isArray(l) ? l : null; if (mounted) paintAbil(); }
+  function setQuick(l) { quickO = Array.isArray(l) ? l.filter(function (x) { return x && (x.label || x.text); }) : null; if (mounted) { el.chips.dataset.k = ''; renderChips(); } }
   function getInsets() {
     var z = { left: 0, right: 0, top: 0, bottom: 0 }; if (!root || !mounted || hidden) return z;
     var rr = root.getBoundingClientRect(), mob = isMobile();
     function shown(n) { return n && n.getClientRects().length > 0 && getComputedStyle(n).display !== 'none'; }
     var top = el.top.getBoundingClientRect().bottom;
-    if (shown(el.now) || shown(el.mis)) top = Math.max(top, el.gd.getBoundingClientRect().bottom);
+    if (shown(el.now) || shown(el.air)) top = Math.max(top, el.gd.getBoundingClientRect().bottom);
     z.top = top - rr.top + 4;
     if (shown(el.left) && (!mob || el.left.classList.contains('mob'))) z.left = el.left.getBoundingClientRect().right - rr.left + 4;
     if (!mob && shown(el.chat)) z.right = rr.right - el.chat.getBoundingClientRect().left + 4;
@@ -715,13 +803,13 @@
     if (ph === 'plan') localVote = null;
     var keep = (ph === 'resolve' && panelName === 'resolve') || (ph === 'summary' && panelName === 'summary');
     if (!keep) closePanel(true);
-    if (ph === 'briefing') openEvent(data);
+    if (ph === 'briefing' && !window.RC_NOCARD) openEvent(data);
     else if (ph === 'plan') openPlan(data);
     else if (ph === 'secret') openSecret(data);
     if (PHASES[ph] && ph !== 'final') { snd(ph === 'briefing' ? 'round_start' : 'open'); }
     if (ph === 'final') { hideAllPanels(); }
     helpFor(ph, true);
-    paintTop(); paintBottom(); paintNow(); paintMission(); renderChips();
+    paintTop(); paintBottom(); paintNow(); renderChips();
     addRoundSep();
   }
   function showPhase(phase, data) {
@@ -986,23 +1074,26 @@
     addRoundSep();
     var kind = m.kind || 'chat', from = m.from || 'sys', b = roleInfo(from), me = from === R && (kind === 'chat' || kind === 'share');
     var stick = pinned || me, first = chatCount === 0, grouped = kind === 'chat' || kind === 'share', tx = String(m.text || '');
+    var mood = m.mood || (kind === 'radio' ? 'alert' : 'talk');
     if (grouped) {
-      var card = m.card, same = card && (tx === card.text || tx.indexOf(card.text) >= 0 || card.text.indexOf(tx) >= 0);
+      var card = m.card || (kind === 'share' && tx ? { title: 'Información compartida', text: tx } : null), same = card && (tx === card.text || tx.indexOf(card.text) >= 0 || card.text.indexOf(tx) >= 0);
       var pre = card ? (tx && !same ? '<div class="pre">' + esc(tx) + '</div>' : '') : esc(tx || '📎 ha compartido una tarjeta');
-      var inner = card ? pre + '<div class="h-card"><div class="t">' + icon('ojo', 12) + ' INTEL · ' + esc(card.title || '') + (card.reliability != null ? relTag(card.reliability) : '') + '</div><div class="x">' + esc(card.text || '') + '</div></div>' : pre;
+      var inner = card ? pre + '<div class="h-card"><div class="t">' + icon('ojo', 12) + ' ' + (me ? 'HAS COMPARTIDO' : 'COMPARTE') + ' · ' + esc(card.title || 'Intel') + (card.reliability != null ? relTag(card.reliability) : '') + '</div><div class="x">' + esc(card.text || '') + '</div></div>' : pre;
       inner += m.altered && me ? '<div style="font-size:11px;color:#ffb0a8;margin-top:5px">✏️ Alterada: solo tú lo sabes</div>' : '';
       var last = el.log.lastElementChild, g;
-      if (last && last.classList.contains('h-g') && last.dataset.from === from && (!m.t || !lastChatT || m.t - lastChatT < 90000)) g = last;
+      if (last && last.classList.contains('h-g') && last.dataset.from === from && last.dataset.mood === mood && (!m.t || !lastChatT || m.t - lastChatT < 90000)) g = last;
       else {
-        g = D.createElement('div'); g.className = 'h-g' + (me ? ' me' : ''); g.dataset.from = from;
-        g.innerHTML = '<div class="av">' + portrait(from, 'neutral', 56) + '</div><div class="bd"><div class="hd" style="color:' + b.color + '">' + esc(b.name) + '<i>' + esc(b.title) + (me ? ' · TÚ' : P && P.players && P.players[from] && P.players[from].ai ? ' · IA' : '') + '</i><time>' + fmtTime(m.t) + '</time></div><div class="bs"></div></div>';
+        g = D.createElement('div'); g.className = 'h-g' + (me ? ' me' : ''); g.dataset.from = from; g.dataset.mood = mood;
+        g.innerHTML = '<div class="av">' + portrait(from, mood, 48) + '</div><div class="bd"><div class="hd" style="color:' + b.color + '">' + esc(b.name) + '<i>' + esc(b.title) + (me ? ' · TÚ' : P && P.players && P.players[from] && P.players[from].ai ? ' · IA' : '') + '</i><time>' + fmtTime(m.t) + '</time></div><div class="bs"></div></div>';
         el.log.appendChild(g);
       }
       var bb = D.createElement('div'); bb.className = 'h-b' + (card ? ' card' : ''); bb.innerHTML = inner; g.querySelector('.bs').appendChild(bb);
+      say(from, mood, card ? (tx && !same ? tx + ' · ' : '') + card.text : tx);
     } else {
       var d = D.createElement('div'); d.className = 'h-m ' + kind;
-      d.innerHTML = kind === 'radio' ? '<div class="bd"><div class="hd">📻 LÍA · RADIO</div><div class="tx">' + esc(tx) + '</div></div>' : '<div class="tx">' + (kind === 'event' ? '⚠ ' : '') + esc(tx) + '</div>';
+      d.innerHTML = kind === 'radio' ? '<div class="av">' + portrait(from === 'sys' ? 'lia' : from, mood, 48) + '</div><div class="bd"><div class="hd">📻 ' + esc(b.name.toUpperCase()) + ' · RADIO</div><div class="tx">' + esc(tx) + '</div></div>' : '<div class="tx">' + (kind === 'event' ? '⚠ ' : '') + esc(tx) + '</div>';
       el.log.appendChild(d);
+      if (kind === 'radio') say(from === 'sys' ? 'lia' : from, mood, tx);
     }
     chatCount++; lastChatT = m.t || 0;
     while (el.log.children.length > 80) el.log.removeChild(el.log.firstChild);
@@ -1012,6 +1103,16 @@
       if (!me) snd(kind === 'radio' ? 'radio_on' : kind === 'share' ? 'share' : kind === 'chat' ? 'chat_recv' : kind === 'event' ? 'toast' : 'click');
     }
     if (isMobile() && !el.chat.classList.contains('open') && !me) { var pv = el.chat.querySelector('.h-ch'); pv.dataset.pv = (b.name + ': ' + tx).slice(0, 60); }
+  }
+  /* panel «hablando ahora»: retrato grande del último que ha hablado + su frase */
+  var sayKey = '';
+  function say(from, mood, text) {
+    if (!el.say || from === 'sys') return;
+    var b = roleInfo(from), sc = (W.innerHeight || 800) >= 760 ? 2 : 1.5, key = from + mood + text + sc;
+    if (key === sayKey) return; sayKey = key;
+    el.say.classList.add('on');
+    el.say.innerHTML = '<div class="fc" style="--c:' + b.color + '">' + bigFace(from, mood, sc) + '</div><div class="sb"><div class="nm" style="color:' + b.color + '">' + esc(b.name) + '<i>' + esc(b.title) + '</i><span>HABLA AHORA</span></div><div class="sx">' + esc(text) + '</div></div>';
+    el.say.classList.remove('pop'); void el.say.offsetWidth; el.say.classList.add('pop');
   }
   function addRoundSep() {
     if (!P || !P.round || P.round === lastChatRound || !el.log) return;
@@ -1045,10 +1146,11 @@
   }
   function chatOpen() { return isMobile() ? el.chat.classList.contains('open') : !el.chat.classList.contains('min'); }
   function renderChips() {
-    var list = customChips || (P && CHIPS[P.phase]) || CHIPS._, opt = P && P.plan && P.plan.options || [];
-    list = list.map(function (t) { return t.replace('{A}', 'A').replace('ruta B', opt.length ? 'ruta ' + 'ABC'[Math.min(1, opt.length - 1)] : 'ruta B'); });
-    var key = list.join('|'); if (el.chips.dataset.k === key) return; el.chips.dataset.k = key;
-    el.chips.innerHTML = list.map(function (t) { return '<button type="button" data-act="chip">' + esc(t) + '</button>'; }).join('');
+    var list, opt = P && P.plan && P.plan.options || [];
+    if (quickO && quickO.length) list = quickO.slice(0, 6).map(function (x) { return { label: x.label || x.text, text: x.text || x.label }; });
+    else list = (customChips || (P && CHIPS[P.phase]) || CHIPS._).map(function (t) { t = t.replace('{A}', 'A').replace('ruta B', opt.length ? 'ruta ' + 'ABC'[Math.min(1, opt.length - 1)] : 'ruta B'); return { label: t, text: t }; });
+    var key = JSON.stringify(list); if (el.chips.dataset.k === key) return; el.chips.dataset.k = key;
+    el.chips.innerHTML = list.map(function (c) { return '<button type="button" data-act="chip" data-text="' + esc(c.text) + '" title="' + esc(c.text) + '">' + esc(c.label) + '</button>'; }).join('');
   }
 
   /* ---------- cuaderno ---------- */
@@ -1078,7 +1180,9 @@
       var sc = V && V.secret;
       body = sc ? '<div class="h-sc1"><div class="lock">🔒</div><div class="t">' + esc(sc.text) + '</div><div class="n">' + (sc.revealed ? '⚠ Este secreto ya se ha revelado.' : 'Nadie más lo sabe. Decide si lo confiesas o lo ocultas: puede salir a la luz en la resolución.') + '</div></div>' : '<div class="h-empty">Sin secreto.</div>';
     } else if (dossierTab === 'objetivo') {
-      var g = V && V.goal; body = g ? '<div class="h-sc1" style="border-color:var(--h-amber)"><div class="lock">🎯</div><div class="t">' + esc(g.text) + '</div><div class="n">' + (g.points ? 'Recompensa: +' + g.points + ' puntos al final. ' : '') + 'Se evalúa al terminar la partida. Es privado: tu equipo no sabe cuál es.</div></div>' : '<div class="h-empty">Sin objetivo.</div>';
+      var mh = '';
+      if (misOv && misOv.steps && misOv.steps.length) mh = '<div class="h-gh">' + esc(misOv.title || 'MISIÓN') + '</div><ul class="h-mlist">' + misOv.steps.map(function (x) { return '<li class="' + (x.done ? 'done' : '') + '"><i>' + (x.done ? '✔' : '') + '</i><span>' + esc(x.text) + '</span></li>'; }).join('') + '</ul>';
+      var g = V && V.goal; body = mh + (g ? '<div class="h-sc1" style="border-color:var(--h-amber)"><div class="lock">🎯</div><div class="t">' + esc(g.text) + '</div><div class="n">' + (g.points ? 'Recompensa: +' + g.points + ' puntos al final. ' : '') + 'Se evalúa al terminar la partida. Es privado: tu equipo no sabe cuál es.</div></div>' : '<div class="h-empty">Sin objetivo.</div>');
     } else {
       var n = (P && P.hallazgos) || 0, cells = ''; for (var i = 0; i < 5; i++) cells += '<div class="' + (i < n ? 'on' : '') + '">' + (i < n ? '📜' : '?') + '</div>';
       body = '<div class="h-gh">LORE DE LA CUEVA · ' + n + '/5</div><div class="h-hl">' + cells + '</div><div class="h-empty">Los POI secretos (brillo tenue) guardan hallazgos coleccionables.</div>';
@@ -1090,8 +1194,82 @@
     var c = ((V && V.intel) || []).filter(function (x) { return x.id === id; })[0]; if (!c) return;
     c.shared = true; editing = null; snd(asIs ? 'share' : 'lie');
     if (cb.share) cb.share(id, asIs ? { asIs: true } : { asIs: false, text: text });
-    renderDossier(); toastNote(asIs ? 'Tarjeta compartida con el equipo' : 'Has compartido una versión alterada');
+    renderDossier(); setChat(true); pinned = true; toastNote(asIs ? 'Compartida: mira el chat' : 'Has compartido una versión alterada: mira el chat');
   }
+
+  /* ---------- diálogo estilo Castlevania: SotN ---------- */
+  function dlgScale(who, mood) { // escala ENTERA según el alto/ancho de pantalla
+    var f = faceInfo(who, mood), fw = f ? f.fw : 64, vh = W.innerHeight || 700, bw = (el.dlg && el.dlg.clientWidth) || (W.innerWidth || 1000);
+    var px = Math.min(.30 * vh, .34 * bw, 320);
+    return Math.max(1, Math.floor(px / fw));
+  }
+  function dialogue(lines, o) {
+    if (!mounted) mount();
+    o = o || {};
+    lines = (Array.isArray(lines) ? lines : [lines]).map(function (l) {
+      if (typeof l === 'string') l = { text: l };
+      l = l || {}; return { who: l.who || l.role || l.from || 'director', mood: l.mood || 'neutral', text: String(l.text == null ? '' : l.text), name: l.name, title: l.title, radio: l.radio };
+    }).filter(function (l) { return l.text; });
+    if (!lines.length) return Promise.resolve();
+    var go = function () { return runDialogue(lines, o); };
+    var pr = (dlgQ || Promise.resolve()).then(go, go); dlgQ = pr; return pr;
+  }
+  function runDialogue(lines, o) {
+    return new Promise(function (done) {
+      var box = el.dlg, i = -1, typed = 0, text = '', tm = 0, talkTm = 0, line = null, fin = false, autoTm = 0, speed = o.speed || 26, ended = false, swap = false;
+      if (D.activeElement && D.activeElement.blur && typingNow()) D.activeElement.blur();
+      box.innerHTML = '<div class="dl-wrap"><div class="dl-por"></div><div class="dl-box"><div class="dl-name"><b></b><i></i></div><div class="dl-text"><span class="a"></span><span class="b"></span></div><div class="dl-foot"><span class="pg"></span><span class="arr">▼</span><button type="button" class="sk" data-act="dlgskip">Saltar <kbd>Esc</kbd></button></div></div></div>';
+      var por = box.querySelector('.dl-por'), nm = box.querySelector('.dl-name'), ta = box.querySelector('.a'), tb = box.querySelector('.b'), wrap = box.querySelector('.dl-wrap'), pg = box.querySelector('.pg'), arr = box.querySelector('.arr');
+      box.classList.add('on'); root.classList.add('dlg'); dlgOpen = true; snd('dialogue_open'); if (cb.dialogue) cb.dialogue(true);
+      function face(mood) { var sc = dlgScale(line.who, mood); por.innerHTML = bigFace(line.who, mood, sc); wrap.style.setProperty('--pw', (por.firstChild.offsetWidth || 64 * sc) + 'px'); wrap.style.setProperty('--ph', (por.firstChild.offsetHeight || 64 * sc) + 'px'); }
+      function next() {
+        clearTimeout(tm); clearTimeout(talkTm); clearTimeout(autoTm); i++;
+        if (i >= lines.length) return end();
+        line = lines[i]; text = line.text; typed = 0; fin = false; swap = false;
+        var b = roleInfo(line.who); wrap.style.setProperty('--c', b.color); wrap.style.setProperty('--cg', b.color + '55'); box.classList.toggle('radio', line.who === 'lia' || !!line.radio);
+        nm.querySelector('b').textContent = line.name || b.name; nm.querySelector('i').textContent = line.title != null ? line.title : b.title; nm.style.display = (line.name || b.name) ? '' : 'none';
+        face(line.mood); por.classList.remove('pop'); void por.offsetWidth; por.classList.add('pop');
+        ta.textContent = ''; tb.textContent = text; arr.style.visibility = 'hidden'; pg.textContent = lines.length > 1 ? (i + 1) + '/' + lines.length : '';
+        if (o.onLine) { try { o.onLine(line, i); } catch (e) { } }
+        step(); talkAnim();
+      }
+      function step() {
+        if (fin || ended) return;
+        typed++; ta.textContent = text.slice(0, typed); tb.textContent = text.slice(typed);
+        var ch = text.charAt(typed - 1);
+        if (ch && ch !== ' ' && typed % 2 === 0) { try { if (W.Sound && W.Sound.talk) W.Sound.talk(line.who, line.mood); else if (typed % 4 === 0) snd('typing'); } catch (e) { } }
+        if (typed >= text.length) return finish();
+        tm = setTimeout(step, speed * (/[.!?…]/.test(ch) ? 9 : /[,;:]/.test(ch) ? 4 : 1));
+      }
+      function talkAnim() { // boca abierta/cerrada mientras escribe (solo moods tranquilos; con otras expresiones se mantiene el gesto)
+        clearTimeout(talkTm); if (fin || ended || (line.mood !== 'neutral' && line.mood !== 'talk')) return;
+        swap = !swap; face(swap ? 'talk' : 'neutral'); talkTm = setTimeout(talkAnim, 150);
+      }
+      function finish() {
+        fin = true; clearTimeout(tm); clearTimeout(talkTm); typed = text.length; ta.textContent = text; tb.textContent = '';
+        face(line.mood === 'talk' ? 'neutral' : line.mood); arr.style.visibility = 'visible';
+        if (o.auto) autoTm = setTimeout(next, o.auto);
+      }
+      function advance() { if (ended) return; if (!fin) finish(); else { snd('click'); next(); } }
+      function end() {
+        if (ended) return; ended = true; clearTimeout(tm); clearTimeout(talkTm); clearTimeout(autoTm);
+        W.removeEventListener('keydown', onK, true); box.removeEventListener('click', onC);
+        box.classList.add('out'); root.classList.remove('dlg'); dlgOpen = false;
+        setTimeout(function () { if (!dlgOpen) { box.classList.remove('on', 'out', 'radio'); box.innerHTML = ''; } if (cb.dialogue && !dlgOpen) cb.dialogue(false); }, 220);
+        dlgCur = null; done();
+      }
+      function onK(e) {
+        if (e.ctrlKey || e.metaKey || e.altKey || /^F\d+$/.test(e.key) || e.key === 'Shift' || e.key === 'Control' || e.key === 'Alt') return;
+        e.stopImmediatePropagation(); e.preventDefault();
+        if (e.key === 'Escape') { if (o.skippable !== false) end(); else advance(); }
+        else if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight' || e.key === 'e' || e.key === 'E') { if (!e.repeat) advance(); }
+      }
+      function onC(e) { if (e.target.closest('[data-act=dlgskip]')) { if (o.skippable !== false) end(); return; } advance(); }
+      W.addEventListener('keydown', onK, true); box.addEventListener('click', onC);
+      dlgCur = { end: end }; next();
+    });
+  }
+  var dlgCur = null;
 
   /* ---------- ayuda y pausa ---------- */
   function helpFor(ph, auto) {
@@ -1164,7 +1342,9 @@
       case 'closeevt': closePanel(); break;
       case 'skiprs': break;
       case 'cont': if (panel && panel._end) panel._end(); break;
-      case 'chip': sendChat(t.textContent); break;
+      case 'chip': sendChat(t.dataset.text || t.textContent); break;
+      case 'ability': if (abilO && abilO.ready === false) { snd('error'); } if (cb.ability) cb.ability(); break;
+      case 'ask': var hx = helpO && helpO[+t.dataset.i]; if (hx && hx.enabled !== false && cb.ask) cb.ask(hx.role, hx.gateId); break;
       case 'chatmin': setChat(!chatOpen()); break;
       case 'chatfocus': setChat(true); el.input.focus(); break;
       case 'help': toggleHelp(); break;
@@ -1188,7 +1368,6 @@
     if (!mounted) mount(); var n = D.createElement('div'); n.className = 'h-fl ' + (type || 'info') + (/PTS|PUNTOS|¡/.test(txt) ? ' big' : '');
     n.textContent = txt; var rr = root.getBoundingClientRect(), x = rr.width / 2, y = rr.height * .4;
     if (where && typeof where === 'object') { x = where.x; y = where.y; }
-    else if (where === 'score') { var b = el.score.getBoundingClientRect(); x = b.left - rr.left + b.width / 2; y = b.bottom - rr.top + 18; }
     else if (where && el.sts[where]) { var b2 = el.sts[where].getBoundingClientRect(); x = b2.left - rr.left + b2.width / 2; y = b2.bottom - rr.top + 20; }
     else { x += (Math.random() - .5) * 120; }
     n.style.left = x + 'px'; n.style.top = y + 'px'; el.fx.appendChild(n); setTimeout(function () { n.remove(); }, 1700);
@@ -1229,7 +1408,7 @@
   var Hud = {
     mount: mount, update: update, showPhase: showPhase, showResolve: showResolve, showSummary: showSummary,
     achievement: achievement, floatText: floatText, setOptions: setOptions,
-    setNow: setNow, setMission: setMission, setReady: setReady, getInsets: getInsets, setMinimapSource: function (f) { miniFn = typeof f === 'function' ? f : null; drawMini(); }, onInsets: function (f) { cb.insets = f; },
+    setNow: setNow, setMission: setMission, setReady: setReady, setAir: setAir, setAbilities: setAbilities, setHelp: setHelp, setQuick: setQuick, dialogue: dialogue, isDialogue: function () { return dlgOpen; }, skipDialogue: function () { if (dlgCur) dlgCur.end(); }, getInsets: getInsets, setMinimapSource: function (f) { miniFn = typeof f === 'function' ? f : null; drawMini(); }, onInsets: function (f) { cb.insets = f; },
     hide: function () { hidden = true; if (root) { root.classList.add('off'); } },
     show: function () { hidden = false; if (root) root.classList.remove('off'); },
     chat: { add: function (m) { chatAdd(m); }, typing: typing, clear: function () { if (el.log) el.log.innerHTML = ''; seenChat = {}; chatCount = 0; lastChatRound = 0; lastChatFrom = null; unread = 0; badge(); }, focus: function () { setChat(true); el.input.focus(); } },
@@ -1237,9 +1416,10 @@
     openDossier: openDossier, closeDossier: closeDossier, help: function () { helpFor(cur.phase, false); }, shake: shake, flash: flash, sparks: sparks, note: note,
     openPause: function () { if (!paused) openPause(); }, closePause: closePause,
     closePanel: function () { closePanel(true); }, isTyping: typingNow, resetHelp: function () { helpSeen = {}; lsSet('rcv3_hudhelp', helpSeen); },
-    reset: function () { this.chat.clear(); closePanel(true); closeDossier(); cur = { phase: null, round: 0 }; dispInit = false; waterLevelHit = 0; lastIntelLen = 0; intelSeen = 0; localReady = false; localVote = null; secretSel = null; secretSealed = false; P = null; V = null; nowOv = misOv = readyOv = null; nowKey = ''; },
+    reset: function () { this.chat.clear(); closePanel(true); closeDossier(); cur = { phase: null, round: 0 }; dispInit = false; waterLevelHit = 0; lastIntelLen = 0; intelSeen = 0; localReady = false; localVote = null; secretSel = null; secretSealed = false; P = null; V = null; nowOv = misOv = readyOv = null; nowKey = ''; airV = null; abilO = helpO = quickO = null; if (this.skipDialogue) this.skipDialogue(); setAir(null); paintAbil(); sayKey = ''; if (el.say) { el.say.classList.remove('on'); el.say.innerHTML = ''; } },
     onChat: function (f) { cb.chat = f; }, onShare: function (f) { cb.share = f; }, onVote: function (f) { cb.vote = f; }, onSecret: function (f) { cb.secret = f; },
     onReady: function (f) { cb.ready = f; }, onExit: function (f) { cb.exit = f; }, onSettings: function (f) { cb.settings = f; }, onPause: function (f) { cb.pause = f; },
+    onAbility: function (f) { cb.ability = f; }, onAsk: function (f) { cb.ask = f; }, onDialogue: function (f) { cb.dialogue = f; },
     onFx: function (f) { cb.fx = f; }, onChatFocus: function (f) { cb.focus = f; }, onTyping: function (f) { cb.typing = f; },
     _dbg: function () { return { P: P, V: V, R: R, panel: panelName }; }
   };

@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>hud5-test</title><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}#game{position:absolute;inset:0;background:linear-gradient(#0d2b3a,#1b1038 70%,#0a0716);overflow:hidden}
+#game:before{content:"";position:absolute;left:0;right:0;bottom:0;height:35%;background:repeating-linear-gradient(90deg,#2a2236 0 32px,#241c2e 32px 64px);border-top:6px solid #4b3a63}</style></head>
+<body><div id="game"></div>
+<script src="../src/assets.js"></script><script src="../src/hud.js"></script><script src="../src/ui.js"></script>
+<script>
+window.Sound={_v:.4,setVolume(v){this._v=v},getVolume(){return this._v},sfx(){},music(){},talk(r,m){(window.talks=window.talks||[]).push(r+':'+m)}};
+const R='medica';
+const pub={v:5,phase:'explore',round:2,tleft:62,s:{agua:48,salud:62,material:55,confianza:70},score:{total:340},
+ event:{id:'derrumbe',title:'Derrumbe en la galería',text:'Un temblor sacude la cueva.',art:'event_derrumbe',radio:'Chicos, se oye todo crujir...'},
+ pois:[],plan:{options:[{id:'A',title:'Ruta alta',text:'Subir por la grieta norte.'},{id:'B',title:'Cruzar',text:'Cruzar la galería.'},{id:'C',title:'Esperar',text:'Esperar.'}],votes:{}},
+ players:{guia:{name:'Nico',ready:true,ai:true,connected:true},medica:{name:'Ona',ready:false,ai:false,connected:true},ing:{name:'Iván',ready:false,ai:true,connected:true}},chat:[]};
+const priv={goal:{text:'Mantén la salud de Lía por encima de 60.',stat:'salud',min:60,points:150},secret:{text:'Sospechas una lesión interna.'},intel:[{id:'i1',round:2,title:'Barro en la orilla',text:'El barro marca por dónde baja el agua.',reliability:.8,shared:false}]};
+Hud.mount(document.getElementById('game'));Hud.update(pub,priv,R);
+window.pub=pub;window.priv=priv;window.R=R;
+</script></body></html>

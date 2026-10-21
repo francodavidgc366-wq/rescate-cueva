@@ -1,59 +1,80 @@
-<!doctype html><meta charset="utf-8"><title>engine-test v3</title>
+<!doctype html><meta charset="utf-8"><link rel="icon" href="data:,"><title>engine-test v5</title>
 <style>body{margin:0;background:#0b0816;color:#ddd;font:12px monospace}canvas{display:block;margin:0 auto}#bar{padding:4px;text-align:center}button{font:12px monospace}</style>
-<div id="bar">Flechas/AD mover, W trepar, Espacio saltar, E interactuar (mantener = curar) | rol:
+<div id="bar">Flechas/AD mover, W trepar, Espacio saltar, E interactuar, Q habilidad | rol:
  <select id="role" onchange="T.setRole(this.value)"><option>guia</option><option>medica</option><option>ing</option></select>
- tramo <select id="rnd" onchange="T.round(+this.value)"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+ zona <select id="rnd" onchange="T.round(+this.value)"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
  <button onclick="T.inst.setWater(T.inst.water+12)">agua +12</button>
  <button onclick="T.inst.setWaterRate(T.inst.waterRate?0:2)">agua continua</button>
- <button onclick="T.bots()">bots a POI</button>
  <button onclick="T.inst.say('medica','Esto no me gusta nada...')">decir</button>
  <button onclick="T.inst.say('ing','💡')">emoji</button>
  <button onclick="T.inst.spawnFx('rescue')">rescate</button> <span id="info"></span></div>
 <canvas id="c"></canvas>
 <script src="../src/assets.js"></script><script src="../src/engine.js"></script>
 <script>
-var state={round:1,players:{guia:{ap:3,name:'Nico'},medica:{ap:3,name:'Dra. Ona'},ing:{ap:3,name:'Ivan'}}};
-var log=[],ICON=['mapa','caja','radio','secreto'],LAB=['Examinar mapa','Abrir caja','Escuchar radio','Hallazgo oculto'];
+var state={round:1,players:{guia:{ap:99,name:'Nico'},medica:{ap:99,name:'Dra. Ona'},ing:{ap:99,name:'Ivan'}}};
+var log=[],ICON=['mapa','caja','radio','secreto','lampara','llave'],LAB=['Examinar mapa','Abrir caja','Escuchar radio','Hallazgo oculto','Lampara','Llave'];
+var T=window.T={state:state,log:log,sfx:[],drown:[],gates:[]};
 var inst=Engine.create(document.getElementById('c'),{assets:window.ASSETS,getState:function(){return state},localRole:'guia',
-  onInteract:function(role,id){log.push(role+':'+id);if(/^p\d/.test(id)){state.players[role].ap--;inst.markPoi(id,{used:true,by:role});inst.say(role,'He mirado '+LAB[+id[1]].toLowerCase())}},
-  onSfx:function(n,r){T.sfx.push(n)}});
-var T=window.T={inst:inst,state:state,log:log,sfx:[],
-  round:function(r){state.round=r;inst.gather(r);inst.setPois(r,[0,1,2,3].map(function(i){return{id:'p'+i,slot:i,label:LAB[i],icon:ICON[i],kind:i==3?'secreto':'info'}}));inst.setWater(5+r*6)},
-  setRole:function(r){inst.setLocal(r)},
-  bots:function(){['guia','medica','ing'].forEach(function(r,i){if(r!==inst.active)inst.botGoto(r,'p'+(i+1))})}};
-// test automatizado: cada rol llega a pie a los 4 POI de cada tramo (maxSec simulados por POI), sin fundidos
-T.reach=function(maxSec,fromFloor,wfix){maxSec=maxSec||50;var res=[],fails=0;inst.stop();
-  ['guia','medica','ing'].forEach(function(role){inst.setLocal('guia');[1,2,3,4,5].forEach(function(r){
-    state.round=r;inst.gather(r);['guia','medica','ing'].forEach(function(x){inst.setBot(x,x===role)});
-    state.players.guia.ap=state.players.medica.ap=state.players.ing.ap=99;
-    if(wfix!==undefined){inst.setWater(wfix===true?5+r*6:wfix);for(var s0=0;s0<900;s0++)inst.step()}
-    inst.setPois(r,[0,1,2,3].map(function(i){return{id:'p'+i,slot:i,label:LAB[i],icon:ICON[i],kind:i==3?'secreto':'info'}}));
-    var b=inst.bodies[role];if(fromFloor){b.x=9*16+8;b.y=25*16;b.x+=(r-1)*960}
-    var w0=inst.stats.warps;
-    [0,1,2,3].forEach(function(i){inst.gather(r);var id='p'+i,t0=inst.tick,ok=inst.botGoto(role,id),done=false,n0=log.length;
+  onInteract:function(role,id){log.push(role+':'+id);if(/^p\d/.test(id)){inst.markPoi(id,{used:true,by:role})}},
+  onSfx:function(n,r){var b=n==='jump'&&inst.bodies[r];T.sfx.push({n:n,r:r,t:inst.tick,x:b?b.x:0,y:b?b.y:0})},onDrown:function(r){T.drown.push(r+'@'+inst.tick+' '+(inst.bodies[r].x/16|0)+','+(inst.bodies[r].y/16|0)+' w'+Math.round(inst.water))},onGate:function(r,id,k){T.gates.push(r+':'+id+':'+k)}});
+T.inst=inst;
+// lista de POI de una zona: 6 slots; los de puerta llevan gate (su slot esta detras de la puerta)
+T.pois=function(z){var gs=inst.getGates().filter(function(g){return g.zone===z}),used={},l=[];gs.forEach(function(g){used[g.slot]=1;l.push({id:'p'+z+'g'+g.slot,gate:g.id,label:LAB[g.slot],icon:ICON[g.slot],kind:'info'})});
+  for(var i=0;i<6;i++)if(!used[i]&&!gs.some(function(g){return g.slot===i}))l.push({id:'p'+z+'_'+i,slot:i,label:LAB[i],icon:ICON[i],kind:i==3?'secreto':'info'});return l};
+T.round=function(r){state.round=r;inst.setUnlocked(r);inst.gather(r);inst.setPois(r,T.pois(r))};
+T.setRole=function(r){inst.setLocal(r)};
+T.openAll=function(){inst.getGates().forEach(function(g){inst.openGate(g.id,true)})};
+T.run=function(n){for(var i=0;i<n;i++)inst.step()};
+T.unlockAll=function(){inst.setUnlocked(5)};
+// alcanzabilidad: con TODAS las puertas abiertas, cada rol llega a pie a los 6 POI de las 5 zonas desde el spawn de la zona
+T.reach=function(maxSec,water){maxSec=maxSec||60;var res=[],fails=0,tot=0;inst.stop();inst.resetGates();T.openAll();inst.setUnlocked(5);inst.setWater(water||5);inst.setWaterRate(0);for(var k=0;k<900;k++)inst.step();
+  ['guia','medica','ing'].forEach(function(role){inst.setLocal('guia');[1,2,3,4,5].forEach(function(z){
+    ['guia','medica','ing'].forEach(function(x){inst.setBot(x,x===role)});
+    state.round=z;inst.gather(z);inst.setPois(z,T.pois(z));
+    Object.keys(inst.pois).forEach(function(id){var p=inst.pois[id];inst.gather(z);inst.bodies[role].air=100;inst.markPoi(id,{used:false});p.disc=true;var t0=inst.tick,ok=inst.botGoto(role,id),done=false,n0=log.length;tot++;
       for(var k=0;k<maxSec*60&&ok&&!done;k++){inst.step();for(var q=n0;q<log.length;q++)if(log[q]===role+':'+id)done=true}
-      if(!done)fails++;var bb=inst.bodies[role];res.push((done?'OK ':'FAIL ')+role+' r'+r+' '+id+' '+((inst.tick-t0)/60).toFixed(1)+'s'+(ok?'':' (sin ruta)')+(done?'':' @'+((bb.x-(r-1)*960)/16|0)+','+(bb.y/16|0)+' w='+inst.water.toFixed(0)))});
-    res.push('  warps '+(inst.stats.warps-w0))})});
-  inst.start();return{fails:fails,warps:inst.stats.warps,res:res}};
-// conectividad: desde cada POI se llega a los otros 3 (grafo de saltos)
-T.conn=function(){var bad=[];[1,2,3,4,5].forEach(function(r){inst.setPois(r,[0,1,2,3].map(function(i){return{id:'p'+i,slot:i,kind:'info'}}));var o=inst.nav.out;
-  var ids=[0,1,2,3].map(function(i){var q=inst.slotPos(r,i);return Math.round(q.y/16)*300+Math.floor(q.x/16)});
-  ids.forEach(function(a,i){var seen={};seen[a]=1;var qq=[a];while(qq.length){var n=qq.shift();(o[n]||[]).forEach(function(e){if(!seen[e.to]){seen[e.to]=1;qq.push(e.to)}})}
-    ids.forEach(function(b,j){if(!seen[b])bad.push('r'+r+' p'+i+'->p'+j)})})});return bad};
-// bots sin atascos: 5 min simulados (18000 ticks) yendo de POI en POI y paseando
-T.soak=function(minutes){minutes=minutes||5;inst.stop();var out=[],tot=minutes*3600,seg=3600/5;
-  ['guia','medica','ing'].forEach(function(x){inst.setBot(x,true)});state.players.guia.ap=state.players.medica.ap=state.players.ing.ap=99;
-  var w0=inst.stats.warps,maxStill=0,still={},lastx={},pos0={};
+      if(!done)fails++;var bb=inst.bodies[role];res.push((done?'OK ':'FAIL ')+role+' z'+z+' s'+p.slot+' '+id+' '+((inst.tick-t0)/60).toFixed(1)+'s'+(ok?'':' (sin ruta)')+(done?'':' @'+(bb.x/16|0)+','+(bb.y/16|0)))})})});
+  inst.start();return{total:tot,fails:fails,warps:inst.stats.warps,max:Math.max.apply(null,res.map(function(r){return +(r.match(/ ([\d.]+)s/)||[0,0])[1]})),fail:res.filter(function(r){return r[0]==='F'}),res:res}};
+// puertas: cada puerta cerrada es alcanzable por el bot de su rol, el POI de detras NO lo es hasta abrir, y tras abrir si
+T.gatesTest=function(){var out=[],bad=0;inst.stop();inst.setWater(5);inst.setWaterRate(0);
+  inst.getGates().forEach(function(g){inst.resetGates();inst.setUnlocked(5);var z=g.zone;state.round=z;inst.gather(z);inst.setPois(z,T.pois(z));['guia','medica','ing'].forEach(function(x){inst.setBot(x,true)});
+    var pid=Object.keys(inst.pois).filter(function(id){return inst.pois[id].gate===g.id})[0],role=g.role,r={id:g.id,role:role,slot:g.slot,poi:pid};
+    var blockedBefore=!inst.botGoto(role,pid);r.blockedBefore=blockedBefore;
+    var other=['guia','medica','ing'].filter(function(x){return x!==role})[0];r.wrongRole=!inst.botOpenGate(other,g.id);
+    var cbv=null,ok=inst.botOpenGate(role,g.id,function(v){cbv=v});r.route=ok;var t0=inst.tick;
+    for(var k=0;k<90*60&&ok&&!inst.getGates().filter(function(q){return q.id===g.id})[0].open;k++)inst.step();
+    r.openS=((inst.tick-t0)/60).toFixed(1);for(var k2=0;k2<200;k2++)inst.step();r.open=inst.getGates().filter(function(q){return q.id===g.id})[0].open;r.cbf=function(){return cbv};
+    inst.gather(z);r.reachAfter=inst.botGoto(role,pid)&&true;var done=false,n0=log.length;for(var k3=0;k3<90*60&&r.reachAfter&&!done;k3++){inst.step();for(var q=n0;q<log.length;q++)if(log[q]===role+':'+pid)done=true}r.arrived=done;
+    out.push(r)});
+  return new Promise(function(res){setTimeout(function(){out.forEach(function(r){r.cb=r.cbf();delete r.cbf;r.ok=r.blockedBefore&&r.wrongRole&&r.route&&r.open&&r.cb===true&&r.arrived;if(!r.ok)bad++});inst.resetGates();inst.start();res({bad:bad,out:out})},100)})};
+// 5 min de bots (todos IA): sin atascos >10 s, sin saltos en bucle; el agua sube y baja; las puertas se abren/cierran
+T.soak=function(minutes){minutes=minutes||5;inst.stop();inst.resetGates();inst.setUnlocked(5);var tot=minutes*3600,w0=inst.stats.warps,l0=inst.stats.loops,still={},last={},lastT={},maxStill=0,stillWho='',jumps={guia:[],medica:[],ing:[]},loops=0,minZ={};
+  ['guia','medica','ing'].forEach(function(x){inst.setBot(x,true)});T.sfx.length=0;T.drown.length=0;inst.setWaterRate(0);
+  var air0=0,airMin=100;
   for(var k=0;k<tot;k++){
-    if(k%seg===0){var r=(k/seg|0)%5+1;state.round=r;inst.gather(r);inst.setPois(r,[0,1,2,3].map(function(i){return{id:'p'+i,slot:i,label:LAB[i],icon:ICON[i],kind:'info'}}));}
-    if(k%420===0)['guia','medica','ing'].forEach(function(x,i){inst.botGoto(x,'p'+((k/420|0)+i)%4)});
+    if(k%1800===0){var z=(k/1800|0)%5+1;state.round=z;inst.gather(z);inst.setPois(z,T.pois(z));inst.setWater([10,30,55,25,70][(k/1800|0)%5]);}
+    if(k%900===300){inst.getGates().forEach(function(g){if(g.zone===(k/1800|0)%5+1&&!g.open)inst.botOpenGate(g.role,g.id)})}
+    if(k%600===0)['guia','medica','ing'].forEach(function(x,i){var ids=Object.keys(inst.pois);if(ids.length&&(k/600|0)%3===i)inst.botGoto(x,ids[(k/600|0)%ids.length])});
     inst.step();
-    if(k%30===0)['guia','medica','ing'].forEach(function(x){var b=inst.bodies[x];still[x]=Math.abs(b.x-lastx[x])<1&&Math.abs(b.y-(pos0[x]||0))<1?(still[x]||0)+30:0;lastx[x]=b.x;pos0[x]=b.y;maxStill=Math.max(maxStill,still[x])})}
-  inst.start();return{warps:inst.stats.warps-w0,maxStillSec:maxStill/60,interacts:inst.stats.interacts}};
-T.dump=function(sec){var o=[],g=inst.world.g;for(var r=0;r<30;r++){var l='';for(var c=0;c<60;c++){var v=g[r*300+sec*60+c];l+=v==1?'#':v==2?'=':'.'}o.push(l)}return o.join('\n')};
+    if(k%30===0)['guia','medica','ing'].forEach(function(x){var b=inst.bodies[x];var mv=last[x]===undefined||Math.abs(b.x-last[x])>=1||Math.abs(b.y-lastT[x])>=1;still[x]=mv?0:(still[x]||0)+30;last[x]=b.x;lastT[x]=b.y;if(still[x]>maxStill){maxStill=still[x];stillWho=x+'@'+(b.x/16|0)+','+(b.y/16|0)+' k='+k+' swim='+b.swim+' goal='+(b.goal?(b.goal.gate?'gate':b.goal.poi?'poi':'w'):'none')+' air='+Math.round(b.air)+' calm='+b.calm+' busy='+b.busy+' water='+inst.water.toFixed(0)+' mac='+!!b.mac+' grounded='+b.grounded+' cur='+inst.curNode(b)+' xy='+b.x.toFixed(1)+','+b.y.toFixed(1)+' idleT='+b.idleT+' tile='+inst.tileAt(Math.floor(b.x/16),Math.round(b.y/16))+inst.tileAt(Math.floor(b.x/16),Math.round(b.y/16)-1)}airMin=Math.min(airMin,b.air)})}
+  // saltos: sfx 'jump' en tierra (los de natacion son 'swim'); bucle = >=8 saltos en 5 s con <1.5 tiles de desplazamiento
+  T.sfx.filter(function(e){return e.n==='jump'}).forEach(function(e){jumps[e.r].push(e)});
+  var maxJ=0,jw='',loops=0,loopEv=[];['guia','medica','ing'].forEach(function(x){var a=jumps[x];for(var i=0;i<a.length;i++){var c=0,xa=1e9,xb=-1e9,ya=1e9,yb=-1e9;for(var j=i;j<a.length&&a[j].t-a[i].t<300;j++){c++;xa=Math.min(xa,a[j].x);xb=Math.max(xb,a[j].x);ya=Math.min(ya,a[j].y);yb=Math.max(yb,a[j].y)}var dd=Math.max(xb-xa,yb-ya);if(c>=7&&xb-xa<=40&&yb-ya<=32){loops++;if(loopEv.length<3)loopEv.push(x+' '+a.slice(i,j).map(function(q){return q.t+':'+(q.x/16).toFixed(1)+','+(q.y/16).toFixed(1)}).join(' '))}if(c>maxJ){maxJ=c;jw=x+' t='+a[i].t+' disp='+Math.round(dd)}}});
+  inst.start();return{warps:inst.stats.warps-w0,loopsDetected:inst.stats.loops-l0,maxStillSec:maxStill/60,stillWho:stillWho,maxJumpsIn5s:maxJ,jumpWho:jw,jumpLoops:loops,loopEv:loopEv,interacts:inst.stats.interacts,lastLoop:inst.stats.lastLoop,drowns:T.drown.length,airMin:airMin}};
+T.airTest=function(){inst.stop();inst.setUnlocked(1);inst.gather(1);inst.setWater(100);inst.setWaterRate(0);for(var k=0;k<2000;k++)inst.step();var b=inst.bodies.guia;
+  ['guia','medica','ing'].forEach(function(x){inst.setBot(x,false)});b.x=40*16+8;b.y=35*16;b.vx=b.vy=0;b.air=100;T.drown.length=0;T.sfx.length=0;var a=[];
+  for(var s=0;s<30;s++){for(var k=0;k<60;k++)inst.step();a.push(Math.round(b.air))}
+  var sf={};T.sfx.forEach(function(e){sf[e.n]=(sf[e.n]||0)+1});var res={airPerSec:a.join(','),drowns:T.drown.length,sfx:sf};
+  b.x=50*16+8;b.y=33*16;b.air=10;for(var k=0;k<120;k++)inst.step();res.pocketAir=Math.round(b.air);inst.setWater(10);for(var k=0;k<600;k++)inst.step();res.airDry=Math.round(b.air);
+  inst.setBot('medica',false);inst.setBot('ing',false);inst.start();return res};
+T.dump=function(z){var o=[],g=inst.world.g;for(var r=0;r<40;r++){var l='';for(var c=0;c<100;c++){var v=g[r*500+(z-1)*100+c];l+=v==1?'#':v==2?'=':'.'}o.push(l)}return o.join('\n')};
+T.rmap=function(z,role){var seen={},b=inst.bodies[role||'guia'],sp=inst.world.spawns[z-1];inst.setUnlocked(5);inst.gather(z);var st=Math.round(sp.y/16)*500+Math.floor(sp.x/16);var o=inst.nav.out;var q=[st];seen[st]=1;
+  while(q.length){var n=q.shift();(o[n]||[]).forEach(function(e){if(!seen[e.to]){seen[e.to]=1;q.push(e.to)}})}
+  var g=inst.world.g,L=[];for(var r=0;r<40;r++){var l='';for(var c=0;c<100;c++){var v=g[r*500+(z-1)*100+c],id=r*500+(z-1)*100+c;l+=v==1?(seen[id]?'o':'#'):v==2?(seen[id]?'+':'='):(seen[id]?'o':'.')}L.push(l)}return L.join('\n')};
+T.shot=function(z,role,col,row){T.round(z);inst.setLocal(role||'guia');var b=inst.bodies[inst.active];b.x=((z-1)*100+col)*16+8;b.y=row*16;b.vx=b.vy=0;inst.setBot('medica',false);inst.setBot('ing',false);inst.setBot('guia',false);for(var k=0;k<150;k++)inst.step();inst.render();return[b.x,b.y]};
 T.round(1);
 var keys={};
-function send(){inst.setInput(inst.active,{left:keys.ArrowLeft||keys.a,right:keys.ArrowRight||keys.d,jump:keys[' '],interact:keys.e,up:keys.ArrowUp||keys.w,down:keys.ArrowDown||keys.s});}
+function send(){inst.setInput(inst.active,{left:keys.ArrowLeft||keys.a,right:keys.ArrowRight||keys.d,jump:keys[' '],interact:keys.e,up:keys.ArrowUp||keys.w,down:keys.ArrowDown||keys.s,ability:keys.q});}
 addEventListener('keydown',function(e){keys[e.key]=1;send();if(e.key.indexOf('Arrow')==0||e.key===' ')e.preventDefault()});
 addEventListener('keyup',function(e){keys[e.key]=0;send()});
 inst.fit(innerWidth,innerHeight-30);addEventListener('resize',function(){inst.fit(innerWidth,innerHeight-30)});

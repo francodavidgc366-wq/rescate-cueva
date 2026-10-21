@@ -1,13 +1,13 @@
 // main.js v3: orquestador. El host es la autoridad (fases, temporizadores, bots, motor); los clientes reciben `state` público + su `priv`.
 (function () {
   'use strict';
-  const RK = ['guia', 'medica', 'ing'], ZERO = { left: 0, right: 0, jump: 0, interact: 0, up: 0, down: 0 };
+  const RK = ['guia', 'medica', 'ing'], ZERO = { left: 0, right: 0, jump: 0, interact: 0, up: 0, down: 0, ability: 0 };
   const TRACK = { briefing: 'briefing', explore: 'explore', plan: 'plan', secret: 'secret', resolve: 'resolve', summary: 'summary' };
   const WHY = { sin_ap: 'Sin acciones: ya gastaste las 3', ya_visto: 'Ya has revisado esto', agotado: 'Otro compañero se lo ha llevado', fase: 'Ahora no se puede', poi: 'Eso no existe' };
   const S = window.Sound || {}, snd = (n) => { try { S.sfx && S.sfx(n); } catch (e) { } };
   let st = null, eng = null, cv = null, gameEl = null, myRole = 'ing', myId = 'solo', myPriv = null, mode = 'solo', started = false;
   let timer = null, snapT = null, busyRound = false, lastTrack = '', shownRes = -1, shownSum = -1, shownFinal = false, lastChatId = 0, lastChatAt = 0, lastStart = null;
-  let earlyN = 0, sec = 0, typing = false; const busy = {}, nextBot = {}, introReady = {}, keys = {};
+  let earlyN = 0, sec = 0, typing = false, lastScene = ''; const busy = {}, nextBot = {}, introReady = {}, keys = {};
   const isClient = () => mode === 'client';
   const ownerRole = id => RK.find(r => st.players[r].owner === id);
 
@@ -21,36 +21,63 @@
     addEventListener('resize', () => eng && eng.fit(innerWidth, innerHeight));
     Hud.mount(gameEl);
     Hud.onChat(onChat); Hud.onShare(onShare); Hud.onVote(onVote); Hud.onSecret(onSecret); Hud.onReady(onReady);
+    Hud.onAsk && Hud.onAsk(onAsk); Hud.onAbility && Hud.onAbility(() => { if (!isClient() && eng) { const o = eng.useAbility(myRole); if (o && !o.ok) Hud.floatText(o.reason === 'rol' ? 'Esa puerta la abre otro compañero: pídeselo por radio' : 'Aquí no puedes usar tu habilidad', 'bad'); } });
+    Hud.onDialogue && Hud.onDialogue(o => { if (o && eng) Object.keys(keys).forEach(k => keys[k] = 0), pushInput(); });
     Hud.onExit(() => location.reload()); Hud.onSettings(() => UI.openSettings());
     Hud.onFx && Hud.onFx((t, i) => eng && eng.camShake(i || 2)); Hud.onChatFocus && Hud.onChatFocus(b => { typing = b; pushInput(); });
   }
   function makeEngine(authority) {
     if (eng) return;
-    eng = Engine.create(cv, { assets: window.ASSETS, getState: () => st, authority, localRole: myRole, water: 10, onInteract, onSfx: n => snd(n) });
+    eng = Engine.create(cv, { assets: window.ASSETS, getState: () => st, authority, localRole: myRole, water: 10, onInteract, onSfx: n => snd(n), onGate, onDrown });
     eng.start(); eng.fit(innerWidth, innerHeight);
     const ins = () => { try { eng.setViewInsets(Hud.getInsets()); } catch (e) { } }; ins(); Hud.onInsets && Hud.onInsets(ins);
   }
-  // Misión: banner «qué hacer», pasos, etiqueta del botón y flecha guía (la IA no recomienda nada al cliente sin priv: try/catch)
-  let gKey = '';
+  // Misión v5: UN objetivo, flecha guía, habilidad, ayuda, aire, reunión y chips de chat contextuales
+  let gKey = '', quickMap = {};
+  const humansActed = () => RK.filter(r => st.players[r].owner).every(r => { try { return Story.privOf(st, r).ap < 3; } catch (e) { return true; } });
   function guide() {
     if (!st || !eng || !started || !myPriv || st.phase === 'intro' || st.phase === 'final') return;
+    const ex = st.phase === 'explore', air = eng.getAir ? eng.getAir(myRole) : 100;
+    Hud.setAir && Hud.setAir(ex && air != null && air < 99 ? air : null);
     let m; try { m = Story.mission(st, myRole); } catch (e) { return; } if (!m || !m.now) return;
-    const ex = st.phase === 'explore', rl = Story.readyLabel(st.phase) || {}, ap = myPriv.ap, k = JSON.stringify([m.now.text, m.steps.map(x => x.done), st.round, ex && ap]);
+    const cr = ex ? Story.crisisReady(st) : { ready: false }, g = ex ? eng.nearGate(myRole) : null;
+    const gates = (st.gates || []).filter(x => !st.gatesOpen[x.id] && x.zone === st.round && x.role !== myRole);
+    const k = JSON.stringify([m.now.text, m.steps.map(x => x.done), st.round, ex && myPriv.ap, !!g, cr.ready, gates.length]);
     if (k !== gKey) {
-      gKey = k;
-      Hud.setNow({ text: m.now.text, sub: m.now.hint || '', kind: ex ? (m.now.target ? 'go' : 'explore') : st.phase === 'plan' ? 'plan' : st.phase === 'secret' ? 'secret' : 'info' });
+      gKey = k; const rl = Story.readyLabel(st.phase) || {};
+      Hud.setNow({ text: m.now.text, why: m.now.why || '', sub: m.now.hint || '', kind: ex ? (m.now.target ? 'go' : 'explore') : st.phase === 'plan' ? 'plan' : st.phase === 'secret' ? 'secret' : 'info' });
       Hud.setMission({ title: m.title, steps: m.steps.map(x => ({ text: x.text, done: x.done })) });
-      Hud.setReady({ label: rl.label, tip: rl.tip, pulse: ex && ap === 0 });
+      Hud.setReady({ label: rl.label, tip: rl.tip, pulse: !!cr.ready });
+      const ab = { guia: 'Clavar anclaje', medica: 'Estabilizar / reptadero', ing: 'Puente / válvula' }[myRole];
+      Hud.setAbilities && Hud.setAbilities(ex ? { key: 'Q', label: ab, hint: g ? g.text : 'Se usa en el cartel con tu nombre, o junto a un compañero sin aire (Ona)', ready: !!g || myRole === 'medica' } : null);
+      Hud.setHelp && Hud.setHelp(ex ? gates.map(x => ({ role: x.role, label: 'Pedir a ' + { guia: 'Nico', medica: 'Ona', ing: 'Iván' }[x.role] + ': ' + x.kind, enabled: true, hint: x.why, gateId: x.id })) : null);
+      try { const q = Story.chatSuggest(st, myRole) || []; quickMap = {}; q.forEach(c => quickMap[c.text] = c); Hud.setQuick && Hud.setQuick(q.map(c => ({ label: c.label, text: c.text }))); } catch (e) { }
     }
     const tgt = ex && m.now.target ? m.now.target : null; if (tgt !== guide.t) { guide.t = tgt; eng.setGuide(tgt, tgt ? { label: m.now.short ? m.now.short.replace(/^Ve a /, '') : '' } : undefined); }
+  }
+  // Puertas de habilidad: el motor las abre (jugador o bot) y aquí se refleja en el estado de la historia
+  const helpFor = {};
+  function onGate(role, gateId) {
+    if (isClient() || !st) return;
+    const o = Story.openGate(st, role, gateId, { helpFor: helpFor[gateId] }); if (!o || !o.ok) return;
+    syncPois(); snd('gate_open'); Hud.floatText('PUERTA ABIERTA: ' + (o.kind || ''), 'info'); gKey = ''; push();
+  }
+  function onDrown(role) { if (isClient() || !st || st.phase !== 'explore') return; st.s.salud = Math.max(0, st.s.salud - 5); if (role === myRole) Hud.floatText('¡Te ahogas! -5 salud', 'bad'); }
+  function onAsk(toRole, gateId) {
+    if (isClient()) return Net.send('poi', { act: 'ask', toRole, gateId });
+    doAsk(myRole, toRole, gateId);
+  }
+  function doAsk(from, to, gateId) {
+    const q = Story.request(st, from, to, { gateId }); push(); if (!q || !q.ok || !q.accept || q.human) return;
+    helpFor[gateId] = from; setTimeout(() => { if (st && st.phase === 'explore') eng.botOpenGate(to, gateId, () => { }); }, q.delay || 1500);
   }
   function setupBots() { RK.forEach(r => eng.setBot(r, r !== myRole && (!isClient() ? st.players[r].ai : true))); eng.setLocal(myRole); }
   function showGame() { gameEl.style.display = 'flex'; Hud.show && Hud.show(); eng.fit(innerWidth, innerHeight); }
 
   // ---------- Teclado ----------
-  const KEYMAP = { ArrowLeft: 'left', a: 'left', ArrowRight: 'right', d: 'right', ArrowUp: 'up', w: 'up', ArrowDown: 'down', s: 'down', ' ': 'jump', e: 'interact' };
+  const KEYMAP = { ArrowLeft: 'left', a: 'left', ArrowRight: 'right', d: 'right', ArrowUp: 'up', w: 'up', ArrowDown: 'down', s: 'down', ' ': 'jump', e: 'interact', q: 'ability' };
   const kmap = e => KEYMAP[e.key.length > 1 ? e.key : e.key.toLowerCase()];
-  const cur = () => (st && st.phase === 'explore' && !typing) ? Object.assign({}, ZERO, keys) : ZERO;
+  const cur = () => (st && st.phase === 'explore' && !typing && !(Hud.isDialogue && Hud.isDialogue())) ? Object.assign({}, ZERO, keys) : ZERO;
   function pushInput() { if (!st || !eng || !started) return; const i = cur(); if (isClient()) Net.send('input', i); else eng.setInput(myRole, i); }
   addEventListener('keydown', e => { if (/INPUT|TEXTAREA/.test(e.target.tagName) || e.ctrlKey || e.metaKey) return; const k = kmap(e); if (k) { keys[k] = 1; if (st && st.phase === 'explore') e.preventDefault(); pushInput(); } });
   addEventListener('keyup', e => { const k = kmap(e); if (k) { keys[k] = 0; pushInput(); } });
@@ -76,6 +103,12 @@
     const t = TRACK[st.phase]; if (t && t !== lastTrack) { lastTrack = t; S.music && S.music(t); }
     S.setIntensity && S.setIntensity(st.s.agua / 100);
     (st.chat || []).forEach(m => { if (m.id > lastChatId) { lastChatId = m.id; lastChatAt = Date.now(); if (RK.includes(m.from) && (m.kind === 'chat' || m.kind === 'share') && eng) eng.say(m.from, String(m.text).slice(0, 70)); } });
+    const sk = st.round + ':' + st.phase;
+    if (sk !== lastScene) {
+      lastScene = sk; const kind = st.phase === 'briefing' ? 'event' : st.phase === 'plan' ? 'plan' : null;
+      if (kind && Hud.dialogue) { let ls = []; try { ls = Story.scene(st, kind) || []; } catch (e) { } if (st.round === 1 && kind === 'event') { try { ls = ls.concat(Story.scene(st, 'lia') || []); } catch (e) { } }
+        Hud.dialogue(ls).then(() => { if (kind === 'event' && mode !== 'client' && st && st.phase === 'briefing') advance(); }); }
+    }
     const res = st.lastRes;
     if (st.phase === 'resolve' && res && shownRes !== st.round) {
       shownRes = st.round;
@@ -104,7 +137,7 @@
 
   // ---------- Host: partida ----------
   async function startGame(o, noIntro) {
-    lastStart = o; shownRes = shownSum = -1; shownFinal = false; lastChatId = 0; lastTrack = ''; clearInterval(timer);
+    lastStart = o; shownRes = shownSum = -1; shownFinal = false; lastChatId = 0; lastTrack = ''; lastScene = ''; clearInterval(timer);
     const hostMode = o.host && !o.solo && window.Net && Net.role === 'host';
     mode = hostMode ? 'host' : 'solo'; myRole = o.role || 'ing'; myId = hostMode ? Net.localId : 'solo';
     const hs = hostMode ? Net.players.filter(p => !p.bot && RK.includes(p.role)).map(p => p.role) : [myRole];
@@ -122,7 +155,7 @@
   async function startRound() {
     busyRound = true; earlyN = 0;
     await Story.roundStart(st);
-    eng.setPois(st.round, st.pois); eng.gather(st.round); eng.pan(st.round); eng.setWaterRate(0); eng.setWater(st.s.agua);
+    eng.setUnlocked(st.round); eng.setPois(st.round, st.pois); try { eng.setPoiHints(Story.poiHints(st, myRole)); } catch (e) { } eng.gather(st.round); eng.pan(st.round); eng.setWaterRate(0); eng.setWater(st.s.agua);
     busyRound = false; push(); react('brief'); gKey = ''; guide.t = undefined; guide();
     const ev = st.event, fp = ev && ev.focus && ev.focus.poi && eng.getPoiPos(ev.focus.poi); if (fp) setTimeout(() => eng.focus(fp.x, fp.y, { ms: 2500 }), 1500);
   }
@@ -132,6 +165,7 @@
 
   function tick() {
     if (!st || busyRound || st.phase === 'intro' || st.phase === 'final') return;
+    if (Hud.isDialogue && Hud.isDialogue()) return;
     st.tleft = Math.max(0, st.tleft - 0.25);
     if (st.phase === 'explore') {
       const w = Story.tickWater(st, 0.25); eng.setWater(st.s.agua);
@@ -139,7 +173,8 @@
     }
     botLoop(); guide();
     if (st.phase === 'explore' && Date.now() - lastChatAt > 25000) { lastChatAt = Date.now(); react('idle'); }
-    const early = (st.phase === 'explore' && Story.allReady(st)) || (st.phase === 'plan' && allVoted()) || (st.phase === 'secret' && allSecret());
+    if (st.phase === 'explore' && !(sec % 20)) { try { Story.botRequest(st) && push(); } catch (e) { } }
+    const cr = st.phase === 'explore' ? Story.crisisReady(st) : {}, early = (st.phase === 'explore' && (Story.allConvened(st) || (cr.ready && (cr.reason === 'tiempo' || humansActed())))) || (st.phase === 'plan' && allVoted()) || (st.phase === 'secret' && allSecret());
     earlyN = early ? earlyN + 1 : 0;
     if (st.tleft <= 0 || earlyN >= 8) advance();
     else if (++sec % 4 === 0) push();
@@ -177,6 +212,7 @@
         if (!ok || st.phase !== 'explore') return; Story.exec(st, r, a); syncPois();
         Story.botChat(st, r, 'found', { poi: a.label, hide: false }).catch(() => { }).then(push); push();
       });
+    } else if (a.type === 'gate') { eng.botOpenGate(r, a.gateId, () => { });
     } else { const out = Story.exec(st, r, a); if (out && out.react) react(out.react.trigger, out.react.ctx); push(); }
   }
 
@@ -196,11 +232,16 @@
   function doChat(role, text) { text = String(text || '').slice(0, 300).trim(); if (!text) return; Story.say(st, role, text, 'chat'); react('chat', { from: role, text }); }
   function doShare(role, d) { const out = Story.share(st, role, d.cardId, { asIs: d.asIs !== false, text: d.text }); if (out && out.ok) { if (out.lie && role === myRole) Hud.floatText('Has compartido información falsa', 'bad'); if (out.react) react(out.react.trigger, out.react.ctx); } push(); }
   function doVote(role, optId) { const out = Story.vote(st, role, optId); if (out && out.react) react(out.react.trigger, out.react.ctx); push(); }
-  function onChat(text) { if (isClient()) Net.send('chat', { text }); else doChat(myRole, text); }
+  function onChat(text) {
+    const c = quickMap[text];
+    if (c && c.gateId && c.toRole) return onAsk(c.toRole, c.gateId);
+    if (c && c.cardId) return onShare(c.cardId);
+    if (isClient()) Net.send('chat', { text }); else doChat(myRole, text);
+  }
   function onShare(cardId, o) { const d = { act: 'share', cardId, asIs: !o || o.asIs !== false, text: o && o.text }; if (isClient()) Net.send('poi', d); else doShare(myRole, d); }
   function onVote(optId) { if (isClient()) Net.send('vote', { optId }); else doVote(myRole, optId); }
   function onSecret(idx) { if (isClient()) Net.send('secret', { idx }); else { Story.secretPick(st, myRole, idx); push(); } }
-  function onReady() { if (isClient()) Net.send('ready', { act: 'explore' }); else { Story.ready(st, myRole); push(); } }
+  function onReady() { if (isClient()) Net.send('ready', { act: 'explore' }); else { const o = Story.convene(st, myRole); if (o && !o.ok) Hud.floatText('Investiga algo antes de convocar al equipo', 'bad'); push(); } }
 
   // ---------- Red ----------
   function wireNet() {
@@ -208,10 +249,10 @@
     const host = () => mode === 'host' && st;
     Net.on('input', (d, from) => { if (!host() || from === 'p0') return; const r = ownerRole(from); if (!r) return; eng.setBot(r, false); eng.setInput(r, st.phase === 'explore' ? d : ZERO); });
     Net.on('chat', (d, from) => { if (!host()) return; const r = ownerRole(d.from || from); if (r && r !== myRole && d.text) doChat(r, d.text); });
-    Net.on('poi', (d, from) => { if (!host() || !d || d.act !== 'share') return; const r = ownerRole(from); if (r) doShare(r, d); });
+    Net.on('poi', (d, from) => { if (!host() || !d) return; const r = ownerRole(from); if (!r) return; if (d.act === 'share') doShare(r, d); else if (d.act === 'ask' && RK.includes(d.toRole)) doAsk(r, d.toRole, d.gateId); });
     Net.on('vote', (d, from) => { if (!host()) return; const r = ownerRole(from); if (r) doVote(r, d.optId); });
     Net.on('secret', (d, from) => { if (!host()) return; const r = ownerRole(from); if (r) { Story.secretPick(st, r, d.idx); push(); } });
-    Net.on('ready', (d, from) => { if (!host() || !d) return; if (d.act === 'intro') introReady[from] = 1; else if (d.act === 'explore') { const r = ownerRole(from); if (r) { Story.ready(st, r); push(); } } });
+    Net.on('ready', (d, from) => { if (!host() || !d) return; if (d.act === 'intro') introReady[from] = 1; else if (d.act === 'explore') { const r = ownerRole(from); if (r) { Story.convene(st, r); push(); } } });
     Net.on('players', () => { // quien se va pasa a compañero IA
       if (!host()) return; const live = Net.players.filter(p => !p.bot && p.connected !== false).map(p => p.id); let ch = false;
       RK.forEach(r => { const o = st.players[r].owner; if (o && o !== myId && !live.includes(o)) { st.players[r].owner = null; st.players[r].ai = true; st.players[r].connected = false; eng.setBot(r, true); ch = true; } });
@@ -238,6 +279,6 @@
   UI.on('restart', () => { if (isClient()) return UI.toast('Solo el anfitrión puede reiniciar.'); if (lastStart) startGame(lastStart, true); });
   UI.on('menu', () => location.reload());
   window.RC = { st: () => st, eng: () => eng, advance: () => advance(), priv: () => myPriv, role: () => myRole }; // gancho para pruebas
-  wireNet(); UI.showMenu();
+  window.RC_NOCARD = true; wireNet(); UI.showMenu();
   if (/#sala=/.test(location.hash)) UI.showLobby({ mode: 'join' });
 })();

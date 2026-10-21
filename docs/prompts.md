@@ -14,3 +14,5 @@ Secciones del prompt: `[CONTEXTO]`, `[EVENTO BASE]`/`[ESTADO PÚBLICO]`, `[CHAT 
 Historial: v1 prototipo; v2 secciones + ejemplo + validación estricta; v3 reparto de responsabilidades (IA = texto y decisiones de compañeros, código = reglas y azar), compañeros con información privada, árbitro con mentiras/secretos.
 
 v4 (sin cambio de prompts): `botChat` aplica limitador y anti-repetición también a la salida de la IA (frase repetida -> se usa la demo; frenado -> null). La intro y la ficha de rol ya no contienen secretos; solo `priv.secret` (y el prompt privado del propio bot) los incluye.
+
+v5 (sin cambio de prompts de IA): las etiquetas de POI del director IA se ignoran (nombre/why/puertas salen de las tablas por zona); `Story.request` y `Story.scene` son 100 % código (demo), sin llamada a Claude.

@@ -46,23 +46,26 @@ const TR = {
     perc: { t: 'x.......' + '........' }, mv: 'bell', wind: .8, drip: .5, base: .25, lp: 550,
     motif: [[0, 0, 7, 8], [0, 8, 6, 8], [1, 0, 5, 8], [1, 8, 4, 8], [2, 0, 3, 8], [2, 8, 2, 8], [3, 0, 1, 12]] }
 };
-const SFX_NAMES = 'click hover back error select confirm open close toast chat_send chat_recv typing tick tick_urgent round_start intel share lie vote vote_pass vote_fail secret_reveal dice resolve_good resolve_bad achievement grade_s grade_low water_warn thunder rumble drip radio_on radio_static heal rope plank rescue win lose cable jump land step splash swim interact'.split(' ');
-const THROTTLE = { hover: .04, step: .07, typing: .025, tick: .05, tick_urgent: .05, drip: .08, land: .08, jump: .08, click: .03 };
+const SFX_NAMES = 'click hover back error select confirm open close toast chat_send chat_recv typing tick tick_urgent round_start intel share lie vote vote_pass vote_fail secret_reveal dice resolve_good resolve_bad achievement grade_s grade_low water_warn thunder rumble drip radio_on radio_static heal rope plank rescue win lose cable jump land step splash swim interact gasp drown ability gate_open help dialogue_open'.split(' ');
+const THROTTLE = { hover: .04, step: .07, typing: .025, tick: .05, tick_urgent: .05, drip: .08, land: .08, jump: .08, click: .03, gasp: .3, dialogue_open: .15 };
 
 /* ---------------- Core: grafo + voces + secuenciador + SFX ---------------- */
-function Core(ctx) {
+function Core(ctx, master) {
   const sr = ctx.sampleRate, R = rng(20241021);
   const G = () => ctx.createGain();
   const gain = (v, to) => { const g = G(); g.gain.value = v; if (to) g.connect(to); return g; };
   const filt = (type, f, q) => { const b = ctx.createBiquadFilter(); b.type = type; b.frequency.value = f; if (q != null) b.Q.value = q; return b; };
   /* master: buses -> mute -> compresor -> saturador tanh (garantiza |x|<1: sin clipping digital) -> salida */
-  const out = gain(.9, ctx.destination);
-  const sat = ctx.createWaveShaper(); { const c = new Float32Array(2049); for (let i = 0; i < c.length; i++) c[i] = Math.tanh((i / 1024 - 1) * 1.1); sat.curve = c; } sat.connect(out);
-  const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -16; comp.knee.value = 14; comp.ratio.value = 3.5; comp.attack.value = .008; comp.release.value = .25; comp.connect(sat);
+  /* v5: bus -> mute -> compresor -> limitador -> lowpass 9k -> tanh (techo .64 = -3.9 dBFS) -> volumen maestro (<=1, def .4) -> salida */
+  const out = gain(master == null ? .4 : master, ctx.destination);
+  const sat = ctx.createWaveShaper(); { const c = new Float32Array(2049); for (let i = 0; i < c.length; i++) c[i] = .8 * Math.tanh((i / 1024 - 1) * 1.1); sat.curve = c; } sat.connect(out);
+  const mlp = filt('lowpass', 9000, .5); mlp.connect(sat);
+  const lim = ctx.createDynamicsCompressor(); lim.threshold.value = -6; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = .002; lim.release.value = .12; lim.connect(mlp);
+  const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -20; comp.knee.value = 14; comp.ratio.value = 3.5; comp.attack.value = .008; comp.release.value = .25; comp.connect(lim);
   const an = ctx.createAnalyser(); an.fftSize = 1024; out.connect(an);
   const muteG = gain(1, comp);
-  const musicVol = gain(.6, muteG), duck = gain(1, musicVol), musicIn = gain(1, duck);
-  const sfxVol = gain(.8, muteG), sfxIn = gain(1, sfxVol);
+  const musicVol = gain(.6, muteG), duck = gain(1, musicVol), musicIn = gain(.398, duck); // musica -8 dB vs v4
+  const sfxVol = gain(.8, muteG), sfxIn = gain(.631), sfxLP = filt('lowpass', 6000, .5); sfxIn.connect(sfxLP); sfxLP.connect(sfxVol); // SFX -4 dB y agudos suaves
   /* ruido y reverb (impulso generado: ruido estereo con decaimiento exponencial y amortiguacion de agudos creciente) */
   const nb = ctx.createBuffer(1, sr * 3, sr); { const d = nb.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = R() * 2 - 1; }
   const ir = ctx.createBuffer(2, Math.floor(sr * 2.6), sr);
@@ -75,7 +78,7 @@ function Core(ctx) {
   const sDly = ctx.createDelay(1); sDly.delayTime.value = .27; { const fb = gain(.32), lp = filt('lowpass', 2200); sDly.connect(lp); lp.connect(fb); fb.connect(sDly); lp.connect(gain(.5, sfxIn)); sW.connect(gain(.3, sDly)); }
 
   /* ---- voces ---- */
-  function adsr(p, t, v, a, d, s, dur, r) { p.setValueAtTime(.0001, t); p.linearRampToValueAtTime(v, t + a); const sl = Math.max(v * s, .0001); p.exponentialRampToValueAtTime(sl, t + a + d); const te = Math.max(t + dur, t + a + d); p.setValueAtTime(sl, te); p.exponentialRampToValueAtTime(.0001, te + r); return te + r; }
+  function adsr(p, t, v, a, d, s, dur, r) { a = Math.max(a, .006); p.setValueAtTime(.0001, t); p.linearRampToValueAtTime(v, t + a); const sl = Math.max(v * s, .0001); p.exponentialRampToValueAtTime(sl, t + a + d); const te = Math.max(t + dur, t + a + d); p.setValueAtTime(sl, te); p.exponentialRampToValueAtTime(.0001, te + r); return te + r; }
   function tone(dest, type, f, t, dur, v, o) {
     o = o || {}; const os = ctx.createOscillator(), g = G(); os.type = type; os.frequency.setValueAtTime(f, t);
     if (o.to) os.frequency.exponentialRampToValueAtTime(o.to, t + (o.glide || dur)); if (o.det) os.detune.value = o.det;
@@ -160,6 +163,14 @@ function Core(ctx) {
   }
   function setIntensity(x) { intensity = clamp(+x || 0, 0, 1); if (cur && cur.d.adapt) setLevels(cur, intensity); }
 
+  /* ---- blips de dialogo (typewriter): tono por rol, color por mood; muy suaves ---- */
+  const TALK = { guia: 200, medica: 330, ing: 150, lia: 400, director: 120 }, MOOD = { neutral: [1, 'sine'], alegre: [1.18, 'triangle'], feliz: [1.18, 'triangle'], tenso: [.94, 'triangle'], miedo: [1.3, 'sine'], triste: [.82, 'sine'], enfadado: [.88, 'triangle'], serio: [.92, 'sine'] };
+  function talk(role, mood, at) {
+    let b = TALK[role]; if (!b) { let h = 0; for (const ch of String(role || '')) h = (h * 31 + ch.charCodeAt(0)) | 0; b = 130 + mod(h, 280); }
+    const md = MOOD[mood] || MOOD.neutral, t = (at != null ? at : ctx.currentTime) + .003, f = b * md[0] * (1 + (R() - .5) * .08);
+    tone(sfxIn, md[1], f, t, .045, .05, { lp: 1800, a: .008, r: .03, to: f * (mood === 'tenso' || mood === 'triste' ? .95 : 1.04) });
+  }
+
   /* ---- SFX ---- */
   const m = mtof, rnd = () => R();
   function sfx(name, o, at) {
@@ -216,29 +227,35 @@ function Core(ctx) {
       case 'splash': nzz(0, .8, .5, { type: 'bandpass', f: 1500, to: 300, q: 1.2, a: .02 }); for (let i = 0; i < 5; i++) { const f = 400 + rnd() * 500; tn('sine', f, .05 + i * .09, .09, .1, { to: f * 2 }, W); } break;
       case 'swim': for (let i = 0; i < 2; i++) nzz(i * .3, .35, .22, { type: 'bandpass', f: 600, to: 1500, q: 1.2, a: .12 }); tn('sine', 500, .2, .08, .08, { to: 1100 }); break;
       case 'interact': arp([76, 83], .07, .5, .22, pl); nzz(.05, .3, .04, { type: 'highpass', f: 6000, a: .05 }, W); break;
+      case 'gasp': nzz(0, .32, .3, { type: 'bandpass', f: 600, to: 1700, q: 1, a: .1 }, W); tn('sine', 420, 0, .3, .05, { to: 640, a: .1 }); nzz(.4, .08, .05, { type: 'bandpass', f: 900, q: 1 }); break;
+      case 'drown': nzz(0, 1.6, .3, { f: 700, to: 150, a: .1, q: .6 }, W); for (let i = 0; i < 6; i++) { const f = 500 - i * 45 + rnd() * 80; tn('sine', f, .1 + i * .22, .14, .12, { to: f * 1.8, a: .02 }, W); } tn('sine', 90, .2, 1.4, .25, { to: 40, a: .3 }); break;
+      case 'ability': arp([79, 84, 88, 91], .06, .6, .2); nzz(0, .35, .08, { type: 'bandpass', f: 800, to: 3200, q: 1, a: .15 }, W); tn('sine', 300, 0, .3, .1, { to: 900, a: .1 }); break;
+      case 'gate_open': nzz(0, 1.8, .35, { f: 300, to: 120, a: .4, q: .6, am: [7, .4] }); tn('sawtooth', 70, 0, 1.8, .12, { lp: 260, to: 95, glide: 1.6, a: .4, am: [9, .4] }); tn('sine', 48, 0, 1.8, .3, { a: .4 }); bl(72, 1.5, 1, .2); bl(79, 1.6, 1.2, .18); break;
+      case 'help': for (let i = 0; i < 2; i++) { tn('triangle', 600, i * .42, .32, .2, { to: 860, a: .03, lp: 2400 }, W); tn('sine', 1200, i * .42, .3, .04, { to: 1720, a: .03 }, W); } break;
+      case 'dialogue_open': nzz(0, .16, .08, { type: 'bandpass', f: 500, to: 1800, q: 1, a: .06 }); bl(79, .05, .35, .2); bl(86, .12, .45, .16); break;
       default: return false;
     }
     return true;
   }
-  return { ctx, an, music, sfx, pump, setIntensity, nodes: { muteG, musicVol, sfxVol, duck, out, comp }, get cur() { return cur; }, get intensity() { return intensity; } };
+  return { ctx, an, music, sfx, talk, pump, setIntensity, nodes: { lim, mlp, sfxLP, muteG, musicVol, sfxVol, duck, out, comp }, get cur() { return cur; }, get intensity() { return intensity; } };
 }
 
 /* ---------------- tiempo real: estado, desbloqueo, voz, persistencia ---------------- */
 let ctx = null, core = null, want = null, pumpTimer = null, hooked = false, voiceOK = false, speaking = 0, utter = null, speakGuard = null, lastSfx = {}, warned = {};
-let S = { muted: false, vols: { music: .6, sfx: .8, voice: 1 } };
-try { const j = JSON.parse(localStorage.getItem(KEY) || 'null'); if (j) { S.muted = !!j.muted; for (const k in S.vols) if (j.vols && j.vols[k] >= 0 && j.vols[k] <= 1) S.vols[k] = +j.vols[k]; } } catch (e) { }
+let S = { muted: false, vols: { music: .6, sfx: .8, voice: 1 }, master: .4 };
+try { const j = JSON.parse(localStorage.getItem(KEY) || 'null'); if (j) { S.muted = !!j.muted; if (j.master >= 0 && j.master <= 1) S.master = +j.master; for (const k in S.vols) if (j.vols && j.vols[k] >= 0 && j.vols[k] <= 1) S.vols[k] = +j.vols[k]; } } catch (e) { }
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { } };
 const running = () => !!ctx && ctx.state === 'running';
 
 function applyGains() {
   if (!core) return; const t = ctx.currentTime, N = core.nodes;
-  N.muteG.gain.setTargetAtTime(S.muted ? 0 : 1, t, .04); N.musicVol.gain.setTargetAtTime(S.vols.music, t, .05); N.sfxVol.gain.setTargetAtTime(S.vols.sfx, t, .05);
+  N.muteG.gain.setTargetAtTime(S.muted ? 0 : 1, t, .04); N.musicVol.gain.setTargetAtTime(S.vols.music, t, .05); N.sfxVol.gain.setTargetAtTime(S.vols.sfx, t, .05); N.out.gain.setTargetAtTime(S.master, t, .05);
 }
 function ensure() {
   if (core) return core;
   try {
     const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
-    ctx = new AC({ latencyHint: 'interactive' }); core = Core(ctx); applyGains();
+    ctx = new AC({ latencyHint: 'interactive' }); core = Core(ctx, S.master); applyGains();
     ctx.onstatechange = () => { if (running()) onRunning(); };
     pumpTimer = setInterval(() => { if (running()) { core.pump(ctx.currentTime + .6); } else if (ctx.state === 'interrupted') ctx.resume().catch(() => { }); }, 80);
     document.addEventListener('visibilitychange', () => { if (!document.hidden && ctx && ctx.state !== 'running') ctx.resume().catch(() => { }); });
@@ -282,7 +299,7 @@ function speak(text, o) {
   if (!text || S.muted || S.vols.voice <= 0 || typeof speechSynthesis === 'undefined' || typeof SpeechSynthesisUtterance === 'undefined') return false;
   try {
     speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text), v = pickVoice(), w = WHO[o.who] || [1, 1]; u.lang = 'es-ES'; if (v) { u.voice = v; u.lang = v.lang; }
-    u.pitch = clamp(o.pitch || w[0], .1, 2); u.rate = clamp(o.rate || w[1], .5, 1.6); u.volume = S.vols.voice; utter = u; const id = ++speaking;
+    u.pitch = clamp(o.pitch || w[0], .1, 2); u.rate = clamp(o.rate || w[1], .5, 1.6); u.volume = clamp(S.vols.voice * (.3 + .7 * S.master), 0, 1); // v5: voz acompasada al volumen maestro (def .4 -> .58) utter = u; const id = ++speaking;
     const end = () => { if (id === speaking) { speaking = 0; setDuck(false); clearTimeout(speakGuard); } };
     u.onstart = () => { if (id === speaking) setDuck(true); }; u.onend = u.onerror = end;
     clearTimeout(speakGuard); speakGuard = setTimeout(end, 2500 + text.length * 90); // si el motor nunca avisa (sin voces), no dejar la musica atenuada
@@ -296,17 +313,27 @@ const Sound = {
   setIntensity(x) { if (ensure()) core.setIntensity(x); else return; },
   mute(b) { S.muted = b === undefined ? true : !!b; if (S.muted) stopSpeak(); applyGains(); save(); return S.muted; },
   toggle() { return Sound.mute(!S.muted); },
+  setVolume(v) { S.master = clamp(+v || 0, 0, 1); applyGains(); save(); return S.master; },
+  getVolume() { return S.master; },
+  talk(role, mood) {
+    if (!ensure() || !running() || S.muted) return false; const t = ctx.currentTime; if (Sound._lt > t - .06) return false; Sound._lt = t;
+    try { core.talk(role, mood); return true; } catch (e) { return false; }
+  },
+  _lt: 0,
   setVol(k, v) { if (!(k in S.vols)) return false; S.vols[k] = clamp(+v || 0, 0, 1); applyGains(); save(); return true; },
   state() {
     return { running: running(), ctxState: ctx ? ctx.state : 'none', muted: S.muted, music: core && core.cur ? core.cur.name : null, want, intensity: core ? core.intensity : 0,
-      vols: Object.assign({}, S.vols), speaking: !!speaking, voice: (() => { try { const v = pickVoice(); return v ? v.name + ' (' + v.lang + ')' : null; } catch (e) { return null; } })() };
+      vols: Object.assign({}, S.vols), master: S.master, speaking: !!speaking, voice: (() => { try { const v = pickVoice(); return v ? v.name + ' (' + v.lang + ')' : null; } catch (e) { return null; } })() };
   },
   level() { if (!core) return 0; const a = new Float32Array(1024); core.an.getFloatTimeDomainData(a); let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * a[i]; return Math.sqrt(s / a.length); }, // RMS de la salida real (VU / pruebas)
   /* Render offline (tests): kind 'music'|'sfx' -> Promise<AudioBuffer> */
   render(kind, name, o) {
     o = o || {}; const sec = o.seconds || (kind === 'music' ? 20 : 3), sr = o.sampleRate || 44100, OC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
-    const oc = new OC(2, Math.ceil(sec * sr), sr), c = Core(oc);
+    const oc = new OC(2, Math.ceil(sec * sr), sr), c = Core(oc, o.master);
+    if (o.burst) o.burst.forEach(b => c.sfx(b[0], null, b[1]));
     if (kind === 'music') { if (o.intensity != null) c.setIntensity(o.intensity); c.music(name, { offline: true, at: 0, x: o.intensity }); c.pump(sec + .2); }
+    else if (o.burst) { }
+    else if (kind === 'talk') c.talk(name, o.mood, o.at || 0);
     else c.sfx(name, o.opts, o.at || 0);
     return oc.startRendering();
   },
