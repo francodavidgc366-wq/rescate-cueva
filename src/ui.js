@@ -19,9 +19,9 @@ const snd = (m, a, b) => { try { if (window.Sound && Sound[m]) return Sound[m](a
 const sfx = (n, o) => snd('sfx', n, o);
 const RK = ['guia', 'medica', 'ing'];
 const RD = {
-  guia: { n: 'Nico', t: 'El guia', col: '#f0a030', hat: '#e0a030', body: '#c0392b', skill: 'Conoce las galerias: lee rutas y abre atajos.', ai: 'Cauto y reservado', goal: 'Mantener unido al equipo.' },
-  medica: { n: 'Ona', t: 'La medica', col: '#2fd0b0', hat: '#e8e8f0', body: '#2e9e6b', skill: 'Cuida de Lia: lee su estado y detecta lo que otros no ven.', ai: 'Empatica, directa', goal: 'Que Lia llegue con salud.' },
-  ing: { n: 'Ivan', t: 'El ingeniero', col: '#5aa8ff', hat: '#4aa0e8', body: '#7a5a3a', skill: 'Mide el agua y gestiona el material y los anclajes.', ai: 'Tecnico, algo orgulloso', goal: 'Cuidar el material.' }
+  guia: { n: 'Mateo', t: 'El guia', col: '#f0a030', hat: '#e0a030', body: '#c0392b', skill: 'Conoce las galerias: lee rutas y abre atajos.', ai: 'Cauto y reservado', goal: 'Mantener unido al equipo.' },
+  medica: { n: 'Elena', t: 'La medica', col: '#2fd0b0', hat: '#e8e8f0', body: '#2e9e6b', skill: 'Cuida de Lia: lee su estado y detecta lo que otros no ven.', ai: 'Empatica, directa', goal: 'Que Lia llegue con salud.' },
+  ing: { n: 'Samuel', t: 'El ingeniero', col: '#5aa8ff', hat: '#4aa0e8', body: '#7a5a3a', skill: 'Mide el agua y gestiona el material y los anclajes.', ai: 'Tecnico, algo orgulloso', goal: 'Cuidar el material.' }
 };
 const rinfo = k => { const R = (window.Story && Story.ROLES && Story.ROLES[k]) || {}; const d = RD[k]; return { id: k, n: R.short || d.n, full: R.name || (d.n + ', ' + d.t), t: d.t, col: d.col, hat: R.hat || d.hat, body: R.body || d.body, skill: R.skill || d.skill, ai: R.personality || d.ai, goal: R.goal || d.goal }; };
 const GRADE = { S: '#ffd34d', A: '#6be08a', B: '#5ab8ff', C: '#ff9a4d', D: '#ff5a5a' };
@@ -226,9 +226,9 @@ const css = `
 #rcv3 .ach{display:flex;gap:.7em;align-items:center;padding:.5em;background:#2a2248;border:2px solid #ffd34d;border-radius:3px;animation:rpop .5s both}
 #rcv3 .ach.old{border-color:#3a2e60;background:#1c1636}
 /* logros */
-#rcv3 .fates{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:.7em;margin-top:.6em}
-#rcv3 .fate{display:flex;gap:.7em;align-items:flex-start;padding:.6em;background:rgba(20,14,40,.85);border:2px solid #3b2f66;border-radius:12px;animation:rrise .5s both}
-#rcv3 .fate .pt{flex:none;border-radius:12px;overflow:hidden;border:3px solid #7e62c8;background:radial-gradient(circle at 50% 100%,#4a3a8a,#150b30)}#rcv3 .fate .pt canvas{display:block;width:88px;height:88px;image-rendering:pixelated}
+#rcv3 .fates{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.9em;margin:.6em auto 0;max-width:1100px;width:100%}@media (max-width:640px){#rcv3 .fates{grid-template-columns:repeat(2,minmax(0,1fr))}}
+#rcv3 .fate{display:flex;flex-direction:column;text-align:center;gap:.5em;align-items:center;padding:.6em;background:rgba(20,14,40,.85);border:2px solid #3b2f66;border-radius:12px;animation:rrise .5s both}
+#rcv3 .fate .pt{flex:none;border-radius:12px;overflow:hidden;border:3px solid #7e62c8;background:radial-gradient(circle at 50% 100%,#4a3a8a,#150b30)}#rcv3 .fate .pt canvas{display:block;width:clamp(96px,12vw,150px);height:clamp(96px,12vw,150px);image-rendering:pixelated}
 #rcv3 .fate.vivo .pt{border-color:#5fe39a}#rcv3 .fate.herido .pt{border-color:#f2a93b}#rcv3 .fate.muerto{opacity:.9;border-color:#4a4658}#rcv3 .fate.muerto .pt{border-color:#6b6678;background:#1c1a24}#rcv3 .fate.muerto .pt canvas{filter:grayscale(1) brightness(.75)}
 #rcv3 .fate .st{display:inline-block;font-size:.72em;font-weight:800;letter-spacing:.5px;padding:2px 7px;border-radius:8px;margin:.2em 0}#rcv3 .fate.vivo .st{background:#1d4a30;color:#9affc0}#rcv3 .fate.herido .st{background:#4a3208;color:#ffd27a}#rcv3 .fate.muerto .st{background:#2c2a36;color:#b9b4c8}
 #rcv3 .fate .cdl{display:inline-block;width:6px;height:15px;background:#e8dcc0;position:relative;margin-left:.5em;vertical-align:middle;border-radius:1px}#rcv3 .fate .cdl:before{content:"";position:absolute;left:0;top:-8px;width:6px;height:8px;background:#ffb347;border-radius:50% 50% 40% 40%;animation:cflk .6s ease-in-out infinite alternate}@keyframes cflk{to{transform:scaleY(.8) translateY(1px);opacity:.8}}
@@ -262,6 +262,22 @@ const css = `
 @media(max-width:720px){#rcv3 .tcard{grid-template-columns:1fr}#rcv3 .grid2{grid-template-columns:1fr}#rcv3 .cards{gap:.4em}#rcv3 .rc{padding:.5em .3em;font-size:.82em}#rcv3 .tut{justify-content:flex-start;overflow-y:auto}#rcv3 .tart{min-height:0}}
 @media(prefers-reduced-motion:reduce){#rcv3 *{animation-duration:.01s!important}}
 #rcv3.rm *{animation-duration:.01s!important}
+
+/* v7 Blasphemous: marcos de oro viejo, rojos apagados */
+#rcv3{--bg:#0a0505;--bg2:#1a0b0c;--amb:#b8923a;--vio:#7a1a1a;--gold2:#d9c88f;--title:'Cinzel','Palatino Linotype',Georgia,serif}
+#rcv3 .scr{background:radial-gradient(ellipse at 50% 0%,#2a0e0f,#0a0505 70%)}
+#rcv3 h1,#rcv3 h2,#rcv3 .lab,#rcv3 .btn{font-family:var(--title);font-weight:700;text-transform:uppercase;letter-spacing:.16em}
+#rcv3 h1{color:#e8d9a8;text-shadow:0 3px 0 #000,0 0 22px rgba(122,26,26,.7);letter-spacing:.18em}
+#rcv3 h2,#rcv3 .lab{color:var(--gold2)}
+#rcv3 .btn{color:#e8d9a8;background:linear-gradient(#5a1818,#2c0a0b);border:2px solid #b8923a;border-radius:2px;box-shadow:0 3px 0 #000,inset 0 0 0 1px #000}
+#rcv3 .btn.sec{background:linear-gradient(#1f1210,#120a09);border-color:#5a4420}#rcv3 .btn.go{background:linear-gradient(#6b4f16,#3b2a0a);color:#f6e9bb;border-color:#d9c88f}
+#rcv3 .btn:hover,#rcv3 .btn:focus-visible,#rcv3 .btn.sel{box-shadow:0 5px 0 #000,0 0 14px rgba(184,146,58,.4)}
+#rcv3 .panel,#rcv3.hf .panel,#rcv3 .fate,#rcv3 .ach{border-image:none!important;padding:1em 1.2em;--co:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 26 26'%3E%3Cg fill='none' stroke='%23b8923a' stroke-width='1.6'%3E%3Cpath d='M2 24V9Q2 2 9 2H24'/%3E%3Cpath d='M10 10q5-1 5 4' stroke-width='1'/%3E%3Ccircle cx='2.5' cy='2.5' r='2' fill='%23d9c88f' stroke='none'/%3E%3C/g%3E%3C/svg%3E");background:var(--co) top 3px left 3px/20px no-repeat,radial-gradient(ellipse at 50% 0%,#2a0e0f,#120707 60%,#0a0505);border:2px solid #7a5f2a;border-radius:3px;box-shadow:inset 0 0 0 1px #000,inset 0 0 0 4px #160a08,inset 0 0 0 5px #4a3818}
+#rcv3 .fate{padding:1.1em .8em;animation:rrise .5s both}#rcv3 .fate .pt{border-radius:3px;border:2px solid #b8923a}#rcv3 .fate b{font-family:var(--title);letter-spacing:.14em;text-transform:uppercase;color:var(--gold2);font-size:1.15em}
+#rcv3 .fate .mut{display:block;font-size:.95em;line-height:1.35;color:#cfc3a8}
+#rcv3 .fate.vivo .pt{border-color:#b8923a}#rcv3 .fate.herido .pt{border-color:#a8605a}
+#rcv3 .fate .st,#rcv3 .fate.vivo .st,#rcv3 .fate.herido .st,#rcv3 .fate.muerto .st{border-radius:2px;letter-spacing:.14em}
+#rcv3 .fhead{font-family:var(--title);text-transform:uppercase;letter-spacing:.16em;color:var(--gold2)!important}
 `;
 
 /* ================= Raiz, pantallas, bucle ================= */
@@ -269,7 +285,7 @@ let root, scr = {}, cur = null, fx, fxg, parts = [], tks = new Set(), raf = 0, l
 function mount(el) {
   if (root) return root;
   const st = $('style', '', document.head); st.textContent = css;
-  if (!document.getElementById('rcv3-font')) { const l = $('link', '', document.head); l.id = 'rcv3-font'; l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap'; }
+  if (!document.getElementById('rcv3-font')) { const l = $('link', '', document.head); l.id = 'rcv3-font'; l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Cinzel:wght@600;700&display=swap'; }
   root = $('div', ''); root.id = 'rcv3'; (el || document.body).appendChild(root); applyLook();
   fx = $('canvas', '', root); fx.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:50'; fxg = fx.getContext('2d');
   toasts = $('div', 'toasts', root);
@@ -440,7 +456,7 @@ function ttext(g, s, x, y, col, size, al) { g.font = 'bold ' + (size || 8) + 'px
 function tkey(g, x, y, s, on, w) { w = w || 14; g.fillStyle = '#10081c'; g.fillRect(x - 1, y - 1, w + 2, 15); g.fillStyle = on ? '#ffd24a' : '#6a6070'; g.fillRect(x, y + (on ? 2 : 0), w, on ? 11 : 12); g.fillStyle = on ? '#fff2c0' : '#cfc8d8'; g.fillRect(x, y + (on ? 1 : 0), w, 10); ttext(g, s, x + w / 2, y + 6 + (on ? 2 : 0), '#2a1408', 7, 'center'); }
 function ticon(g, name, cx, cy, big) { const m = meta('poi_icons'), i = m && m.names ? m.names.indexOf(name) : -1, s = big || 16; if (i >= 0 && blit(g, 'poi_icons', (i % 10) * 16, Math.floor(i / 10) * 16, 16, 16, cx - s / 2, cy - s / 2, s, s)) return; g.fillStyle = '#ffd24a'; g.fillRect(cx - 4, cy - 4, 8, 8); }
 const tr = r => r === 'lia' ? { col: '#7bf0a0', n: 'Lía' } : rinfo(r);
-function tface(g, role, ex, x, y, s) { const i = { neutral: 0, worried: 1, angry: 2, happy: 3 }[ex] || 0; if (!blit(g, 'portrait_' + role, i * 64, 0, 64, 64, x, y, s, s)) { g.fillStyle = tr(role).col || '#888'; g.fillRect(x, y, s, s); } g.strokeStyle = tr(role).col || '#fff'; g.lineWidth = 1; g.strokeRect(x + .5, y + .5, s - 1, s - 1); }
+function tface(g, role, ex, x, y, s) { const i = { neutral: 0, worried: 1, angry: 2, happy: 3 }[ex] || 0; const fw = ((window.ASSETS && ASSETS.meta['portrait_' + role]) || {}).fw || 64; if (!blit(g, 'portrait_' + role, i * fw, 0, fw, fw, x, y, s, s)) { g.fillStyle = tr(role).col || '#888'; g.fillRect(x, y, s, s); } g.strokeStyle = tr(role).col || '#fff'; g.lineWidth = 1; g.strokeRect(x + .5, y + .5, s - 1, s - 1); }
 function tpoi(g, x, y, T, name, used) { // POI como en el motor: aro en el suelo + pastilla con icono flotando
   const rp = (T * .5) % 1, by = Math.round(Math.sin(T * 5) * 1.5), py = y - 26 + by; if (!used) { g.strokeStyle = 'rgba(255,210,74,' + (.6 * (1 - rp)) + ')'; g.beginPath(); g.ellipse(x, y, 4 + rp * 10, 1.5 + rp * 3, 0, 0, 7); g.stroke(); }
   tpill(g, x - 8, py - 8, 17, 17, used ? '#2a2638' : '#241a3a', used ? '#5a5870' : '#ffd24a'); g.globalAlpha = used ? .4 : 1; ticon(g, name, x, py); g.globalAlpha = 1; if (used) ttext(g, '✔', x + 6, py - 9, '#7dffb0', 9, 'center');
@@ -479,14 +495,14 @@ const TSTEPS = [
             tpill(g, bx, y, 150, bh - 2, m[3] === 'radio' ? '#06140f' : m[3] === 'share' ? '#0c2229' : me ? '#3d2b0f' : '#241c46', m[3] === 'radio' ? '#2c7a52' : m[3] === 'share' ? '#2fd0b0' : '#3b2f66');
             ttext(g, tr(m[0]).n + (m[3] === 'radio' ? ' (radio)' : ''), bx + 4, y + 7, c, 7); if (m[3] === 'share') ttext(g, 'HAS COMPARTIDO · INTEL', bx + 4, y + 17, '#2fd0b0', 6); lines.forEach((l, k) => ttext(g, l, bx + 4, y + (m[3] === 'share' ? 27 : 17) + k * 10, m[3] === 'radio' ? '#7bf0a0' : '#fff', 7)); y += bh; g.globalAlpha = 1; }
         g.restore(); const press = u > 4.6 && u < 5.4; tpill(g, 4, 118, 120, 17, press ? '#4a3418' : '#241c46', press ? '#ffd24a' : '#b58cff'); ttext(g, 'Os cuento lo que he visto', 9, 126.5, '#fff', 7); tpill(g, 130, 118, 90, 17, '#0a0716', '#3b2f66'); ttext(g, 'Escribe al equipo...', 135, 126.5, '#8a82a8', 7); }, TW, TH, 2); } },
-  { t: 'Habilidad y ayuda', p: 'Cada rol tiene una <b>habilidad con la tecla</b> <span class="key">Q</span>: Nico clava anclajes, Ona da aire y primeros auxilios, Iván hace puentes y abre válvulas. Hay puertas que solo abre un rol concreto: si no eres tú, <b>pídeselo a tu compañero</b> con «Pedir ayuda».', tip: 'Tu compañero puede ayudarte... o negarse si no se fía de ti. Por eso hablar importa.',
+  { t: 'Habilidad y ayuda', p: 'Cada rol tiene una <b>habilidad con la tecla</b> <span class="key">Q</span>: Mateo clava anclajes, Elena da aire y primeros auxilios, Samuel hace puentes y abre válvulas. Hay puertas que solo abre un rol concreto: si no eres tú, <b>pídeselo a tu compañero</b> con «Pedir ayuda».', tip: 'Tu compañero puede ayudarte... o negarse si no se fía de ti. Por eso hablar importa.',
     art(p) { canvasArt(p, (g, T, w, h) => { const u = T % 13, open = u > 8.2, GX = 168; tcave(g, w, h, T, 0);
-      if (!open) { for (let r = 0; r < 2; r++) ttile(g, 19, GX, FLOOR - 16 - r * 16); tpill(g, GX - 28, FLOOR - 54, 74, 13, '#2a2638', '#f2a93b'); ttext(g, 'PUENTE · solo Iván', GX - 24, FLOOR - 47, '#ffd27a', 6.5); } else { for (let i = 0; i < 4; i++) ttile(g, 20, GX - 16 + i * 16, FLOOR - 16); }
+      if (!open) { for (let r = 0; r < 2; r++) ttile(g, 19, GX, FLOOR - 16 - r * 16); tpill(g, GX - 28, FLOOR - 54, 74, 13, '#2a2638', '#f2a93b'); ttext(g, 'PUENTE · solo Samuel', GX - 24, FLOOR - 47, '#ffd27a', 6.5); } else { for (let i = 0; i < 4; i++) ttile(g, 20, GX - 16 + i * 16, FLOOR - 16); }
       const ox = u < 2 ? lerp(20, 112, u / 2) : u < 9.5 ? 112 : lerp(112, 200, frac(u, 9.5, 11.5)); tplayer(g, 'medica', u < 2 || u > 9.5 ? 'run' : 'idle', T, ox, FLOOR, false);
       const ix = u < 4.2 ? -30 : u < 6 ? lerp(-30, 140, frac(u, 4.2, 6)) : 140; if (u > 4.2 && u < 10) tplayer(g, 'ing', u < 6 ? 'run' : u < 8.4 ? 'interact' : 'idle', T, ix, FLOOR, false);
       if (u > 2.4 && u < 5) tbubble(g, 112, FLOOR - 50, 'No puedo pasar...', '#3fd0c0'); if (u > 6.2 && u < 8.2) tsparks(g, 152, FLOOR - 14, frac(u, 6.2, 8.2) % 1, '#b58cff'); if (u > 8.4 && u < 10.4) tbubble(g, 140, FLOOR - 40, '¡Hecho!', '#b58cff');
-      tpill(g, 6, 6, 96, 17, '#1a1228', '#6a6070'); tkey(g, 9, 7, 'Q', false, 11); ttext(g, 'Estabilizar (Ona)', 24, 14.5, '#9a94b0', 7);
-      const pr = u > 3.4 && u < 4.4, vis = u > 2.4 && u < 8.2; if (vis) { tpill(g, 6, 28, 122, 17, pr ? '#4a3418' : '#241c46', pr ? '#ffd24a' : '#b58cff'); ttext(g, 'Pedir a Iván: puente', 12, 36.5, '#fff', 7.5); } if (u > 3 && u < 4.6) ttext(g, '▲ pulsa aquí', 70, 54, '#ffd24a', 7, 'center'); }, TW, TH, 2); } },
+      tpill(g, 6, 6, 96, 17, '#1a1228', '#6a6070'); tkey(g, 9, 7, 'Q', false, 11); ttext(g, 'Estabilizar (Elena)', 24, 14.5, '#9a94b0', 7);
+      const pr = u > 3.4 && u < 4.4, vis = u > 2.4 && u < 8.2; if (vis) { tpill(g, 6, 28, 122, 17, pr ? '#4a3418' : '#241c46', pr ? '#ffd24a' : '#b58cff'); ttext(g, 'Pedir a Samuel: puente', 12, 36.5, '#fff', 7.5); } if (u > 3 && u < 4.6) ttext(g, '▲ pulsa aquí', 70, 54, '#ffd24a', 7, 'center'); }, TW, TH, 2); } },
   { t: 'Agua, aire y reunión', p: 'El <b>agua sube</b>. Bajo el agua se gasta tu <b>aire</b>: sal a respirar antes de que llegue a 0. Cuando hayáis investigado, pulsa <b>Convocar reunión</b>: el equipo debate y <b>vota</b> el plan (teclas 1, 2 o 3). Cada crisis resuelta abre una zona nueva.', tip: 'Los puntos solo se cuentan al final, por categorías. Ahora céntrate en rescatar a Lía.',
     art(p) { canvasArt(p, (g, T, w, h) => { const u = T % 14; tcave(g, w, h, T, 0);
       if (u < 7) { const wl = lerp(90, 80, u / 7), under = u > 1 && u < 4.6, f = frac(u, 1, 4.6); for (let x = 0; x < w; x += 16) { blit(g, 'water_tile', (Math.floor(T * 5) % 4) * 16, 0, 16, 16, x, wl - 2); for (let y = wl + 14; y < h; y += 16) blit(g, 'water_tile', (Math.floor(T * 5) % 4) * 16, 16, 16, 16, x, y); }
@@ -524,7 +540,7 @@ const FXD = { valle: ['snow', 'fog'], cabina: ['sway', 'rain'], tormenta: ['rain
 const GRADEC = { valle: 'rgba(255,140,60,.16)', cabina: 'rgba(60,70,140,.18)', tormenta: 'rgba(40,70,140,.22)', entrada: 'rgba(255,150,60,.10)', radio: 'rgba(40,200,120,.10)', mapa: 'rgba(255,170,80,.14)', inundada: 'rgba(30,110,160,.2)', rescate: 'rgba(255,230,160,.18)', derrota: 'rgba(20,40,70,.3)' };
 const INTRO_DEF = [
   { still: 'valle', text: 'Valle de Sorrosal. Atardece. Hace dos horas que nadie sabe nada de Lia.' },
-  { still: 'cabina', text: 'Nico, Ona e Ivan suben en el viejo teleferico. Nadie habla. Cada uno guarda algo que los demas no saben.' },
+  { still: 'cabina', text: 'Mateo, Elena y Samuel suben en el viejo teleferico. Nadie habla. Cada uno guarda algo que los demas no saben.' },
   { still: 'tormenta', text: 'La tormenta cae de golpe. El cable se sacude... y la cabina se queda colgada sobre el vacio.' },
   { still: 'entrada', text: 'La boca de la cueva. El suelo ya esta mojado, y el agua no deberia estar aqui.' },
   { still: 'radio', who: 'Lia (radio)', text: '"...aqui Lia... estoy atrapada... la pierna... el agua sube. Por favor... daos prisa."' },
@@ -539,7 +555,7 @@ function buildShots(id, o) {
   if (id === 'derrota') return [{ still: 'derrota', text: o && o.text || 'El agua lo cubre todo. El silencio es lo peor.', who: '' }];
   let I = window.Story && Array.isArray(Story.intro) && Story.intro.length >= 3 ? Story.intro : null; if (!I) return INTRO_DEF;
   // la cinematica la ven TODOS: fuera las lineas que cuentan lo privado de un rol (empiezan por su nombre) o el secreto
-  I = I.filter(e => !/^\s*(Nico|Ona|Iv[aá]n)\b|c[oó]mo se juega|pulsa|tecla|\bvota|\bchat\b|explora y busca/i.test(typeof e === 'string' ? e : (e && e.text) || '')); if (I.length < 6) return INTRO_DEF;
+  I = I.filter(e => !/^\s*(Mateo|Elena|Samuel|Nico|Ona|Iv[aá]n)\b|c[oó]mo se juega|pulsa|tecla|\bvota|\bchat\b|explora y busca/i.test(typeof e === 'string' ? e : (e && e.text) || '')); if (I.length < 6) return INTRO_DEF;
   const ord = ['valle', 'cabina', 'tormenta', 'entrada', 'radio', 'mapa', 'inundada'];
   const sh = I.map((e, n) => { const t = typeof e === 'string' ? { text: e } : Object.assign({}, e); if (!t.still) { const k = KEYS.find(x => x[0].test(t.text || '')); t.still = n === 0 ? 'valle' : k ? k[1] : ord[Math.min(n, ord.length - 1)]; } return t; });
   sh.push(INTRO_DEF[INTRO_DEF.length - 1]); return sh;
@@ -635,7 +651,7 @@ function showFinal(result, state) {
   go('final', { music: result.saved === false ? 'lose' : 'win', keys: e => { if (e.key === 'r' || e.key === 'R' || e.key === 'Enter') { b1.click(); return; } if (e.key === 'm' || e.key === 'M' || e.key === 'Escape') { b3.click(); return; } return false; } });
   bgc(s, result.saved === false ? 'derrota' : 'rescate', { dark: .8, kind: good ? 'ember' : 'snow', light: false, n: 60 });
   const c = $('div', 'rel', s), seq = []; let dly = 0; const step = (fn, wait) => { dly += wait; seq.push(setTimeout(fn, dly)); }; own(() => seq.forEach(clearTimeout));
-  const fates = (state.final && state.final.fates) || result.fates || (result.final && result.final.fates) || [], lf = fates.find(f => f.id === 'lia'), saved = lf ? lf.status !== 'muerto' : result.saved !== false;
+  const IDS4 = ['lia', 'guia', 'medica', 'ing'], fates = ((state.final && state.final.fates) || result.fates || (result.final && result.final.fates) || []).filter(f => f && IDS4.includes(f.id)).sort((a, b) => IDS4.indexOf(a.id) - IDS4.indexOf(b.id)), lf = fates.find(f => f.id === 'lia'), saved = lf ? lf.status !== 'muerto' : result.saved !== false;
   $('div', 'fhead', c, saved ? 'Lía está a salvo' : 'No habéis llegado a tiempo').style.color = saved ? '#9affc0' : '#ffb0a8';
   if (fates.length) {
     const ok = fates.filter(f => f.status !== 'muerto').length; $('div', 'lab', c, 'DESTINO DE LAS PERSONAS').style.textAlign = 'center'; $('div', '', c, 'Salvasteis a <b>' + ok + '</b> de ' + fates.length).style.cssText = 'text-align:center;font-size:1.25em;margin:.2em 0';
@@ -644,7 +660,7 @@ function showFinal(result, state) {
       step(() => { e.style.opacity = 1; e.style.animation = 'rrise .5s both'; sfx('tick'); }, 450); });
   }
   const gh = $('div', 'grade', c, grade); gh.style.visibility = 'hidden'; $('div', 'lab', c, 'NOTA DEL EQUIPO').style.textAlign = 'center';
-  step(() => { gh.style.visibility = 'visible'; sfx(good ? 'grade_s' : 'grade_low'); s.style.animation = 'rshake .4s'; flashEl(gc); if (good) { confetti(grade === 'S' ? 140 : 70); burst(innerWidth / 2, innerHeight * .25, ['#ffd34d', gc], 30, { v: 300 }); } }, 700);
+  step(() => { gh.style.visibility = 'visible'; sfx(good ? 'grade_s' : 'grade_low'); flashEl(gc); if (good) { confetti(grade === 'S' ? 140 : 70); burst(innerWidth / 2, innerHeight * .25, ['#ffd34d', gc], 30, { v: 300 }); } }, 700);
   const g2 = $('div', 'grid2', c); g2.style.marginTop = '1em'; const sc = result.score || state.score || {}, L = $('div', 'panel', g2), R = $('div', 'panel', g2);
   $('div', 'lab', L, 'PUNTUACION'); const names = { equipo: 'Equipo', info: 'Informacion', honestidad: 'Honestidad', riesgo: 'Riesgo calculado' };
   Object.keys(names).forEach(k => { if (sc[k] == null) return; const ln = $('div', 'ln', L, '<span>' + names[k] + '</span><b class="px" data-v="' + sc[k] + '">0</b>'); ln.style.opacity = 0; step(() => { ln.style.opacity = 1; count(ln.querySelector('b'), sc[k]); sfx('tick'); }, 280); });
@@ -663,13 +679,13 @@ function showFinal(result, state) {
   return s;
 }
 function fateFace(f) { // retrato segun estado: _dead / _hurt / hoja; si falta cae al generico o a un hueco
-  const c = mk(64, 64), A = (window.ASSETS && ASSETS.images) || {}, id = f.id, base = f.portrait || (['lia', 'guia', 'medica', 'ing'].includes(id) ? 'portrait_' + id : 'pers_' + id), root0 = base.replace(/_(dead|hurt)$/, '');
+  const c = mk(96, 96), A = (window.ASSETS && ASSETS.images) || {}, id = f.id, base = f.portrait || (['lia', 'guia', 'medica', 'ing'].includes(id) ? 'portrait_' + id : 'pers_' + id), root0 = base.replace(/_(dead|hurt)$/, '');
   const suf = f.status === 'muerto' ? '_dead' : f.status === 'herido' ? '_hurt' : '', name = [root0 + suf, root0, 'portrait_' + id].find(n => A[n]);
-  const g = c.getContext('2d'); g.fillStyle = '#2a2240'; g.fillRect(0, 0, 64, 64); g.fillStyle = '#9a90b8'; g.font = 'bold 34px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText((f.name || '?').charAt(0), 32, 34);
-  if (name) withImg(name, im => { const fw = meta(name).fw || 64, cols = Math.max(1, Math.floor(im.width / fw)), i = name.endsWith('_dead') || name.endsWith('_hurt') || cols < 2 ? 0 : f.status === 'herido' ? 1 : f.status === 'muerto' ? 0 : Math.min(3, cols - 1); g.clearRect(0, 0, 64, 64); g.imageSmoothingEnabled = false; g.drawImage(im, i * fw, 0, fw, im.height >= fw ? Math.min(im.height, fw) : im.height, 0, 0, 64, 64); });
+  const g = c.getContext('2d'); g.fillStyle = '#2a2240'; g.fillRect(0, 0, 96, 96); g.fillStyle = '#9a90b8'; g.font = 'bold 50px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText((f.name || '?').charAt(0), 48, 50);
+  if (name) withImg(name, im => { const mt = meta(name), fw = mt.fw || 64, fh = mt.fh || Math.min(im.height, fw), cols = Math.max(1, Math.floor(im.width / fw)), i = name.endsWith('_dead') || name.endsWith('_hurt') || cols < 2 ? 0 : f.status === 'herido' ? 1 : f.status === 'muerto' ? 0 : Math.min(3, cols - 1); g.clearRect(0, 0, 96, 96); g.imageSmoothingEnabled = false; g.drawImage(im, i * fw, 0, fw, Math.min(fh, im.height), 0, 0, 96, 96); });
   return c;
 }
-function flashEl(col) { if (S.flash) return; const f = $('div', '', root); f.style.cssText = 'position:absolute;inset:0;background:' + col + ';opacity:.55;z-index:45;pointer-events:none;transition:opacity .6s'; requestAnimationFrame(() => f.style.opacity = 0); setTimeout(() => f.remove(), 700); }
+function flashEl(col) { if (S.flash || (window.matchMedia && matchMedia('(prefers-reduced-motion:reduce)').matches)) return; const f = $('div', '', root); f.style.cssText = 'position:absolute;inset:0;box-shadow:inset 0 0 0 3px ' + col + ';opacity:.12;z-index:45;pointer-events:none;transition:opacity .14s'; requestAnimationFrame(() => f.style.opacity = 0); setTimeout(() => f.remove(), 200); }
 function count(el, to, ms) { ms = ms || 700; let t0 = performance.now(); const f = () => { const p = clamp((performance.now() - t0) / ms, 0, 1); el.textContent = Math.round(to * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(f); }; f(); }
 function typeInto(el, txt, cps) { let i = 0; const iv = setInterval(() => { i += 2; el.textContent = txt.slice(0, i); if (i >= txt.length || !el.isConnected) clearInterval(iv); }, 1000 / (cps || 30) * 2); }
 

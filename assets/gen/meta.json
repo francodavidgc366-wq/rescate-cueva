@@ -324,11 +324,11 @@
   "note": "ilustraci\u00f3n de cinem\u00e1tica 320x180, para Ken Burns/parallax; sin alfa"
  },
  "portrait_guia": {
-  "w": 256,
-  "h": 64,
-  "cell": 64,
-  "fw": 64,
-  "fh": 64,
+  "w": 384,
+  "h": 96,
+  "cell": 96,
+  "fw": 96,
+  "fh": 96,
   "frames": 4,
   "cols": 4,
   "expressions": [
@@ -337,14 +337,14 @@
    "enfadado",
    "feliz"
   ],
-  "note": "v6 dibujado 64x64; fondo transparente; hoja horizontal neutral, preocupado, enfadado, feliz"
+  "note": "v7 gotico oscuro 96x96 (estilo Blasphemous); fondo transparente; hoja horizontal neutral, preocupado, enfadado, feliz"
  },
  "portrait_medica": {
-  "w": 256,
-  "h": 64,
-  "cell": 64,
-  "fw": 64,
-  "fh": 64,
+  "w": 384,
+  "h": 96,
+  "cell": 96,
+  "fw": 96,
+  "fh": 96,
   "frames": 4,
   "cols": 4,
   "expressions": [
@@ -353,14 +353,14 @@
    "enfadado",
    "feliz"
   ],
-  "note": "v6 dibujado 64x64; fondo transparente; hoja horizontal neutral, preocupado, enfadado, feliz"
+  "note": "v7 gotico oscuro 96x96 (estilo Blasphemous); fondo transparente; hoja horizontal neutral, preocupado, enfadado, feliz"
  },
  "portrait_ing": {
-  "w": 256,
-  "h": 64,
-  "cell": 64,
-  "fw": 64,
-  "fh": 64,
+  "w": 384,
+  "h": 96,
+  "cell": 96,
+  "fw": 96,
+  "fh": 96,
   "frames": 4,
   "cols": 4,
   "expressions": [
@@ -369,14 +369,14 @@
    "enfadado",
    "feliz"
   ],
-  "note": "v6 dibujado 64x64; fondo transparente; hoja horizontal neutral, preocupado, enfadado, feliz"
+  "note": "v7 gotico oscuro 96x96 (estilo Blasphemous); fondo transparente; hoja horizontal neutral, preocupado, enfadado, feliz"
  },
  "portrait_lia": {
-  "w": 256,
-  "h": 64,
-  "cell": 64,
-  "fw": 64,
-  "fh": 64,
+  "w": 384,
+  "h": 96,
+  "cell": 96,
+  "fw": 96,
+  "fh": 96,
   "frames": 4,
   "cols": 4,
   "expressions": [
@@ -385,7 +385,7 @@
    "enfadado",
    "feliz"
   ],
-  "note": "v6 dibujado 64x64; fondo transparente; hoja horizontal neutral, preocupado, enfadado, feliz"
+  "note": "v7 gotico oscuro 96x96 (estilo Blasphemous); fondo transparente; hoja horizontal neutral, preocupado, enfadado, feliz"
  },
  "portrait_director": {
   "w": 192,
@@ -404,76 +404,76 @@
   "note": "fila \u00fanica: neutral, preocupado, enfadado, feliz (x=i*48)"
  },
  "portrait_guia_alert": {
-  "w": 64,
-  "h": 64,
+  "w": 96,
+  "h": 96,
   "expression": "alert",
-  "note": "v6 dibujado 64x64; fondo transparente"
+  "note": "v7 gotico oscuro 96x96 (estilo Blasphemous); fondo transparente"
  },
  "portrait_guia_hurt": {
-  "w": 64,
-  "h": 64,
+  "w": 96,
+  "h": 96,
   "expression": "hurt",
-  "note": "v6 dibujado 64x64; fondo transparente"
+  "note": "v7 gotico oscuro 96x96 (estilo Blasphemous); fondo transparente"
  },
  "portrait_guia_talk": {
-  "w": 64,
-  "h": 64,
+  "w": 96,
+  "h": 96,
   "expression": "talk",
-  "note": "v6 dibujado 64x64; fondo transparente"
+  "note": "v7 gotico oscuro 96x96 (estilo Blasphemous); fondo transparente"
  },
  "portrait_medica_alert": {
-  "w": 64,
-  "h": 64,
+  "w": 96,
+  "h": 96,
   "expression": "alert",
-  "note": "v6 dibujado 64x64; fondo transparente"
+  "note": "v7 gotico oscuro 96x96 (estilo Blasphemous); fondo transparente"
  },
  "portrait_medica_hurt": {
-  "w": 64,
-  "h": 64,
+  "w": 96,
+  "h": 96,
   "expression": "hurt",
-  "note": "v6 dibujado 64x64; fondo transparente"
+  "note": "v7 gotico oscuro 96x96 (estilo Blasphemous); fondo transparente"
  },
  "portrait_medica_talk": {
-  "w": 64,
-  "h": 64,
+  "w": 96,
+  "h": 96,
   "expression": "talk",
-  "note": "v6 dibujado 64x64; fondo transparente"
+  "note": "v7 gotico oscuro 96x96 (estilo Blasphemous); fondo transparente"
  },
  "portrait_ing_alert": {
-  "w": 64,
-  "h": 64,
+  "w": 96,
+  "h": 96,
   "expression": "alert",
-  "note": "v6 dibujado 64x64; fondo transparente"
+  "note": "v7 gotico oscuro 96x96 (estilo Blasphemous); fondo transparente"
  },
  "portrait_ing_hurt": {
-  "w": 64,
-  "h": 64,
+  "w": 96,
+  "h": 96,
   "expression": "hurt",
-  "note": "v6 dibujado 64x64; fondo transparente"
+  "note": "v7 gotico oscuro 96x96 (estilo Blasphemous); fondo transparente"
  },
  "portrait_ing_talk": {
-  "w": 64,
-  "h": 64,
+  "w": 96,
+  "h": 96,
   "expression": "talk",
-  "note": "v6 dibujado 64x64; fondo transparente"
+  "note": "v7 gotico oscuro 96x96 (estilo Blasphemous); fondo transparente"
  },
  "portrait_lia_alert": {
-  "w": 64,
-  "h": 64,
+  "w": 96,
+  "h": 96,
   "expression": "alert",
-  "note": "v6 dibujado 64x64; fondo transparente"
+  "note": "v7 gotico oscuro 96x96 (estilo Blasphemous); fondo transparente"
  },
  "portrait_lia_hurt": {
-  "w": 64,
-  "h": 64,
+  "w": 96,
+  "h": 96,
   "expression": "hurt",
-  "note": "v6 dibujado 64x64; fondo transparente"
+  "note": "v7 gotico oscuro 96x96 (estilo Blasphemous); fondo transparente"
  },
  "portrait_lia_talk": {
-  "w": 64,
-  "h": 64,
+  "w": 96,
+  "h": 96,
   "expression": "talk",
-  "note": "v6 dibujado 64x64; fondo transparente"
+  "note": "v7 gotico oscuro 96x96 (estilo Blasphemous); fondo transparente"
  },
  "icons": {
   "w": 160,
@@ -776,28 +776,28 @@
   "note": "eslabon 8x8 tileable en vertical; colocar bajo el gancho de lamp_hang (empalma con y=0 de su cuerpo)"
  },
  "portrait_guia_dead": {
-  "w": 64,
-  "h": 64,
+  "w": 96,
+  "h": 96,
   "expression": "dead",
-  "note": "v6 dibujado 64x64; fondo transparente; escala de grises azul frio, ojos cerrados, sin brillo (final: personas que murieron)"
+  "note": "v7 gotico oscuro 96x96 (estilo Blasphemous); fondo transparente; gris frio, ojos cerrados"
  },
  "portrait_medica_dead": {
-  "w": 64,
-  "h": 64,
+  "w": 96,
+  "h": 96,
   "expression": "dead",
-  "note": "v6 dibujado 64x64; fondo transparente; escala de grises azul frio, ojos cerrados, sin brillo (final: personas que murieron)"
+  "note": "v7 gotico oscuro 96x96 (estilo Blasphemous); fondo transparente; gris frio, ojos cerrados"
  },
  "portrait_ing_dead": {
-  "w": 64,
-  "h": 64,
+  "w": 96,
+  "h": 96,
   "expression": "dead",
-  "note": "v6 dibujado 64x64; fondo transparente; escala de grises azul frio, ojos cerrados, sin brillo (final: personas que murieron)"
+  "note": "v7 gotico oscuro 96x96 (estilo Blasphemous); fondo transparente; gris frio, ojos cerrados"
  },
  "portrait_lia_dead": {
-  "w": 64,
-  "h": 64,
+  "w": 96,
+  "h": 96,
   "expression": "dead",
-  "note": "v6 dibujado 64x64; fondo transparente; escala de grises azul frio, ojos cerrados, sin brillo (final: personas que murieron)"
+  "note": "v7 gotico oscuro 96x96 (estilo Blasphemous); fondo transparente; gris frio, ojos cerrados"
  },
  "pers_marta": {
   "w": 256,

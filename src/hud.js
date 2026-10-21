@@ -6,9 +6,9 @@
 
   /* ---------- datos base ---------- */
   var ROLES = {
-    guia: { name: 'Nico', title: 'Guía', color: '#f2a93b', emoji: '🧭' },
-    medica: { name: 'Ona', title: 'Médica', color: '#3fd0c0', emoji: '⚕️' },
-    ing: { name: 'Iván', title: 'Ingeniero', color: '#b58cff', emoji: '🔧' },
+    guia: { name: 'Mateo', title: 'Guía', color: '#f2a93b', emoji: '🧭' },
+    medica: { name: 'Elena', title: 'Médica', color: '#3fd0c0', emoji: '⚕️' },
+    ing: { name: 'Samuel', title: 'Ingeniero', color: '#b58cff', emoji: '🔧' },
     lia: { name: 'Lía', title: 'Radio', color: '#7bf0a0', emoji: '📻' },
     director: { name: 'Director', title: 'Narrador', color: '#ff8a5c', emoji: '🎬' },
     sys: { name: 'Sistema', title: '', color: '#9aa5b1', emoji: 'ℹ️' }
@@ -155,7 +155,7 @@
   var customChips = null, dossierTab = 'intel', editing = null, paused = false;
   var toastQ = [], toastBusy = false, resolving = false, rafOn = false;
   var airV = null, airWarned = false, abilO = null, helpO = null, quickO = null, dlgQ = null, dlgOpen = false;
-  var coachO = null, coachPrev = null, miniUser = null, sayQ = [], shareWait = null, nowOv = null, misOv = null, readyOv = null, nowKey = '', miniFn = null, miniTimer = 0, ro = null;
+  var coachO = null, coachPrev = null, miniUser = false, sayQ = [], shareWait = null, nowOv = null, misOv = null, readyOv = null, nowKey = '', miniFn = null, miniTimer = 0, ro = null;
 
   /* ---------- CSS ---------- */
   var CSS = [
@@ -556,7 +556,40 @@
 .h-xr .tx{flex:1;font-size:calc(18px*var(--h-fs));line-height:1.35}.h-xr .dl{font-family:var(--h-px);font-size:calc(20px*var(--h-fs));min-width:84px;text-align:right}.h-xr .dl.g{color:var(--h-green)}.h-xr .dl.b{color:var(--h-red)}.h-xr .dl.z{color:var(--h-dim)}
 .h-xw{margin:14px 0 0;padding:0;list-style:none;font-size:calc(16px*var(--h-fs));color:var(--h-ink)}.h-xw li{padding:4px 0 4px 20px;position:relative}.h-xw li:before{content:"▸";position:absolute;left:0;color:var(--h-amber)}.h-xw h4{margin:0 0 4px;font-family:var(--h-px);font-weight:400;font-size:calc(9px*var(--h-fs));color:var(--h-violet)}
 .h-pn[data-p=resolve] .h-foot .h-btn{font-size:calc(14px*var(--h-fs));padding:14px 22px}
-`
+`,
+
+  /* ===== v7: lavado gótico (Blasphemous), sin flashes, menos opciones ===== */
+  (function () {
+    function co(r) { return 'url("data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 26 26"><g transform="rotate(' + r + ' 13 13)" fill="none" stroke="#b8923a" stroke-width="1.6"><path d="M2 24V9Q2 2 9 2H24"/><path d="M6 24V11Q6 6 11 6H24" stroke-width=".8" opacity=".7"/><path d="M10 10q5-1 5 4" stroke-width="1"/><circle cx="2.5" cy="2.5" r="2" fill="#d9c88f" stroke="none"/></g></svg>') + '")'; }
+    var C = co(0) + ' top 3px left 3px/22px 22px no-repeat,' + co(90) + ' top 3px right 3px/22px 22px no-repeat,' + co(270) + ' bottom 3px left 3px/22px 22px no-repeat,' + co(180) + ' bottom 3px right 3px/22px 22px no-repeat';
+    return [
+      ':root{--h-corners:' + C + ';--h-gold:#b8923a;--h-gold2:#d9c88f;--h-blood:#7a1a1a;--h-bg:#0a0505;--h-panel:#140808;--h-panel2:#1f0d0e;--h-line:#5a4420;--h-amber:#b8923a;--h-amber2:#d9c88f;--h-violet:#a8605a;--h-ink:#eadfc6;--h-dim:#a69a82;--h-px:"Cinzel","Palatino Linotype","Book Antiqua",Georgia,serif;--h-title:"Cinzel","Palatino Linotype","Book Antiqua",Georgia,serif}',
+      '.h-top,.h-left,.h-chat,.h-dos,.h-pn,.h-sp,.h-hint,.h-fcard,.dl-box{background:var(--h-corners),radial-gradient(ellipse at 50% 0%,#2a0e0f,#120707 60%,#0a0505)!important;border:2px solid #7a5f2a!important;border-radius:3px!important;box-shadow:inset 0 0 0 1px #000,inset 0 0 0 4px #160a08,inset 0 0 0 5px #4a3818,0 8px 24px #000c!important}',
+      '.h-now{background:linear-gradient(#240d0e,#120707)!important;border:2px solid #7a5f2a!important;border-radius:3px!important;box-shadow:inset 0 0 0 3px #160a08,0 6px 18px #000a!important}',
+      '.h-opt,.h-so,.h-xr{background:linear-gradient(#240e0f,#150808)!important;border:2px solid #5a4420!important;border-radius:3px!important;box-shadow:inset 0 0 0 1px #000!important}.h-opt:hover,.h-so:hover,.h-opt.sel,.h-so.sel{border-color:#d9c88f!important}',
+      '.h-ic1{background:#e8dcb8!important;border-radius:2px!important}',
+      '.hud .h-btn{font-family:var(--h-title)!important;font-weight:700;letter-spacing:.14em!important;background:linear-gradient(#5a1818,#2c0a0b)!important;color:#e8d9a8!important;border:2px solid #b8923a!important;border-radius:2px!important;box-shadow:0 3px 0 #000,inset 0 0 0 1px #000!important;text-shadow:0 1px 0 #000}',
+      '.hud .h-btn.alt{background:linear-gradient(#1f1210,#120a09)!important;border-color:#5a4420!important;color:#cdbf98!important}.hud .h-btn.sm{font-size:.8em;padding:6px 8px}',
+      '.hud .h-btn.teal{background:linear-gradient(#6b4f16,#3b2a0a)!important;color:#f6e9bb!important;border-color:#d9c88f!important}.hud .h-btn.red{background:linear-gradient(#8a1c1c,#4a0c0d)!important;color:#ffd9d2!important}',
+      '.hud kbd{background:#1f1210;border-color:#5a4420;color:#d9c88f}',
+      '.h-ph1 h2,.h-ph1 .q,.h-dh,.h-lh,.h-xh,.dl-name b,.h-sec,.h-gh,.h-rlab,.h-opt h3{font-family:var(--h-title)!important;text-transform:uppercase;letter-spacing:.14em;color:#d9c88f!important;font-weight:700}',
+      '.h-ph1 .q,.h-xh,.h-opt h3{letter-spacing:.06em}',
+      '.h-coach{background:linear-gradient(#3a1214,#1c0809)!important;color:#e8d9a8!important;border:2px solid #b8923a!important;border-radius:3px!important;box-shadow:0 0 0 3px #000,0 8px 24px #000c!important;animation:none!important}.h-coach .st{color:#b8923a}',
+      '.dl-box.L,.dl-box{color:#eadfc6}.dl-co{border-color:#b8923a!important}',
+      /* sin flashes: borde fino, <150 ms, opacidad <=.12 */
+      '.h-flash{background:none!important;box-shadow:inset 0 0 0 3px var(--fc,#d9c88f);animation:h-fl3 .14s ease-out forwards!important}@keyframes h-fl3{from{opacity:.12}to{opacity:0}}',
+      '.h-vig{background:none;box-shadow:inset 0 0 0 3px #b02a2a,inset 0 0 18px #b02a2a55}.h-vig.on{opacity:.55;animation:h-vig2 1.6s ease-in-out infinite}@keyframes h-vig2{50%{opacity:.25}}',
+      '.hud.noflash .h-vig.on{animation:none;opacity:.4}@media (prefers-reduced-motion:reduce){.h-flash{display:none}.h-vig.on{animation:none}}',
+      '.h-st.flash-g .h-bar,.h-st.flash-b .h-bar{box-shadow:0 0 0 1px var(--h-line)}',
+      /* menos opciones: una sola acción visible */
+      '.hud.hasask .h-ab,.hud.hasask .h-bot,.hud.hasab .h-bot{display:none}.h-act:has(.h-bot .h-btn) .h-ab:not(.rdy){display:none}',
+      /* tarjeta flotante de hallazgo, brief del plan, «sirve para» */
+      '.h-fcard{position:absolute;left:12px;bottom:92px;z-index:12;width:min(320px,calc(100% - 24px));padding:12px 16px 12px 34px;pointer-events:none;animation:sy-in .3s both}.h-fcard.out{animation:sy-out .4s forwards}',
+      '.h-fcard .k{font-family:var(--h-title);text-transform:uppercase;letter-spacing:.16em;font-size:calc(11px*var(--h-fs));color:#b8923a}.h-fcard .t{font-weight:800;font-size:calc(17px*var(--h-fs));color:#f1e6c6;margin:2px 0}.h-fcard .x{font-size:calc(14px*var(--h-fs));color:var(--h-ink)}.h-fcard .u{margin-top:6px;font-size:calc(14px*var(--h-fs));color:#e8d9a8;border-top:1px solid #5a4420;padding-top:6px}.h-fcard .u b{color:#d9c88f}',
+      '.h-brief{margin:10px 14px 0;padding:8px 12px;border-left:3px solid #b8923a;background:#00000055;font-size:calc(15px*var(--h-fs));line-height:1.4}.h-brief b{display:block;font-family:var(--h-title);text-transform:uppercase;letter-spacing:.14em;font-size:.8em;color:#d9c88f;margin-bottom:2px}',
+      '.h-ic1 .us{margin-top:6px;font-size:calc(14px*var(--h-fs));font-weight:700;color:#5a3a08}.h-ic1 .us b{color:#7a1a1a}'
+    ].join('\n');
+  })()
   ].join('\n');
 
   var STAT_TIPS = {
@@ -577,7 +610,7 @@
     host = host || D.body;
     if (!D.getElementById('hud-css')) {
       var st = D.createElement('style'); st.id = 'hud-css'; st.textContent = CSS; D.head.appendChild(st);
-      if (!D.querySelector('link[href*="Press+Start+2P"]')) { var lk = D.createElement('link'); lk.rel = 'stylesheet'; lk.href = 'https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap'; D.head.appendChild(lk); }
+      if (!D.querySelector('link[href*="Press+Start+2P"]')) { var lk = D.createElement('link'); lk.rel = 'stylesheet'; lk.href = 'https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Cinzel:wght@600;700&display=swap'; D.head.appendChild(lk); }
     }
     if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
     root = D.createElement('div'); root.className = 'hud'; root.id = 'hud';
@@ -591,7 +624,7 @@
       '<div class="h-ph"><div class="h-phn"></div><div class="h-phi"></div><div class="h-evt"></div></div>' +
       '<div class="h-tm"><div class="h-time">0:00</div><div class="h-tbar"><i></i></div></div>' +
       '<div class="h-sts">' + stats + '</div></div>' +
-      '<div class="h-left"><div class="h-lh" data-act="leftmin">' + icon('mapa', 14) + ' TÚ<span class="x">▾</span></div><div class="h-lb"></div></div>' +
+      '<div class="h-left gone"><div class="h-lh" data-act="leftmin">' + icon('mapa', 14) + ' TÚ<span class="x">▾</span></div><div class="h-lb"></div></div>' +
       '<div class="h-mid"><div class="h-gd"><div class="h-coach"></div><div class="h-now"></div><div class="h-air"></div></div><div class="h-tst"></div><div class="h-stage"></div>' +
         '<div class="h-help"></div><div class="h-sy"></div><div class="h-dos"></div><canvas class="h-mini" width="160" height="64"></canvas></div>' +
       '<div class="h-act"><div class="h-abil"></div><div class="h-bot"></div><div class="h-dock">' +
@@ -827,10 +860,11 @@
   /* habilidad del rol (tecla Q) y fila «Pedir ayuda» */
   function paintAbil() {
     if (!el.abil) return; var ab = abilO, hp = helpO, h = '';
-    if (ab && (ab.ready !== false || ab.hint)) h += '<div class="h-ab"><button class="h-btn ' + (ab.ready ? 'teal glow' : 'alt') + '" data-act="ability" title="' + esc(ab.hint || '') + '"' + (ab.ready ? '' : ' aria-disabled="true"') + '><kbd>' + esc(ab.key || 'Q') + '</kbd> ' + esc(ab.label || 'Habilidad') + '</button>' + (ab.hint ? '<small>' + esc(ab.hint) + '</small>' : '') + '</div>';
-    if (hp && hp.length) h += '<div class="h-ask"><span class="l">PEDIR AYUDA</span>' + hp.map(function (x, i) {
-      var b = roleInfo(x.role);
+    if (ab && (ab.ready !== false || ab.hint)) h += '<div class="h-ab' + (ab.ready ? ' rdy' : '') + '"><button class="h-btn ' + (ab.ready ? 'teal glow' : 'alt') + '" data-act="ability" title="' + esc(ab.hint || '') + '"' + (ab.ready ? '' : ' aria-disabled="true"') + '><kbd>' + esc(ab.key || 'Q') + '</kbd> ' + esc(ab.label || 'Habilidad') + '</button>' + (ab.hint ? '<small>' + esc(ab.hint) + '</small>' : '') + '</div>';
+    if (hp && hp.length) h += '<div class="h-ask"><span class="l">PEDIR AYUDA</span>' + hp.map(function (x, i) { return [x, i]; }).sort(function (a, b) { return (a[0].enabled === false) - (b[0].enabled === false); }).slice(0, 1).map(function (xi) {
+      var x = xi[0], i = xi[1], b = roleInfo(x.role);
       return '<button class="h-btn alt" data-act="ask" data-i="' + i + '" style="--rc:' + b.color + '" title="' + esc(x.hint || '') + '"' + (x.enabled === false ? ' disabled' : '') + '>' + esc(x.label || ('Pedir a ' + b.name)) + '</button>'; }).join('') + '</div>';
+    root.classList.toggle('hasab', !!(ab && ab.ready)); root.classList.toggle('hasask', !!(hp && hp.length));
     var key = h; if (el.abil.dataset.k === key) return; el.abil.dataset.k = key; el.abil.innerHTML = h; el.abil.style.display = h ? '' : 'none';
   }
   function setAbilities(o) { abilO = o && typeof o === 'object' ? o : null; if (mounted) paintAbil(); }
@@ -956,6 +990,7 @@
         '<div class="h-votes"><span class="c"></span></div></button>';
     }).join('');
     openPanel('plan', '<div class="h-ph1"><div class="q">' + esc(plan.ask || '¿Qué hacemos ahora?') + '</div><div class="hv">Vota con <b>1</b>, <b>2</b> o <b>3</b>. Gana la mayoría.</div></div>' +
+      (plan.brief ? '<div class="h-brief"><b>Lo que sabéis / lo que no</b>' + esc(Array.isArray(plan.brief) ? plan.brief.join(' ') : plan.brief) + '</div>' : '') +
       '<div class="h-pb"><div class="h-opts">' + cards + '</div></div><div class="h-foot"><span class="l h-pstat"></span><button class="h-btn alt" data-act="chatfocus">💬 HABLAR EN EL CHAT <kbd>T</kbd></button></div>');
     updatePlan(); clockTick(); if (P.plan && P.plan.chosen) showChosen();
   }
@@ -1236,9 +1271,9 @@
   function chatOpen() { return isMobile() ? el.chat.classList.contains('open') : !el.chat.classList.contains('min'); }
   function renderChips() {
     var list, opt = P && P.plan && P.plan.options || [];
-    if (quickO && quickO.length) list = quickO.slice(0, 3).map(function (x) { return { label: x.label || x.text, text: x.text || x.label }; });
+    if (quickO && quickO.length) list = quickO.slice(0, 2).map(function (x) { return { label: x.label || x.text, text: x.text || x.label }; });
     else list = (customChips || (P && CHIPS[P.phase]) || CHIPS._).map(function (t) { t = t.replace('{A}', 'A').replace('ruta B', opt.length ? 'ruta ' + 'ABC'[Math.min(1, opt.length - 1)] : 'ruta B'); return { label: t, text: t }; });
-    list = list.slice(0, 3); var key = JSON.stringify(list); if (el.chips.dataset.k === key) return; el.chips.dataset.k = key;
+    list = list.slice(0, 2); var key = JSON.stringify(list); if (el.chips.dataset.k === key) return; el.chips.dataset.k = key;
     el.chips.innerHTML = list.map(function (c) { return '<button type="button" data-act="chip" data-text="' + esc(c.text) + '" title="' + esc(c.text) + '">' + esc(c.label) + '</button>'; }).join('');
   }
 
@@ -1259,8 +1294,8 @@
           body += '<div class="h-gh">TRAMO ' + r + '</div>';
           rounds[r].forEach(function (c) {
             var ri = relInfo(c.reliability), isEd = editing === c.id;
-            body += '<div class="h-ic1 ' + ri.cls + '">' + (c.shared ? '<span class="sh">COMPARTIDA</span>' : '') + '<div class="t">' + poiIcon(c.icon || 'info', 18) + esc(c.title) + '</div><div class="x">' + esc(c.text) + '</div>' + relHtml(c.reliability) +
-              '<div class="h-acts" style="margin-top:8px"><button class="h-btn" data-act="share" data-id="' + esc(c.id) + '">📢 Compartir</button><button class="h-btn alt" data-act="edit" data-id="' + esc(c.id) + '">✏️ Compartir con cambios</button></div>' +
+            body += '<div class="h-ic1 ' + ri.cls + '">' + (c.shared ? '<span class="sh">COMPARTIDA</span>' : '') + '<div class="t">' + poiIcon(c.icon || 'info', 18) + esc(c.title) + '</div><div class="x">' + esc(c.text) + '</div>' + ((c.uses || c.use) ? '<div class="us"><b>Sirve para:</b> ' + esc(c.uses || c.use) + '</div>' : '') + relHtml(c.reliability) +
+              '<div class="h-acts" style="margin-top:8px"><button class="h-btn" data-act="share" data-id="' + esc(c.id) + '">📢 Contárselo al equipo</button><button class="h-btn alt sm" data-act="edit" data-id="' + esc(c.id) + '">✏️ Cambiar y contar</button></div>' +
               (isEd ? '<div class="h-edit"><textarea data-ta="' + esc(c.id) + '" maxlength="300">' + esc(c.text) + '</textarea><div class="w">⚠ Cambiar el texto es MENTIR. Si el equipo lo descubre, perderás confianza (pero puedes ganar si cuela).</div><div class="h-acts"><button class="h-btn red" data-act="sendlie" data-id="' + esc(c.id) + '">🤥 Enviar versión alterada</button><button class="h-btn alt" data-act="canceledit">Cancelar</button></div></div>' : '') + '</div>';
           });
         });
@@ -1502,10 +1537,14 @@
       el.fx.appendChild(p); setTimeout(function (q) { q.remove(); }.bind(null, p), 1200);
     }
   }
-  function flash(c) { var f = D.createElement('div'); f.className = 'h-flash'; f.style.setProperty('--fc', c || '#fff'); el.fx.appendChild(f); setTimeout(function () { f.remove(); }, 600); }
-  function shake(i) {
-    if (opts.noflash) return; root.classList.remove('shake'); void root.offsetWidth; root.classList.add('shake'); setTimeout(function () { root.classList.remove('shake'); }, 480);
-    if (cb.fx) cb.fx('shake', i == null ? 1 : i);
+  function flash(c) { if (opts.noflash || (W.matchMedia && W.matchMedia('(prefers-reduced-motion:reduce)').matches)) return; var f = D.createElement('div'); f.className = 'h-flash'; f.style.setProperty('--fc', c || '#fff'); el.fx.appendChild(f); setTimeout(function () { f.remove(); }, 300); }
+  function shake() { /* v7: sin sacudidas (API mantenida, no hace nada) */ }
+  function floatCard(o) {
+    if (!mounted || !o || !(o.title || o.text)) return;
+    var old = root.querySelector('.h-fcard'); if (old) old.remove();
+    var c = D.createElement('div'); c.className = 'h-fcard';
+    c.innerHTML = '<div class="k">Has encontrado</div><div class="t">' + esc(o.title || o.text) + '</div>' + (o.title && o.text ? '<div class="x">' + esc(o.text) + '</div>' : '') + (o.uses ? '<div class="u"><b>Sirve para:</b> ' + esc(o.uses) + '</div>' : '');
+    root.appendChild(c); snd('toast'); setTimeout(function () { c.classList.add('out'); setTimeout(function () { c.remove(); }, 400); }, 5000);
   }
   function note(txt) { var n = D.createElement('div'); n.className = 'h-note'; n.textContent = '⚠ ' + txt; el.tst.appendChild(n); setTimeout(function () { n.style.opacity = 0; n.style.transition = 'opacity .4s'; setTimeout(function () { n.remove(); }, 450); }, 3200); }
   function toastNote(txt) { var n = D.createElement('div'); n.className = 'h-note'; n.style.color = 'var(--h-teal)'; n.style.borderColor = 'var(--h-teal)'; n.textContent = txt; el.tst.appendChild(n); setTimeout(function () { n.remove(); }, 2400); }
@@ -1534,10 +1573,10 @@
     show: function () { hidden = false; if (root) root.classList.remove('off'); },
     chat: { add: function (m) { chatAdd(m); }, typing: typing, clear: function () { if (el.log) el.log.innerHTML = ''; seenChat = {}; chatCount = 0; lastChatRound = 0; lastChatFrom = null; unread = 0; badge(); }, focus: function () { setChat(true); el.input.focus(); } },
     setChips: function (l) { customChips = l; if (el.chips) { el.chips.dataset.k = ''; renderChips(); } },
-    openDossier: openDossier, closeDossier: closeDossier, help: function () { helpFor(cur.phase, false); }, shake: shake, flash: flash, sparks: sparks, note: note,
+    openDossier: openDossier, closeDossier: closeDossier, help: function () { helpFor(cur.phase, false); }, shake: shake, flash: flash, floatCard: floatCard, sparks: sparks, note: note,
     openPause: function () { if (!paused) openPause(); }, closePause: closePause,
     closePanel: function () { closePanel(true); }, isTyping: typingNow, resetHelp: function () { helpSeen = {}; lsSet('rcv3_hudhelp', helpSeen); },
-    reset: function () { this.chat.clear(); closePanel(true); closeDossier(); cur = { phase: null, round: 0 }; dispInit = false; waterLevelHit = 0; lastIntelLen = 0; intelSeen = 0; localReady = false; localVote = null; secretSel = null; secretSealed = false; P = null; V = null; nowOv = misOv = readyOv = null; nowKey = ''; airV = null; abilO = helpO = quickO = null; if (this.skipDialogue) this.skipDialogue(); setAir(null); paintAbil(); coachO = null; miniUser = null; sayQ = []; if (el.sy) el.sy.innerHTML = ''; paintCoach(); },
+    reset: function () { this.chat.clear(); closePanel(true); closeDossier(); cur = { phase: null, round: 0 }; dispInit = false; waterLevelHit = 0; lastIntelLen = 0; intelSeen = 0; localReady = false; localVote = null; secretSel = null; secretSealed = false; P = null; V = null; nowOv = misOv = readyOv = null; nowKey = ''; airV = null; abilO = helpO = quickO = null; if (this.skipDialogue) this.skipDialogue(); setAir(null); paintAbil(); coachO = null; miniUser = false; sayQ = []; if (el.sy) el.sy.innerHTML = ''; paintCoach(); },
     say: say, setCoach: setCoach,
     onChat: function (f) { cb.chat = f; }, onShare: function (f) { cb.share = f; }, onVote: function (f) { cb.vote = f; }, onSecret: function (f) { cb.secret = f; },
     onReady: function (f) { cb.ready = f; }, onExit: function (f) { cb.exit = f; }, onSettings: function (f) { cb.settings = f; }, onPause: function (f) { cb.pause = f; },

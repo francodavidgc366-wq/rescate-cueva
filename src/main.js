@@ -50,7 +50,7 @@
       Hud.setReady({ label: 'Hablar con el equipo y decidir', tip: 'Cuando estés listo, el equipo se reúne para votar el plan', pulse: !!cr.ready });
       const ab = { guia: 'Clavar anclaje', medica: 'Estabilizar / reptadero', ing: 'Puente / válvula' }[myRole];
       Hud.setAbilities && Hud.setAbilities(ex && g ? { key: 'Q', label: ab, hint: g.text, ready: true } : null);
-      Hud.setHelp && Hud.setHelp(ex ? gates.map(x => ({ role: x.role, label: 'Pedir a ' + { guia: 'Nico', medica: 'Ona', ing: 'Iván' }[x.role] + ': ' + x.kind, enabled: true, hint: x.why, gateId: x.id })) : null);
+      Hud.setHelp && Hud.setHelp(ex ? gates.map(x => ({ role: x.role, label: 'Pedir a ' + { guia: 'Mateo', medica: 'Elena', ing: 'Samuel' }[x.role] + ': ' + x.kind, enabled: true, hint: x.why, gateId: x.id })) : null);
       try { const q = Story.chatSuggest(st, myRole) || []; quickMap = {}; q.forEach(c => quickMap[c.text] = c); Hud.setQuick && Hud.setQuick(q.map(c => ({ label: c.label, text: c.text }))); } catch (e) { }
     }
     try { const c = st.phase === 'explore' || st.phase === 'plan' ? Story.coach(st, myRole, coachFlags(m)) : null; Hud.setCoach && Hud.setCoach(c ? { step: c.step, total: c.total, text: c.text } : null); } catch (e) { }
@@ -196,7 +196,7 @@
     try {
       switch (st.phase) {
         case 'briefing': Story.setPhase(st, 'explore'); break;
-        case 'explore': Story.setPhase(st, 'plan'); react('plan'); break;
+        case 'explore': Story.setPhase(st, 'plan'); try { const b = Story.planBrief(st); if (b && st.plan) st.plan.brief = b.lines || b.text; } catch (e) { } react('plan'); break;
         case 'plan': { const t = Story.tally(st); if (t && t.react) react('tally', t.react.ctx); Story.setPhase(st, 'secret'); react('secret'); break; }
         case 'secret': Story.setPhase(st, 'resolve'); st.lastRes = Story.resolve(st); eng.setWater(st.s.agua); react('resolve', { result: st.lastRes }); break;
         case 'resolve': Story.setPhase(st, 'summary'); break;
@@ -232,7 +232,7 @@
   function fb(role, out) {
     const msg = out.card ? 'NUEVA INFO: ' + out.card.title : out.hallazgo ? 'HALLAZGO ' + out.hallazgo.n + '/5: ' + out.hallazgo.title : out.kind === 'recurso' ? 'RECURSO PARA EL EQUIPO' : '';
     const sfx = out.hallazgo ? 'achievement' : 'intel';
-    if (role === myRole) { if (msg) Hud.floatText(msg, 'info'); snd(sfx); }
+    if (role === myRole) { if (out.explain && Hud.floatCard) Hud.floatCard({ title: out.card ? out.card.title : out.hallazgo ? out.hallazgo.title : 'Recurso', text: out.explain, uses: out.card && (out.card.uses || out.card.use) }); else if (msg) Hud.floatText(msg, 'info'); snd(sfx); }
     else { const o = st.players[role].owner; if (o && o !== 'solo') Net.sendTo(o, 'phase', { note: msg, sfx }); }
   }
   function onInteract(role, poiId) { // solo host

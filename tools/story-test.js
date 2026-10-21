@@ -32,13 +32,14 @@ const strip = x => JSON.stringify(x, (k, v) => k === 't' ? undefined : v);
   assert.deepStrictEqual(Story.validateIntelTemplates(), [], 'plantillas de intel con polaridad errónea');
   assert(Story.achievementsList().length >= 14); assert(Story.intro.length >= 6);
   const out = {};
-  for (const dif of ['normal', 'everest']) for (const style of ['coop', 'ego', 'random', 'persona']) {
+  for (const dif of ['facil', 'normal', 'everest']) for (const style of ['coop', 'ego', 'random', 'persona']) {
     let w = 0, grades = {}, ach = new Set();
     for (let i = 0; i < N; i++) { const { fin } = await play(style, dif, 1000 + i); if (fin.saved) w++; grades[fin.grade] = (grades[fin.grade] || 0) + 1; fin.achievements.forEach(a => ach.add(a.id)); }
     out[dif + '/' + style] = w / N; console.log(dif.padEnd(8), style.padEnd(8), (100 * w / N).toFixed(1) + '%', JSON.stringify(grades), 'logros:', ach.size);
   }
   const R = (a, lo, hi) => assert(out[a] >= lo && out[a] <= hi, a + ' fuera de [' + lo + ',' + hi + ']: ' + out[a]);
-  R('normal/coop', .65, .80); R('normal/random', .10, .20); R('normal/ego', .20, .35);
+  R('facil/coop', .84, .95); R('facil/random', .36, .55); R('normal/coop', .64, .78); R('normal/ego', .18, .32); R('normal/random', .08, .25); R('everest/coop', .28, .42); R('everest/ego', 0, .09);
+  assert(out['facil/coop'] > out['normal/coop'] && out['facil/random'] > out['normal/random'] + .15, 'Fácil más fácil que Normal');
   assert(out['everest/coop'] < out['normal/coop'] - .1, 'Everest debe ser más duro'); assert(out['everest/random'] <= out['normal/random']);
   // determinismo por semilla
   const a = await play('persona', 'normal', 777), b = await play('persona', 'normal', 777), c = await play('persona', 'normal', 778);
@@ -117,7 +118,7 @@ const strip = x => JSON.stringify(x, (k, v) => k === 't' ? undefined : v);
   const pe = Story.newGame({ seed: 37 }); await Story.roundStart(pe); Story.openGate(pe, 'guia', 'z1_anclaje'); pe.round = 5; Story.advance; assert(pe.gatesOpen.z1_anclaje && pe.gates.find(g => g.id === 'z1_anclaje').open);
   // escenas: 1-4 líneas cortas con who/mood válidos
   const sc = Story.newGame({ seed: 38 }); await Story.roundStart(sc); Story.setPhase(sc, 'plan'); const MOODS = ['neutral', 'alert', 'hurt', 'angry', 'happy', 'talk'];
-  for (const k of ['event', 'plan', 'resolve', 'lia', 'final']) { const L = Story.scene(sc, k); assert(L.length >= 1 && L.length <= 4, 'escena ' + k); L.forEach(l => { assert(['lia', 'director', ...RK, ...Story.SURVIVORS.map(x => x.id)].includes(l.who) && MOODS.includes(l.mood) && l.text && l.text.length <= 112); }); }
+  for (const k of ['event', 'plan', 'resolve', 'lia', 'final']) { const L = Story.scene(sc, k); assert(L.length >= 1 && L.length <= 4, 'escena ' + k); L.forEach(l => { assert(['lia', 'director', ...RK].includes(l.who) && MOODS.includes(l.mood) && l.text && l.text.length <= 112); }); }
   Story.tally(sc); Story.setPhase(sc, 'secret'); Story.resolve(sc); assert(Story.scene(sc, 'resolve').length >= 2); assert(Story.statusLabels.agua.tip && Story.statusLabels.confianza.tip);
   assert(!Story.intro.some(x => /pulsa|tecla|vota|Cómo se juega/i.test(x)), 'intro sin controles');
   // ===== v6 =====
@@ -127,8 +128,8 @@ const strip = x => JSON.stringify(x, (k, v) => k === 't' ? undefined : v);
     const first = []; for (const k of RK) { const a = await Story.botAct(t, k, 'explore'); const target = a.type === 'gate' ? a.gateId : a.poiId; first.push(target); if (a.type === 'poi') { const op = t.pois.find(p => p.owner === k); assert(t.pois.find(p => p.id === a.poiId).owner === k || (op.gate && !t.gatesOpen[op.gate]), 'bot va a su POI'); } assert(a.say); } assert.strictEqual(new Set(first).size, 3); }
   // parseRequest / answerChat
   const pr = Story.newGame({ seed: 70, humans: ['guia'], style: 'coop' }); pr.round = 3; await Story.roundStart(pr); Story.setPhase(pr, 'explore');
-  for (const [txt, to, gate] of [['ivan haz el puente', 'ing', null], ['Iván, abre la válvula', 'ing', 'z3_valvula'], ['abrid la valvula', 'ing', 'z3_valvula'], ['la médica puede abrir el reptadero?', 'medica', 'z3_reptadero'], ['ONA abre', 'medica', 'z3_reptadero']]) { const q = Story.parseRequest(pr, 'guia', txt); assert(q && q.to === to && q.kind === 'gate', txt + ' ' + JSON.stringify(q)); if (gate) assert.strictEqual(q.gateId, gate, txt); }
-  assert.strictEqual(Story.parseRequest(pr, 'guia', 'hola a todos'), null); assert.strictEqual(Story.parseRequest(pr, 'guia', 'ona qué ves').kind, 'info'); assert.strictEqual(Story.parseRequest(pr, 'guia', 'ivan sitúate').kind, 'where'); assert.strictEqual(Story.parseRequest(pr, 'guia', 'ona ayúdame').kind, 'help');
+  for (const [txt, to, gate] of [['ivan haz el puente', 'ing', null], ['Samuel, abre la válvula', 'ing', 'z3_valvula'], ['elena abre', 'medica', 'z3_reptadero'], ['Iván, abre la válvula', 'ing', 'z3_valvula'], ['abrid la valvula', 'ing', 'z3_valvula'], ['la médica puede abrir el reptadero?', 'medica', 'z3_reptadero'], ['ONA abre', 'medica', 'z3_reptadero']]) { const q = Story.parseRequest(pr, 'guia', txt); assert(q && q.to === to && q.kind === 'gate', txt + ' ' + JSON.stringify(q)); if (gate) assert.strictEqual(q.gateId, gate, txt); }
+  assert.strictEqual(Story.parseRequest(pr, 'ing', 'mateo qué ves').to, 'guia'); assert.strictEqual(Story.parseRequest(pr, 'ing', 'nico qué ves').to, 'guia'); assert.strictEqual(Story.parseRequest(pr, 'guia', 'hola a todos'), null); assert.strictEqual(Story.parseRequest(pr, 'guia', 'ona qué ves').kind, 'info'); assert.strictEqual(Story.parseRequest(pr, 'guia', 'ivan sitúate').kind, 'where'); assert.strictEqual(Story.parseRequest(pr, 'guia', 'ona ayúdame').kind, 'help');
   assert.strictEqual(Story.parseRequest(pr, 'guia', 'ona abre la valvula').redirect, 'ing');
   const an = Story.answerChat(pr, 'guia', 'iván abre la válvula'); assert(an.ok && an.to === 'ing' && an.msgs.length === 1 && an.msgs[0].from === 'ing' && an.msgs[0].mood && typeof an.accept === 'boolean'); if (an.accept) assert.strictEqual(an.gateId, 'z3_valvula');
   Story.openGate(pr, 'ing', 'z3_valvula'); assert(/ya está abierta/.test(Story.answerChat(pr, 'guia', 'ivan abre la válvula otra vez').text)); Story.openGate(pr, 'medica', 'z3_reptadero'); Story.openGate(pr, 'ing', 'z2_puente'); Story.openGate(pr, 'guia', 'z1_anclaje'); Story.openGate(pr, 'guia', 'z2_anclaje'); assert(/ninguna que me toque/.test(Story.answerChat(pr, 'guia', 'ivan abre algo').text));
@@ -144,15 +145,29 @@ const strip = x => JSON.stringify(x, (k, v) => k === 't' ? undefined : v);
   const ex = await play('coop', 'normal', 5151, (st) => { const e = Story.explainResult(st); assert(e.headline && e.lines.length && e.why.length >= 2 && e.lines.every(l => ['agua', 'salud', 'material', 'confianza', 'info'].includes(l.icon) && l.text)); assert(/votos? de 3/.test(e.why[0])); }); assert(ex.st);
   // coach solo en zona 1, <=10 palabras, avanza
   const co = Story.newGame({ seed: 72, humans: ['ing'] }); await Story.roundStart(co); Story.setPhase(co, 'explore'); let c0 = Story.coach(co, 'ing'); assert(c0.step === 1 && c0.total === 8 && c0.text.split(/\s+/).length <= 10);
-  Story.poiInteract(co, 'ing', co.pois.find(p => p.owner === 'ing').id); c0 = Story.coach(co, 'ing'); assert(c0.step === 4); Story.share(co, 'ing', co.priv.ing.intel[0].id); c0 = Story.coach(co, 'ing'); assert(c0.step === 6 && /Nico/.test(c0.text) && c0.text.split(/\s+/).length <= 10, c0.text);
-  Story.answerChat(co, 'ing', 'nico haz el anclaje'); assert.strictEqual(Story.coach(co, 'ing').step, 7); Story.setPhase(co, 'plan'); assert.strictEqual(Story.coach(co, 'ing').step, 8); Story.vote(co, 'ing', 'A'); assert.strictEqual(Story.coach(co, 'ing'), null); co.round = 2; assert.strictEqual(Story.coach(co, 'ing'), null);
+  Story.poiInteract(co, 'ing', co.pois.find(p => p.owner === 'ing').id); c0 = Story.coach(co, 'ing'); assert(c0.step === 4); Story.share(co, 'ing', co.priv.ing.intel[0].id); c0 = Story.coach(co, 'ing'); assert(c0.step === 6 && /Mateo/.test(c0.text) && c0.text.split(/\s+/).length <= 10, c0.text);
+  Story.answerChat(co, 'ing', 'mateo haz el anclaje'); assert.strictEqual(Story.coach(co, 'ing').step, 7); Story.setPhase(co, 'plan'); assert.strictEqual(Story.coach(co, 'ing').step, 8); Story.vote(co, 'ing', 'A'); assert.strictEqual(Story.coach(co, 'ing'), null); co.round = 2; assert.strictEqual(Story.coach(co, 'ing'), null);
   assert.strictEqual(Story.difficulty('facil').rate < Story.difficulty('normal').rate, true);
   // botStuck
   const bs = Story.newGame({ seed: 73 }); await Story.roundStart(bs); Story.setPhase(bs, 'explore'); const own = bs.pois.find(p => p.owner === 'ing').id, b6 = Story.botStuck(bs, 'ing', own); assert(b6.ok && b6.msg && b6.next !== own); assert(!Story.botStuck(bs, 'ing', own).msg, 'solo una vez'); const a6 = await Story.botAct(bs, 'ing', 'explore'); assert(a6.poiId !== own);
-  // supervivientes y destinos
-  assert.strictEqual(Story.SURVIVORS.length, 5); assert(Story.SURVIVORS.every(s => s.id && s.name && s.bio && s.zone && s.portrait));
-  const fa = await play('coop', 'normal', 91); const fx = fa.fin; assert.strictEqual(fx.fates.length, 8); assert(fx.fates.every(f => f.id && f.name && f.portrait && ['vivo', 'herido', 'muerto'].includes(f.status) && f.why.length > 15) && fa.st.fates === fx.fates && fa.st.final.saved_count === fx.saved_count && fx.saved_count === fx.fates.filter(f => f.status !== 'muerto' && !RK.includes(f.id)).length);
-  let dead = 0, alive = 0; for (let i = 0; i < 60; i++) { const { fin } = await play(i % 2 ? 'coop' : 'ego', 'normal', 3000 + i); fin.fates.filter(f => !RK.includes(f.id) && f.id !== 'lia').forEach(f => f.status === 'muerto' ? dead++ : alive++); if (!fin.saved) assert.strictEqual(fin.fates[0].status, 'muerto'); } assert(dead > 10 && alive > 10, 'las decisiones importan: ' + dead + '/' + alive);
-  const sf = Story.newGame({ seed: 74 }); await Story.roundStart(sf); Story.setPhase(sf, 'explore'); const sp = Story.poiInteract(sf, 'guia', 'r1_2'); assert(sp.ok && sp.survivor && sp.survivor.id === 'sara'); sf.plan.votes = {}; Story.setPhase(sf, 'plan'); assert(Story.scene(sf, 'event').some(l => l.who === 'sara') && Story.scene(sf, 'survivor').length === 1);
+  // destinos: solo 4 (Lía + 3 rescatistas), con causa -> efecto y retrato portrait_<id>
+  assert.strictEqual(Story.SURVIVORS.length, 1); assert.deepStrictEqual(Object.values(Story.NAMES), ['Mateo', 'Elena', 'Samuel', 'Lía']);
+  const fa = await play('coop', 'normal', 91); const fx = fa.fin; assert.strictEqual(fx.fates.length, 4); assert.deepStrictEqual(fx.fates.map(f => f.id), ['lia', 'guia', 'medica', 'ing']);
+  assert(fx.fates.every(f => f.name && f.portrait === 'portrait_' + f.id && ['vivo', 'herido', 'muerto'].includes(f.status) && f.why.length > 15) && fa.st.fates === fx.fates && fa.st.final.saved_count === fx.saved_count && fx.saved_count === fx.fates.filter(f => f.status !== 'muerto').length && fx.total_count === 4);
+  for (let i = 0; i < 40; i++) { const { fin } = await play(i % 2 ? 'coop' : 'ego', 'normal', 3000 + i); if (!fin.saved) assert.strictEqual(fin.fates[0].status, 'muerto'); assert(fin.saved_count <= 4); }
+  assert(!/Nico|\bOna\b|Iv[áa]n|Sara|Marta|\bLeo\b|Hugo/.test(JSON.stringify([fx, Story.intro, Story.ROLES, Story.scene(fa.st, 'final'), Story.PROMPTS])), 'nombres antiguos/supervivientes en texto visible');
+  // ===== v7: uses / explain / planBrief / red de seguridad =====
+  const u7 = Story.newGame({ seed: 80, humans: ['ing'] }); await Story.roundStart(u7); Story.setPhase(u7, 'explore');
+  const iu = Story.poiInteract(u7, 'ing', u7.pois.find(p => p.kind === 'info' && p.owner === 'ing').id); assert(/votación/.test(iu.card.uses) && /^Has encontrado .* → .* → úsalo en: la votación/.test(iu.explain), iu.explain);
+  const ru = Story.poiInteract(u7, 'guia', u7.pois.find(p => p.kind === 'recurso').id); assert(ru.card.uses && /→ úsalo en:/.test(ru.explain)); const sp7 = u7.pois.find(p => p.kind === 'secreto'); if (sp7.gate) Story.openGate(u7, u7.gates.find(g => g.id === sp7.gate).role, sp7.gate); const hu = Story.poiInteract(u7, 'guia', sp7.id); assert(hu.card.uses && /→ úsalo en:/.test(hu.explain));
+  const u8 = Story.newGame({ seed: 82 }); await Story.roundStart(u8); Story.setPhase(u8, 'explore'); RK.forEach(k => assert(/^Si /.test(Story.mission(u8, k).now.why), Story.mission(u8, k).now.why));
+  Story.setPhase(u7, 'plan'); assert(u7.chat.some(m => m.from === 'director' && /Hay 3 caminos/.test(m.text)), 'resumen al empezar el plan');
+  const pb0 = Story.planBrief(u7); assert(pb0.text.split(/(?<=\.)\s/).length <= 3 && /Hay 3 caminos/.test(pb0.text) && pb0.best === null);
+  Story.setPhase(u7, 'explore'); const cu = iu.card, cdu = u7.hid.cards[cu.id], sh7 = Story.share(u7, 'ing', cu.id, {}); const pb1 = Story.planBrief(u7);
+  assert(sh7.ok && pb1.known.length === 1 && pb1.known[0].includes(u7.plan.options[cdu.opt].n) && /Samuel/.test(pb1.known[0]), JSON.stringify(pb1)); assert(cdu.pol > 0 ? pb1.best === u7.plan.options[cdu.opt].id : pb1.best === null);
+  // red de seguridad: un tramo malo no hunde (Normal/Fácil); en Everest sí; respiro avisado
+  const g7 = Story.newGame({ seed: 81, difficulty: 'facil' }); g7.round = 2; await Story.roundStart(g7); g7.s.agua = 98; g7.s.salud = 5; g7.hid.bad = {}; Story.setPhase(g7, 'plan'); Story.tally(g7); Story.setPhase(g7, 'secret'); Story.resolve(g7);
+  assert(!Story.isOver(g7) && g7.hid.respiroNext === 3, 'un solo tramo malo no termina'); g7.round = 3; await Story.roundStart(g7); const ro = g7.plan.options.filter(o => o.respiro); assert(ro.length === 1 && g7.chat.some(m => m.from === 'director' && /respiro/.test(m.text)), 'opción de respiro avisada');
+  const e7 = Story.newGame({ seed: 81, difficulty: 'everest' }); e7.round = 2; await Story.roundStart(e7); e7.s.agua = 99; e7.s.salud = 5; Story.setPhase(e7, 'plan'); Story.tally(e7); Story.setPhase(e7, 'secret'); Story.resolve(e7); assert(Story.isOver(e7), 'Everest sin red');
   console.log('OK');
 })().catch(e => { console.error(e); process.exit(1); });
