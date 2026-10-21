@@ -55,6 +55,8 @@
       try { const q = Story.chatSuggest(st, myRole) || []; quickMap = {}; q.forEach(c => quickMap[c.text] = c); Hud.setQuick && Hud.setQuick(q.map(c => ({ label: c.label, text: c.text }))); } catch (e) { }
     }
     try { const c = st.phase === 'explore' || st.phase === 'plan' ? Story.coach(st, myRole, coachFlags(m)) : null; Hud.setCoach && Hud.setCoach(c ? { step: c.step, total: c.total, text: c.text } : null); } catch (e) { }
+    try { const gt = ex && m.now.task === 'ayuda' && m.now.gate ? (st.gates || []).find(x => x.id === m.now.gate && !st.gatesOpen[x.id]) : null;
+      Hud.setBlocked && Hud.setBlocked(gt && gt.role !== myRole ? { role: gt.role, gateId: gt.id, text: 'Pedir a ' + { guia: 'Mateo', medica: 'Elena', ing: 'Samuel' }[gt.role] + ': abrir ' + (gt.label || gt.kind) } : null); } catch (e) { }
     const tgt = ex && m.now.target ? m.now.target : null; if (tgt !== guide.t) { guide.t = tgt; eng.setGuide(tgt, tgt ? { label: m.now.short ? m.now.short.replace(/^Ve a /, '') : '' } : undefined); }
   }
   // Puertas de habilidad: el motor las abre (jugador o bot) y aquí se refleja en el estado de la historia
@@ -133,8 +135,9 @@
       shownFinal = true; try { localStorage.setItem('rcv3_games', String((+localStorage.getItem('rcv3_games') || 0) + 1)); } catch (e) { }
       S.music && S.music(st.final.saved ? 'win' : 'lose');
       const showFin = () => { Hud.hide && Hud.hide(); gameEl.style.display = 'none'; UI.showFinal(st.final, st); };
-      let ls = []; try { ls = Story.scene(st, 'final') || []; } catch (e) { }
-      if (ls.length && Hud.dialogue) Hud.dialogue(ls).then(showFin); else showFin();
+      let ep = null; try { ep = Story.endingPanels(st); } catch (e) { }
+      if (ep && ep.panels && ep.panels.length && UI.playEnding) UI.playEnding({ saved: ep.saved, panels: ep.panels, fates: st.final.fates }).then(showFin, showFin);
+      else { let ls = []; try { ls = Story.scene(st, 'final') || []; } catch (e) { } if (ls.length && Hud.dialogue) Hud.dialogue(ls).then(showFin); else showFin(); }
     }
   }
 
@@ -206,12 +209,13 @@
         case 'resolve': Story.setPhase(st, 'summary'); break;
         case 'summary':
           if (Story.isOver(st)) { st.final = await Story.finish(st, { role: myRole }); break; }
-          { let tr = null; try { tr = Story.travelScene(st); } catch (e) { }
+          { let tr = null, jr = null; try { tr = Story.travelScene(st); } catch (e) { } try { jr = Story.journal(st); } catch (e) { }
+            if (jr && Hud.showJournal && mode !== 'client') { try { await Hud.showJournal(jr); } catch (e) { } }
             Story.advance(st);
             if (tr && eng.playTravel) await new Promise(res => { let d = false; const fin = () => { if (!d) { d = true; res(); } };
               try { Hud.setNow({ text: tr.caption || 'Viajan a la siguiente zona', sub: '', kind: 'info' }); } catch (e) { }
-              const ok = eng.playTravel({ toZone: st.round, kind: tr.kind, outcome: tr.outcome, ms: 8000 }, fin); if (ok === false) return fin();
-              if (Hud.dialogue && tr.lines && tr.lines.length) Hud.dialogue(tr.lines, { auto: 2600 }); setTimeout(fin, 16000); }); }
+              const ok = eng.playTravel({ toZone: st.round, kind: tr.kind, outcome: tr.outcome, ms: 11500, onShot: (i) => { try { Hud.setNow({ text: [tr.caption || 'Salen de la zona', 'Recorren el camino', 'Llegan a la nueva zona'][i] || '', sub: '', kind: 'info' }); } catch (e) { } } }, fin); if (ok === false) return fin();
+              if (Hud.dialogue && tr.lines && tr.lines.length) Hud.dialogue(tr.lines, { auto: 3400 }); setTimeout(fin, 20000); }); }
           await startRound(); return;
       }
     } catch (e) { console.error(e); }

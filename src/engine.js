@@ -1351,14 +1351,14 @@ function create(canvas, opts) {
   }
   function snapshot() {
     var p = {}; Object.keys(bodies).forEach(function (id) { var b = bodies[id]; p[id] = [Math.round(b.x * 10) / 10, Math.round(b.y * 10) / 10, Math.round(b.vx * 100) / 100, Math.round(b.vy * 100) / 100, b.face, b.exAnim, b.cl || 0, b.role, b.name, Math.round(b.air * 10) / 10, b.swim ? 1 : 0]; });
-    return { v: 3, t: tick, w: wlTarget, wc: Math.round(wlCur * 100) / 100, a: active, u: unlocked, gs: GT.map(function (g0) { return g0.open ? 1 : 0; }), air: (function () { var o = {}; ROLES.forEach(function (r) { o[r] = Math.round(bodies[r].air * 10) / 10; }); return o; })(), cs: cs ? [cs.kind, cs.out, cs.t, cs.n, cs.ft] : 0, p: p };
+    return { v: 3, t: tick, w: wlTarget, wc: Math.round(wlCur * 100) / 100, a: active, u: unlocked, gs: GT.map(function (g0) { return g0.open ? 1 : 0; }), air: (function () { var o = {}; ROLES.forEach(function (r) { o[r] = Math.round(bodies[r].air * 10) / 10; }); return o; })(), cs: cs ? [cs.kind, cs.out, cs.t, cs.n, cs.ft, cs.shot | 0, Math.round((cs.zm || 1) * 100)] : 0, p: p };
   }
   function applySnapshot(s) {
     if (!s || !s.p) return;
     if (s.w !== undefined && s.w !== wlTarget) setWater(s.w);
     if (s.u && s.u !== unlocked) setUnlocked(s.u);
     if (!authority) {   // v12: la cinematica la lleva el host; aqui solo se muestra (letterbox, fundido, efectos) y se bloquea la entrada
-      if (s.cs) { if (!cs) { cs = { kind: s.cs[0], out: s.cs[1], t: s.cs[2], n: s.cs[3], ft: s.cs[4] }; csZero(); } else { cs.t = s.cs[2]; cs.n = s.cs[3]; cs.ft = s.cs[4]; } }
+      if (s.cs) { if (!cs) { cs = { kind: s.cs[0], out: s.cs[1], t: s.cs[2], n: s.cs[3], ft: s.cs[4], shot: s.cs[5] | 0, zm: (s.cs[6] || 100) / 100, lead: 0, ech: [] }; csZero(); } else { cs.t = s.cs[2]; cs.n = s.cs[3]; cs.ft = s.cs[4]; cs.shot = s.cs[5] | 0; cs.zm = (s.cs[6] || 100) / 100; } }
       else if (cs) csEnd();
     }
     if (s.gs) s.gs.forEach(function (o, i) { var g0 = GT[i]; if (!g0) return; if (o && !g0.open) doOpen(g0, true); else if (!o && g0.open) { g0.open = false; g0.n = 0; setCells(g0.cells, g0.solid ? 1 : 0); navDirty(); } });
@@ -1376,18 +1376,19 @@ function create(canvas, opts) {
      v12: CINEMATICA DE VIAJE (playTravel). El host conduce (botGoto de los 3 cuerpos al punto de entrada de la zona
      destino; si no llegan al 62 % de la duracion, fundido y se colocan); los clientes solo ven la bandera `cs` del snapshot.
      ===================================================================== */
-  var cs = null, rawIn = {}, csKeyFn = null;
+  var cs = null, rawIn = {}, csKeyFn = null, csZc = null;
   var CS_TXT = { pozo: 'DESCENDIENDO POR EL POZO', balsa: 'CRUZANDO EN BALSA', galeria: 'AVANZANDO POR LA GALERIA', cuerda: 'ASEGURANDO LA CUERDA', puente: 'CRUZANDO EL PUENTE', tunel: 'ABRIENDO PASO', compuerta: 'ABRIENDO PASO' };
   function csZero() { ROLES.forEach(function (r) { inputs[r] = NOINP; }); }
-  function playTravel(o, cb) {
+  var CS_SHOT = ['salida', 'recorrido', 'llegada'];
+  function playTravel(o, cb) {   // v13: 3 planos continuos (salida / recorrido real a 3x / llegada), 10-13 s; opts.onShot(i, nombre)
     o = o || {}; if (!authority) return false;
     if (cs) csEnd(true);
-    var to = clamp(+o.toZone || unlocked, 1, NS), n = Math.round(clamp(+o.ms || 7500, 6000, 9000) * 0.06), c = cs = { kind: String(o.kind || 'generico'), out: o.outcome === 'mal' ? 'mal' : o.outcome === 'bien' ? 'bien' : '', t: 0, n: n, ft: -1, to: to, cb: cb, tg: {}, bots: {}, skip: false, warped: false };
+    var to = clamp(+o.toZone || unlocked, 1, NS), n = Math.round(clamp(+o.ms || 11500, 10000, 13000) * 0.06), c = cs = { kind: String(o.kind || 'generico'), out: o.outcome === 'mal' ? 'mal' : o.outcome === 'bien' ? 'bien' : '', t: 0, n: n, ft: -1, to: to, cb: cb, onShot: typeof o.onShot === 'function' ? o.onShot : null, tg: {}, bots: {}, skip: false, warped: false,
+      shot: -1, s1: Math.round(n * 0.2), tm: Math.round(n * 0.11), e1: -1, go: false, bad: false, acc: 0, sub: 1, zm: 1.45, lead: 0, ech: [] };
     if (unlocked < to) setUnlocked(to);
     cam.focus = null; cam.panT = 0;
     ROLES.forEach(function (r, k) {
       var b = bodies[r], tg = c.tg[r] = spawnOf(to - 1, k); c.bots[r] = b.bot; b.bot = true; b.goal = b.mac = b.pe = b.warp = null; b.busy = 0; b.csDone = false;
-      botGoto(r, { x: tg.x, y: tg.y, id: 'cs' });
     });
     csZero();
     if (global.addEventListener) { csKeyFn = function (e) { var tn = e.target && e.target.tagName; if (!cs || tn === 'INPUT' || tn === 'TEXTAREA') return; if (e.key === ' ' || e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); skipCutscene(); } }; global.addEventListener('keydown', csKeyFn, true); }
@@ -1398,18 +1399,27 @@ function create(canvas, opts) {
     ROLES.forEach(function (r) { var b = bodies[r], tg = cs.tg[r]; puff(b.x, b.y, 5, 0); b.x = b.tx = tg.x; b.y = b.ty = tg.y; b.vx = b.vy = 0; b.climb = null; b.goal = b.mac = b.pe = null; b.busy = 0; b.csDone = true; puff(b.x, b.y, 6, 0); });
     cam.focus = null; snapCam();
   }
+  function csShot(c, i) { if (c.shot === i) return; c.shot = i; if (c.onShot) { try { c.onShot(i, CS_SHOT[i]); } catch (e) { if (global.console) console.error(e); } } }
   function csTick() {
-    var c = cs, all = true; c.t++;
-    ROLES.forEach(function (r) { var b = bodies[r], tg = c.tg[r]; if (!b.csDone && b.grounded && Math.abs(b.x - tg.x) < 10 && Math.abs(b.y - tg.y) < 14) b.csDone = true; if (!b.csDone) all = false; });
-    if (c.ft < 0 && !c.warped && (c.skip || (!all && c.t >= Math.round(c.n * 0.62)))) c.ft = 0;
-    if (c.ft >= 0) { c.ft++; if (c.ft === 10) csPlace(); if (c.ft >= 20) { c.ft = -1; c.warped = true; } }
-    if ((c.skip && c.ft < 0) || c.t >= c.n) csEnd();
+    var c = cs, all = c.go, n = c.n, lv = 0; c.t++;
+    if (!c.go && c.t >= c.tm) { c.go = true; all = true; ROLES.forEach(function (r) { var tg = c.tg[r]; if (!botGoto(r, { x: tg.x, y: tg.y, id: 'cs' })) c.bad = true; }); }
+    ROLES.forEach(function (r) { var b = bodies[r], tg = c.tg[r]; if (c.go && !b.csDone && b.grounded && Math.abs(b.x - tg.x) < 10 && Math.abs(b.y - tg.y) < 14) b.csDone = true; if (!b.csDone) all = false; lv += b.vx / 3; if (b.csDone && b.grounded && Math.abs(b.vx) < 0.4) b.face = 1; });   // los 3 acaban mirando adelante
+    if (c.go && all && c.e1 < 0) c.e1 = clamp(c.t + 24, Math.round(n * 0.5), Math.round(n * 0.8));
+    if (c.ft < 0 && !c.warped && (c.skip || (!all && c.t >= Math.round(n * (c.bad ? 0.5 : 0.82))))) c.ft = 0;   // fundido: ULTIMO recurso (ruta imposible/lenta) o salto del usuario
+    if (c.ft >= 0) { c.ft++; if (c.ft === 10) { csPlace(); c.s1 = Math.min(c.s1, c.t); c.e1 = c.e1 < 0 ? c.t : Math.min(c.e1, c.t); } if (c.ft >= 20) { c.ft = -1; c.warped = true; } }
+    c.spd = c.go ? (c.t > n * 0.6 && !all ? 4 : 3) : 1; c.acc += c.spd; c.sub = c.acc | 0; c.acc -= c.sub;   // ritmo cinematografico: ~3x (sub-pasos de fisica por tick)
+    c.lead += (clamp(lv * 12, -36, 36) - c.lead) * 0.04;
+    csShot(c, c.t < c.s1 ? 0 : (c.e1 < 0 || c.t < c.e1) ? 1 : 2);
+    var tgt = c.shot === 2 ? 1 + 0.07 * clamp(1 - (c.t - c.e1) / Math.max(1, n - c.e1), 0, 1) : 1;   // plano 1: zoom hacia fuera; 3: se asienta
+    c.zm = c.shot === 0 ? 1 + 0.45 * (1 - smooth(c.t / c.s1)) : c.zm + (tgt - c.zm) * 0.05;
+    if ((c.skip && c.ft < 0) || c.t >= n) csEnd();
   }
   function csEnd(force) {
     var c = cs; if (!c) return; if (authority && force) csPlace(); else if (authority) ROLES.forEach(function (r) { var b = bodies[r], tg = c.tg[r]; if (Math.abs(b.x - tg.x) > 24 || Math.abs(b.y - tg.y) > 24) { b.x = b.tx = tg.x; b.y = b.ty = tg.y; b.vx = b.vy = 0; b.climb = null; } });
+    if (authority && c.shot < 2) csShot(c, 2);
     cs = null; if (csKeyFn && global.removeEventListener) { global.removeEventListener('keydown', csKeyFn, true); csKeyFn = null; }
     ROLES.forEach(function (r) { var b = bodies[r]; if (authority) { if (c.bots) b.bot = c.bots[r]; b.goal = b.mac = b.pe = null; b.csDone = false; } if (rawIn[r]) inputs[r] = rawIn[r]; });
-    cam.trans = 0; cam.focus = null; snapCam();
+    cam.focus = null; var g2 = camGoal(); if (Math.hypot(cam.x - g2.x, cam.y - g2.y) > 90) snapCam(); else cam.trans = 40;   // el control vuelve sin salto de camara
     if (c.cb) { try { c.cb(); } catch (e) { if (global.console) console.error(e); } }
   }
   function csFx() {   // efectos por tipo (host y clientes, a partir de kind/outcome/t)
@@ -1417,8 +1427,8 @@ function create(canvas, opts) {
     if (t === 1 && (k === 'tunel' || k === 'compuerta')) sfx('rumble');
     ROLES.forEach(function (r, i) {
       var b = bodies[r], mv = Math.abs(b.vx) > 0.3 && b.grounded, ph = t + i * 7;
-      if (k === 'pozo') { if (ph % 6 === 0) puff(b.x + (rr() - 0.5) * 6, b.y - 20 + rr() * 8, 1, 0); if (ph % 14 === 0) drip(b.x + (rr() - 0.5) * 10, b.y - 36); }
-      else if (k === 'balsa') { if (ph % 10 === 0) { splash(b.x, b.y, 2, 0); addRipple(b.x, 1.2); } if (ph % 30 === 0) addP({ k: 'dust', x: b.x + (rr() - 0.5) * 24, y: b.y - 16, vx: 0, vy: 0, g: 0.15, y0: b.y, life: 110, sz: 2, w: 8, c: '150,100,52' }); }
+      if (k === 'pozo') { if (ph % 6 === 0) puff(b.x + (rr() - 0.5) * 6, b.y - 20 + rr() * 8, 1, 0); if (ph % 14 === 0) drip(b.x + (rr() - 0.5) * 10, b.y - 36); if (i === 0 && t % 52 === 20) { drip(b.x + 6, b.y - 50); sfx('drip'); c.ech.push(t + 16, t + 34); } }   // cuerda + gotas con eco
+      else if (k === 'balsa') { if (ph % 6 === 0) { splash(b.x, b.y, 3, 0); addRipple(b.x, 1.2); } if (mv && ph % 18 === 0) sfx('splash', b); if (ph % 30 === 0) addP({ k: 'dust', x: b.x + (rr() - 0.5) * 24, y: b.y - 16, vx: 0, vy: 0, g: 0.15, y0: b.y, life: 110, sz: 2, w: 8, c: '150,100,52' }); }
       else if (k === 'galeria') { if (ph % 5 === 0) spark(b.x + b.face * 5, b.y - 17, 1); if (mv && ph % 14 === 0) puff(b.x, b.y, 1, -b.face); }
       else if (k === 'cuerda') { if (ph % 26 === 0) spark(b.x + b.face * 12, b.y - 19, 3); }
       else if (k === 'puente') { if (ph % 24 === 0) addP({ k: 'dust', x: b.x + b.face * 10, y: b.y - 22, vx: 0, vy: 0, g: 0.2, y0: b.y, life: 100, sz: 2, w: 9, c: '170,118,60' }); if ((ph + 15) % 24 === 0) puff(b.x + b.face * 10, b.y, 3, 0); }
@@ -1426,6 +1436,7 @@ function create(canvas, opts) {
       else if (mv && ph % 14 === 0) puff(b.x, b.y, 1, -b.face);
       if (c.out === 'bien' && mv && ph % 12 === 0) puff(b.x - b.face * 2, b.y, 1, -b.face);
     });
+    if (c.ech.length && t >= c.ech[0]) { c.ech.shift(); sfx('drip'); drip(g.x + (rr() - 0.5) * 30, g.y - 50); }
     if ((k === 'tunel' || k === 'compuerta') && t % 20 === 0) debris(2);
     if ((k === 'tunel' || k === 'compuerta') && t % 70 === 0) { addShake(0.8); sfx('rumble'); }
     if (c.out === 'mal') {
@@ -1440,11 +1451,16 @@ function create(canvas, opts) {
     ROLES.forEach(function (r, i) {
       var b = bodies[r], x = Math.round(b.x - cxr), y = Math.round(b.y - cyr), f = b.face || 1;
       if (x < -20 || x > W + 20) return;
-      if (k === 'pozo') { out.fillStyle = '#6a4a2a'; out.fillRect(x + 1, 0, 1, y - 15); out.fillStyle = '#d8b878'; out.fillRect(x, 0, 1, y - 15); }
+      if (k === 'pozo') { for (var ry0 = 0; ry0 < y - 15; ry0 += 3) { var sw0 = Math.round(Math.sin(ry0 * 0.07 + t * 0.08 + i) * (ry0 / Math.max(1, y)) * 1.2); out.fillStyle = '#6a4a2a'; out.fillRect(x + 1 + sw0, ry0, 1, 3); out.fillStyle = '#d8b878'; out.fillRect(x + sw0, ry0, 1, 3); } }
       else if (k === 'cuerda') { var ax = x + f * 12; out.fillStyle = '#d8b878'; out.fillRect(Math.min(ax, x), y - 18, Math.abs(ax - x), 1); out.fillStyle = '#10081c'; out.fillRect(ax - 1, y - 21, 4, 4); out.fillStyle = '#c8ccd8'; out.fillRect(ax, y - 20, 2, 2); }
       else if (k === 'galeria') { var fx = x + f * 5; out.fillStyle = '#6a4a2a'; out.fillRect(fx, y - 15, 1, 5); out.fillStyle = ((t + i) >> 2) & 1 ? '#ffd24a' : '#ff8a3a'; out.fillRect(fx, y - 18, 2, 3); }
       if (c.out === 'mal' && r === 'ing' && t >= Math.round(c.n * 0.5) && t < Math.round(c.n * 0.5) + 80) { var ry = y - 11 + (Math.round(t * 0.5) % 2 ? 1 : 0); out.fillStyle = '#f2c9a0'; out.fillRect(x + f * 3, ry, 2, 2); out.fillStyle = '#ff5a4a'; out.fillRect(x - f * 4 + (f < 0 ? -1 : 0), y - 28, 1, 3); out.fillRect(x - f * 4 + (f < 0 ? -1 : 0), y - 24, 1, 1); }
     });
+    if (c.zm > 1.004) {   // v13: zoom de camara (plano 1 hacia fuera, plano 3 se asienta) alrededor del grupo
+      var gx = 0, gy = 0; ROLES.forEach(function (r) { gx += bodies[r].x - cxr; gy += bodies[r].y - cyr; }); gx = clamp(gx / 3, 0, W); gy = clamp(gy / 3 - 12, 0, H);
+      if (!csZc) csZc = canvasOf(W, H); var zx = csZc.getContext('2d'); zx.clearRect(0, 0, W, H); zx.drawImage(out.canvas, 0, 0);
+      out.imageSmoothingEnabled = true; out.drawImage(csZc, gx - gx / c.zm, gy - gy / c.zm, W / c.zm, H / c.zm, 0, 0, W, H); out.imageSmoothingEnabled = false;
+    }
     if (c.ft >= 0) { out.fillStyle = 'rgba(0,0,0,' + (1 - Math.abs(c.ft - 10) / 10).toFixed(2) + ')'; out.fillRect(0, 0, W, H); }
     var bh = Math.max(0, Math.round(Math.min(22, t * 0.8, (c.n - t) * 0.8)));
     if (bh) {
@@ -1457,7 +1473,7 @@ function create(canvas, opts) {
   function doTick() {
     tick++; if (tick % 6 === 0) mmExplore();
     wSlopeT = zoneSlope(); wSlope += clamp(wSlopeT - wSlope, -0.004, 0.004);
-    if (authority) { syncBodies(); gateTick(); if (cs) csTick(); Object.keys(bodies).forEach(function (id) { tickBody(bodies[id]); }); separate(); writeBack(); }
+    if (authority) { syncBodies(); gateTick(); if (cs) csTick(); Object.keys(bodies).forEach(function (id) { tickBody(bodies[id]); for (var q = 1; cs && q < cs.sub; q++) tickBody(bodies[id]); }); separate(); writeBack(); }
     else {
       Object.keys(bodies).forEach(function (id) { var b = bodies[id]; b.x += (b.tx - b.x) * 0.35; b.y += (b.ty - b.y) * 0.35; b.fr++; b.grounded = b.exAnim !== 'jump' && b.exAnim !== 'fall'; });
       if (!st() && false) return;
@@ -1516,7 +1532,7 @@ function create(canvas, opts) {
   function followBody() { return bodies[active]; }
   function camGoal() {
     var vcx = (VIS.x0 + VIS.x1) / 2, vcy = (VIS.y0 + VIS.y1) / 2 + 14, tx, ty, f = followBody();
-    if (cs) { var mx = 0, my = 0; ROLES.forEach(function (r) { mx += bodies[r].x; my += bodies[r].y; }); tx = mx / 3 - vcx; ty = my / 3 - vcy; }   // v12: cinematica: sigue al grupo
+    if (cs) { var mx = 0, my = 0; ROLES.forEach(function (r) { mx += bodies[r].x; my += bodies[r].y; }); tx = mx / 3 - vcx + (cs.lead || 0); ty = my / 3 - vcy; }   // cinematica: travelling continuo sobre el grupo (con adelanto)
     else if (cam.focus) { tx = cam.focus.x - vcx; ty = cam.focus.y - vcy + 14; }
     else if (cam.panT > 0) { tx = cam.panX - vcx; ty = f ? f.y - vcy - 10 : cam.y; }
     else if (cam.mode === 'fixed') { tx = cam.fx; ty = cam.fy; }
@@ -1530,7 +1546,7 @@ function create(canvas, opts) {
   function updCam() {
     if (tick - visT > 45) recalcVis();
     if (cam.focus && --cam.focus.t <= 0) cam.focus = null;
-    var g2 = camGoal(), k = cam.focus ? 0.07 : cam.panT > 0 ? 0.045 : cam.trans > 0 ? 0.05 : 0.09;
+    var g2 = camGoal(), k = cs ? 0.075 : cam.focus ? 0.07 : cam.panT > 0 ? 0.045 : cam.trans > 0 ? 0.05 : 0.09;
     if (cam.panT > 0) cam.panT--; if (cam.trans > 0) cam.trans--;
     cam.x += (g2.x - cam.x) * k; cam.y += (g2.y - cam.y) * (k + 0.02);
   }
@@ -1746,7 +1762,7 @@ function create(canvas, opts) {
   function render() {
     var t = tick, cx0 = cam.x, cy0 = cam.y;
     var sh = shake ? [Math.round((rr() - 0.5) * 2 * shake), Math.round((rr() - 0.5) * 2 * shake)] : [0, 0];
-    if (cs && cs.kind === 'balsa') { sh[0] += Math.round(Math.sin(tick * 0.07)); sh[1] += Math.round(Math.sin(tick * 0.11)); }   // balanceo
+    if (cs && cs.kind === 'balsa') { sh[0] += Math.round(Math.sin(tick * 0.07) * 1.5); sh[1] += Math.round(Math.sin(tick * 0.11) * 1.5); }   // balanceo
     cam.rx = cam.x; cam.ry = cam.y;
     var cxr = Math.round(cam.x) + sh[0], cyr = clamp(Math.round(cam.y) + sh[1], 0, PH - H);
     cam.x = cxr; cam.y = cyr;                    // dibujamos con la camara entera (pixel-perfect)
@@ -2068,7 +2084,6 @@ function create(canvas, opts) {
     // aviso de agua
     var wsy = waterY(wlCur) - cyr;
     if (warnPulse > 0) { out.fillStyle = 'rgba(255,60,60,' + (0.18 * warnPulse * (0.6 + 0.4 * Math.sin(t * 0.4))) + ')'; out.fillRect(0, 0, W, 5); out.fillRect(0, H - 5, W, 5); out.fillRect(0, 0, 4, H); out.fillRect(W - 4, 0, 4, H); }
-    if (wsy > H && wsy < H + 90) { out.fillStyle = 'rgba(90,190,255,' + (0.5 + 0.3 * Math.sin(t * 0.15)) + ')'; out.fillRect(W / 2 - 24, H - 2, 48, 2); drawText(out, 'AGUA ^', W / 2 - 12, H - 9, '#9fe0ff', '#10081c'); }
     if (banner) { var a = Math.min(1, banner.t / 8, (banner.max - banner.t) / 14), tw = textW(banner.text) * 2, bx3 = Math.round((W - tw) / 2); out.globalAlpha = a;
       out.fillStyle = 'rgba(40,6,12,0.8)'; out.fillRect(bx3 - 6, 12, tw + 12, 16); out.fillStyle = (t >> 3) & 1 ? '#ff6a5a' : '#ffd0c0'; out.fillRect(bx3 - 6, 12, tw + 12, 1); out.fillRect(bx3 - 6, 27, tw + 12, 1);
       drawText(out, banner.text, bx3, 16, '#fff0e0', '#40101a', 2); out.globalAlpha = 1; }
@@ -2174,7 +2189,7 @@ function create(canvas, opts) {
     drawArrow(x, y, garg, t, col);
   }
   /* v9: minimapa. Fondo estatico cacheado (offscreen, por tamano/zonas), niebla por celdas, agua y capa dinamica aparte. */
-  var mmX = new Uint8Array(LW * LH), mmS = { key: '', bg: null, air: null, fog: null, fogDirty: true, wt: null, wk: '', cnt: 0 };
+  var mmX = new Uint8Array(LW * LH), mmS = { fog: null, fogDirty: true, z: {}, zn: 0, w: {} };
   var MM_NAMES = ['Entrada', 'Mina', 'Gruta', 'Lago', 'Santuario'];
   function mmExplore() {
     var ch = false;
@@ -2186,14 +2201,14 @@ function create(canvas, opts) {
     });
     if (ch) mmS.fogDirty = true;
   }
-  function mmBuild(n, sc, dw, dh) {   // roca en degradado + galerias claras con borde + tablones + bolsas de aire; filtro de caja si sc<1
-    var c = canvasOf(dw, dh), x = c.getContext('2d'), img = x.createImageData(dw, dh), d = img.data, fa = new Float32Array(dw * dh), px, py, i, j;
-    var tint = [[0, 0, 0], [8, 0, -6], [-4, 6, 4], [-6, 2, 12], [12, -4, 4]];
+  function mmBuild(z, sc) {   // v13: UNA zona (100x40 tiles) a escala sc: roca en degradado + galerias con borde + tablones + bolsas de aire; filtro de caja si sc<1
+    var dw = Math.round(SECW * sc), dh = Math.round(LH * sc), c = canvasOf(dw, dh), x = c.getContext('2d'), img = x.createImageData(dw, dh), d = img.data, fa = new Float32Array(dw * dh), px, py, i, j, sx = dw / SECW, sy = dh / LH, g0 = z * SECW;
+    var tint = [[0, 0, 0], [8, 0, -6], [-4, 6, 4], [-6, 2, 12], [12, -4, 4]][z];
     for (py = 0; py < dh; py++) for (px = 0; px < dw; px++) {
-      var t0 = Math.floor(px / sc), t1 = Math.max(t0 + 1, Math.ceil((px + 1) / sc)), r0 = Math.floor(py / sc), r1 = Math.max(r0 + 1, Math.ceil((py + 1) / sc)), na = 0, np = 0, nt = 0;
-      for (j = r0; j < r1; j++) for (i = t0; i < t1; i++) { var v = (i < n * SECW && j < LH) ? wd.g[j * LW + i] : 1; nt++; if (v === 0) na++; else if (v === 2) np++; }
-      var A = na / nt, P = np / nt, R = 1 - A - P, tn = tint[Math.min(4, (t0 / SECW) | 0)], gy = py / dh, hs = ((t0 * 7 + r0 * 13) & 3) * (sc >= 2 ? 2 : 0);
-      var rk = [44 - 26 * gy + tn[0] + hs, 36 - 24 * gy + tn[1] + hs, 66 - 34 * gy + tn[2] + hs], ga = [124 - 22 * gy, 108 - 20 * gy, 156 - 20 * gy], pl = [236, 178, 96], pw = Math.min(1, P * 1.8), o = (py * dw + px) * 4;
+      var t0 = Math.floor(px / sx), t1 = Math.max(t0 + 1, Math.ceil((px + 1) / sx)), r0 = Math.floor(py / sy), r1 = Math.max(r0 + 1, Math.ceil((py + 1) / sy)), na = 0, np = 0, nt = 0;
+      for (j = r0; j < r1; j++) for (i = t0; i < t1; i++) { var v = (i < SECW && j < LH) ? wd.g[j * LW + g0 + i] : 1; nt++; if (v === 0) na++; else if (v === 2) np++; }
+      var A = na / nt, P = np / nt, R = 1 - A - P, gy = py / dh, hs = ((t0 * 7 + r0 * 13) & 3) * (sc >= 2 ? 2 : 0);
+      var rk = [44 - 26 * gy + tint[0] + hs, 36 - 24 * gy + tint[1] + hs, 66 - 34 * gy + tint[2] + hs], ga = [124 - 22 * gy, 108 - 20 * gy, 156 - 20 * gy], pl = [236, 178, 96], pw = Math.min(1, P * 1.8), o = (py * dw + px) * 4;
       fa[py * dw + px] = A + P;
       for (i = 0; i < 3; i++) d[o + i] = (rk[i] * R + ga[i] * A) / Math.max(0.001, R + A) * (1 - pw) + pl[i] * pw;
       d[o + 3] = 255;
@@ -2207,99 +2222,154 @@ function create(canvas, opts) {
     for (i = 0; i < dw * dh; i++) { ai.data[i * 4] = ai.data[i * 4 + 1] = ai.data[i * 4 + 2] = 255; ai.data[i * 4 + 3] = fa[i] >= 0.4 ? 255 : 0; }
     ax.putImageData(ai, 0, 0);
     wd.pockets.forEach(function (pk) {
-      if (pk.s >= n) return; var qx = Math.floor(pk.x / T * sc), qy = Math.floor(pk.y / T * sc);
+      if (pk.s !== z) return; var qx = Math.floor((pk.x / T - g0) * sc), qy = Math.floor(pk.y / T * sc);
       x.fillStyle = '#e6ecf4'; x.fillRect(qx, qy, sc >= 2 ? 2 : 1, sc >= 2 ? 2 : 1); x.fillStyle = 'rgba(255,255,255,0.35)'; x.fillRect(qx - 1, qy, 1, 1);
     });
-    mmS.bg = c; mmS.air = am;
+    return { bg: c, air: am };
   }
-  function mmWater(dw, dh, sc, t) {
-    var wy = Math.round(waterY(wlCur) / T * sc), k = wy + '|' + (t >> 3) + '|' + dw;
-    if (mmS.wk === k && mmS.wt) return mmS.wt;
-    var c = mmS.wt && mmS.wt.width === dw && mmS.wt.height === dh ? mmS.wt : canvasOf(dw, dh), x = c.getContext('2d'), i; x.globalCompositeOperation = 'source-over'; x.clearRect(0, 0, dw, dh);
+  function mmGet(z, sc) { var k = z + '|' + sc.toFixed(3), e = mmS.z[k]; if (e) return e; if (++mmS.zn > 18) { mmS.z = {}; mmS.zn = 1; mmS.w = {}; } return (mmS.z[k] = mmBuild(z, sc)); }
+  function mmWater(z, sc, e, t) {   // v13: nivel REAL de la zona (cada zona tiene su pendiente: waterY por zona)
+    var dw = e.bg.width, dh = e.bg.height, wyW = (PH + 4 - wlCur * (z >= 1 ? (PH + 4 - (TB * T - 6)) : (PH + 4 - (TA * T - 6))) / 100) / T * sc, wy = Math.round(wyW), k = wy + '|' + (t >> 3) + '|' + dw, o = mmS.w[z];
+    if (o && o.k === k && o.e === e) return o.c;
+    var c = o && o.e === e ? o.c : canvasOf(dw, dh), x = c.getContext('2d'), i; x.globalCompositeOperation = 'source-over'; x.clearRect(0, 0, dw, dh);
     if (wy < dh) {
       x.fillStyle = 'rgba(50,130,230,0.55)'; x.fillRect(0, Math.max(0, wy), dw, dh);
-      x.fillStyle = 'rgba(150,210,255,0.22)'; for (var yy = wy + 3; yy < dh; yy += 3) for (i = 0; i < dw; i += 2) if (Math.sin(i * 0.5 + yy + t * 0.12) > 0.4) x.fillRect(i, yy, 2, 1);
+      if (sc >= 1) { x.fillStyle = 'rgba(150,210,255,0.22)'; for (var yy = wy + 3; yy < dh; yy += 3) for (i = 0; i < dw; i += 2) if (Math.sin(i * 0.5 + yy + t * 0.12) > 0.4) x.fillRect(i, yy, 2, 1); }
       x.fillStyle = 'rgba(190,235,255,0.9)'; for (i = 0; i < dw; i += 2) x.fillRect(i, wy + Math.round(Math.sin(i * 0.45 + t * 0.14) * 0.7), 2, 1);
     }
-    x.globalCompositeOperation = 'destination-in'; x.drawImage(mmS.air, 0, 0); x.globalCompositeOperation = 'source-over';
-    mmS.wk = k; mmS.wt = c; return c;
+    x.globalCompositeOperation = 'destination-in'; x.drawImage(e.air, 0, 0); x.globalCompositeOperation = 'source-over';
+    mmS.w[z] = { k: k, e: e, c: c }; return c;
   }
   function mmFog(n) {   // 1 px por tile; lo no explorado oscuro. Zonas ya superadas (< ultima desbloqueada): visibles
     var tw = n * SECW, c = mmS.fog && mmS.fog.width === tw ? mmS.fog : canvasOf(tw, LH), x = c.getContext('2d'), img = x.createImageData(tw, LH), i;
     for (i = 0; i < tw * LH; i++) { var tx = i % tw; img.data[i * 4] = 6; img.data[i * 4 + 1] = 4; img.data[i * 4 + 2] = 14; img.data[i * 4 + 3] = (tx / SECW | 0) < n - 1 || mmX[((i / tw) | 0) * LW + tx] ? 0 : 125; }
     x.putImageData(img, 0, 0); mmS.fog = c; mmS.fogDirty = false; return c;
   }
-  function drawMinimap(ctx, w, h) {
+  function mmZone(wx) { return clamp(Math.floor(wx / (SECW * T)), 0, NS - 1); }
+  /* v13: minimapa en rejilla de 2 columnas, zonas apiladas HACIA ARRIBA (1 abajo-izq, 2 abajo-der, 3 encima-izq, 4 encima-der, 5 arriba centrada), cada una un cuadro con borde y rotulo, flechas n -> n+1.
+     Grande (w>=400 y h>=200): todos los cuadros, escala entera. Compacto: zona actual ampliada + miniaturas apiladas a la derecha.
+     opts = {zoom:1..3 (centrado en el jugador), panX, panY (en tiles, desplaza el centro del zoom)} */
+  function drawMinimap(ctx, w, h, opts) {
     if (!ctx || !w || !h) return false;
-    w = Math.round(w); h = Math.round(h); mmExplore();
-    var big = w >= 400, n = clamp(unlocked, 1, NS), m = big ? 5 : 3, aw = w - 2 * m, ah = h - 2 * m, sc = Math.min(aw / (n * SECW), ah / LH);
-    if (sc >= 1) sc = Math.floor(sc);
-    var dw = Math.max(1, Math.floor(n * SECW * sc)), dh = Math.max(1, Math.floor(LH * sc)), ox = Math.floor((w - dw) / 2), oy = Math.floor((h - dh) / 2), t = tick, k;
-    var key = [n, sc.toFixed(3), dw, dh].join();
-    if (mmS.key !== key) { mmBuild(n, sc, dw, dh); mmS.key = key; mmS.fogDirty = true; mmS.wk = ''; }
-    var r = big ? 4 : 3, ls = big ? 2 : 1, blink = (t % 40) < 24;
-    function pt(wx2, wy2) { return [Math.round(ox + wx2 / T * sc), Math.round(oy + wy2 / T * sc)]; }
-    function seen(wx2, wy2) { var cx = (wx2 / T) | 0, cy = (wy2 / T) | 0; return cx / SECW < n - 1 || (cx < n * SECW && cy >= 0 && cy < LH && mmX[cy * LW + cx] === 1); }
+    w = Math.round(w); h = Math.round(h); mmExplore(); opts = opts || {};
+    var n = clamp(unlocked, 1, NS), zoom = clamp(+opts.zoom || 1, 1, 3), panX = +opts.panX || 0, panY = +opts.panY || 0, t = tick, k, V = [];
+    var big = w >= 400 && h >= 200, m = big ? 5 : 3, ls = big ? 2 : 1, lh = 5 * ls + 3, gap = big ? 18 : 4, lr = big ? 0 : lh, vw = w, vh = h;
+    var me = bodies[active], az = me ? clamp(mmZone(me.x), 0, n - 1) : 0, mex = me ? (me.x / T - az * SECW) : 50, mey = me ? (me.y - 6) / T : 20;
+    function fitOff(total, view, want, mg) { return total + 2 * mg <= view ? Math.round((view - total) / 2) : clamp(Math.round(want), view - mg - total, mg); }
+    function mkView(z, s, fx, fy, fw, fh, ox, oy, mini, lab) { return { z: z, s: s, fx: fx, fy: fy, fw: fw, fh: fh, ox: ox, oy: oy, mini: mini, lab: lab }; }
+    if (big) {
+      var cols = n > 1 ? 2 : 1, rows = Math.ceil(n / 2), base = Math.min((vw - 2 * m - (cols - 1) * gap) / (cols * SECW), (vh - 2 * m - (rows - 1) * gap) / (rows * LH)), sc = base >= 1 ? Math.floor(base) : base;
+      if (zoom > 1) { var s2 = base * zoom; sc = Math.min(8, s2 >= 1 ? Math.max(Math.floor(Math.max(1, base)), Math.round(s2)) : s2); }
+      var cw = Math.round(SECW * sc), ch = Math.round(LH * sc), gw = cols * cw + (cols - 1) * gap, gh = rows * ch + (rows - 1) * gap;
+      var pxz = (az & 1) * (cw + gap) + (n > 1 && n & 1 && az === n - 1 ? ((gw - cw) / 2 - (az & 1) * (cw + gap)) : 0) + (mex + panX) * sc, pyz = (rows - 1 - (az >> 1)) * (ch + gap) + (mey + panY) * sc;
+      var ox = fitOff(gw, vw, vw / 2 - pxz, m), oy = fitOff(gh, vh, vh / 2 - pyz, m);
+      for (k = 0; k < n; k++) {
+        var cx2 = (n > 1 && (n & 1) && k === n - 1) ? Math.round((gw - cw) / 2) : (k & 1) * (cw + gap), cy2 = (rows - 1 - (k >> 1)) * (ch + gap);
+        V.push(mkView(k, sc, ox + cx2, oy + cy2, cw, ch, ox + cx2, oy + cy2, false, true));
+      }
+    } else {
+      var mini = n > 1, msc = 0.3, mcw = Math.round(SECW * msc), mch = Math.round(LH * msc), mainW = w - 2 * m - (mini ? mcw + 4 : 0), mainH = h - 2 * m - lr, bs = Math.min(mainW / SECW, mainH / LH);
+      var sc1 = Math.min(8, Math.max(0.5, Math.floor(bs * 4 * zoom) / 4)), cw1 = Math.round(SECW * sc1), ch1 = Math.round(LH * sc1), fw = Math.min(mainW, cw1), fh = Math.min(mainH, ch1);
+      if (zoom === 1 && bs >= 1) { sc1 = Math.floor(bs * 4) / 4; cw1 = Math.round(SECW * sc1); ch1 = Math.round(LH * sc1); fw = Math.min(mainW, cw1); fh = Math.min(mainH, ch1); }
+      var fx = m + Math.round((mainW - fw) / 2), fy = m + lr + Math.round((mainH - fh) / 2), mox = fx + fitOff(cw1, fw, fw / 2 - (mex + panX) * sc1, 0), moy = fy + fitOff(ch1, fh, fh / 2 - (mey + panY) * sc1, 0);
+      V.push(mkView(az, sc1, fx, fy, fw, fh, mox, moy, false, true));
+      if (mini) { var tot = n * mch + (n - 1) * gap, y0 = Math.round((h - tot) / 2); for (k = 0; k < n; k++) V.push(mkView(k, msc, w - m - mcw, y0 + (n - 1 - k) * (mch + gap), mcw, mch, w - m - mcw, y0 + (n - 1 - k) * (mch + gap), true, false)); }
+    }
+    mmFog(n);
+    var blink = (t % 40) < 24, pu = 0.5 + 0.5 * Math.sin(t * 0.12);
     function rr2(x0, y0, w0, h0, rad) { ctx.beginPath(); ctx.moveTo(x0 + rad, y0); ctx.lineTo(x0 + w0 - rad, y0); ctx.quadraticCurveTo(x0 + w0, y0, x0 + w0, y0 + rad); ctx.lineTo(x0 + w0, y0 + h0 - rad); ctx.quadraticCurveTo(x0 + w0, y0 + h0, x0 + w0 - rad, y0 + h0); ctx.lineTo(x0 + rad, y0 + h0); ctx.quadraticCurveTo(x0, y0 + h0, x0, y0 + h0 - rad); ctx.lineTo(x0, y0 + rad); ctx.quadraticCurveTo(x0, y0, x0 + rad, y0); ctx.closePath(); }
     function diamond(q, s, col, ol) { ctx.beginPath(); ctx.moveTo(q[0], q[1] - s); ctx.lineTo(q[0] + s, q[1]); ctx.lineTo(q[0], q[1] + s); ctx.lineTo(q[0] - s, q[1]); ctx.closePath(); ctx.fillStyle = col; ctx.fill(); ctx.strokeStyle = ol; ctx.lineWidth = 1; ctx.stroke(); }
-    function lock(q, col, open) {
-      var s = big ? 4 : 3; ctx.strokeStyle = open ? '#6bf08a' : '#e8e0f0'; ctx.lineWidth = 1; ctx.beginPath(); if (open) ctx.arc(q[0] + s - 1, q[1] - s + 1, s * 0.6, Math.PI, TAU * 0.95); else ctx.arc(q[0], q[1] - 1, s * 0.6, Math.PI, TAU); ctx.stroke();
+    function lock(q, col, open, s) {
+      ctx.strokeStyle = open ? '#6bf08a' : '#e8e0f0'; ctx.lineWidth = 1; ctx.beginPath(); if (open) ctx.arc(q[0] + s - 1, q[1] - s + 1, s * 0.6, Math.PI, TAU * 0.95); else ctx.arc(q[0], q[1] - 1, s * 0.6, Math.PI, TAU); ctx.stroke();
       ctx.fillStyle = '#10081c'; ctx.fillRect(q[0] - s, q[1] - 1, s * 2 + 1, s + 3); ctx.fillStyle = open ? '#4fd070' : col; ctx.fillRect(q[0] - s + 1, q[1], s * 2 - 1, s + 1);
+    }
+    function arrowHead(x, y, dx, dy, s) { ctx.fillStyle = '#ffd24a'; ctx.strokeStyle = '#10081c'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x + dx * s, y + dy * s); ctx.lineTo(x - dy * s * 0.9 - dx * s * 0.2, y + dx * s * 0.9 - dy * s * 0.2); ctx.lineTo(x + dy * s * 0.9 - dx * s * 0.2, y - dx * s * 0.9 - dy * s * 0.2); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+    function seen(wx2, wy2) { var cx = (wx2 / T) | 0, cy = (wy2 / T) | 0; return cx / SECW < n - 1 || (cx < n * SECW && cy >= 0 && cy < LH && mmX[cy * LW + cx] === 1); }
+    function drawView(v) {
+      var s = v.s, z = v.z, e = mmGet(z, s), dw = e.bg.width, dh = e.bg.height, r = v.mini ? 1 : s >= 2.5 ? 4 : s >= 1.2 ? 3 : 2, tl = z * SECW * T;
+      var cx0 = Math.max(0, v.fx), cy0 = Math.max(0, v.fy), cx1 = Math.min(vw, v.fx + v.fw), cy1 = Math.min(vh, v.fy + v.fh);
+      if (cx1 <= cx0 || cy1 <= cy0) return;
+      function pt(wx2, wy2) { return [Math.round(v.ox + (wx2 - tl) / T * s), Math.round(v.oy + wy2 / T * s)]; }
+      function inZ(o) { return mmZone(o.x) === z && o.x / T < n * SECW; }
+      ctx.save(); ctx.beginPath(); ctx.rect(cx0, cy0, cx1 - cx0, cy1 - cy0); ctx.clip(); ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(e.bg, v.ox, v.oy); ctx.drawImage(mmWater(z, s, e, t), v.ox, v.oy);
+      ctx.imageSmoothingEnabled = true; ctx.drawImage(mmS.fog, z * SECW, 0, SECW, LH, v.ox, v.oy, dw, dh); ctx.imageSmoothingEnabled = false;
+      var q, k2;
+      if (!v.mini) {
+        for (k2 in pois) {
+          var p = pois[k2]; if (!inZ(p) || (p.kind === 'secreto' && !p.disc && !p.used) || !seen(p.x, p.y)) continue;
+          q = pt(p.x, p.y - 8);
+          if (p.used) { diamond(q, r - 1, '#7a788a', '#3a384a'); ctx.strokeStyle = '#e8e8f0'; ctx.beginPath(); ctx.moveTo(q[0] - 1.5, q[1]); ctx.lineTo(q[0] - 0.5, q[1] + 1.5); ctx.lineTo(q[0] + 2, q[1] - 1.5); ctx.stroke(); }
+          else diamond(q, r - 0.5 + pu * 1.2, '#ffd24a', '#7a4a10');
+        }
+        GT.forEach(function (g0) { if (g0.zone !== z + 1 || !seen(g0.x, g0.y)) return; lock(pt(g0.x, g0.y - 6), ROLE_COL[g0.role].coat, g0.open, r); });
+      }
+      if (z === 4 && n >= 5) {   // camara de Lia
+        var ql = pt(wd.lia.x, wd.lia.y - 6), lr = v.mini ? 1 : r;
+        if (v.mini) { ctx.fillStyle = '#ff7ac8'; ctx.fillRect(ql[0] - 1, ql[1] - 1, 3, 3); }
+        else { ctx.fillStyle = '#10081c'; ctx.fillRect(ql[0] - lr - 1, ql[1] - lr + 1, 2 * lr + 3, 2 * lr - 1); ctx.fillStyle = '#ff7ac8'; ctx.fillRect(ql[0] - lr, ql[1] - lr + 2, 2 * lr + 1, 2 * lr - 3); ctx.fillRect(ql[0] - 2, ql[1] - lr, 3, 2); ctx.fillStyle = '#10081c'; ctx.beginPath(); ctx.arc(ql[0], ql[1] + 0.5, lr * 0.45 + 0.5, 0, TAU); ctx.fill(); ctx.fillStyle = '#fff'; ctx.fillRect(ql[0], ql[1] - 1, 1, 1); }
+      }
+      var gp = guideT === null ? null : targetPos(guideT);
+      if (gp && inZ(gp)) {   // destino de la guia
+        var qg = pt(gp.x, gp.y - 8), ph2 = (t * 0.04) % 1, bob2 = Math.round(Math.abs(Math.sin(t * 0.12)) * 2);
+        if (v.mini) { ctx.fillStyle = blink ? '#ffe070' : '#a08a30'; ctx.fillRect(qg[0] - 1, qg[1] - 1, 3, 3); }
+        else {
+          ctx.strokeStyle = 'rgba(255,255,255,' + (0.95 - ph2 * 0.7) + ')'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(qg[0], qg[1], r + 2 + ph2 * 5, 0, TAU); ctx.stroke();
+          ctx.strokeStyle = '#ffe070'; ctx.beginPath(); ctx.arc(qg[0], qg[1], r + 2, 0, TAU); ctx.stroke();
+          var ay = qg[1] - r - 6 - bob2; ctx.fillStyle = '#ffe070'; ctx.strokeStyle = '#10081c'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(qg[0], ay + 5); ctx.lineTo(qg[0] - 4, ay - 1); ctx.lineTo(qg[0] + 4, ay - 1); ctx.closePath(); ctx.fill(); ctx.stroke();
+        }
+      }
+      function who(role, mine) {
+        var bb = bodies[role]; if (!bb || !inZ(bb)) return; var q2 = pt(bb.x, bb.y - 6), col = (ROLE_COL[role] || ROLE_COL.guia).coat;
+        if (v.mini) { ctx.fillStyle = mine ? '#fff' : col; ctx.fillRect(q2[0] - 1, q2[1] - 1, mine ? 3 : 2, mine ? 3 : 2); if (mine) { ctx.fillStyle = col; ctx.fillRect(q2[0], q2[1], 1, 1); } return; }
+        var rad = mine ? r + 1 : r;
+        if (mine) { ctx.strokeStyle = blink ? '#fff' : 'rgba(255,255,255,0.35)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(q2[0], q2[1], rad + 1.5, 0, TAU); ctx.stroke(); }
+        ctx.fillStyle = col; ctx.strokeStyle = '#10081c'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(q2[0], q2[1], rad, 0, TAU); ctx.fill(); if (!mine) ctx.stroke();
+        if (mine) { var fx2 = bb.face >= 0 ? 1 : -1; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(q2[0] + fx2 * (rad + 4), q2[1]); ctx.lineTo(q2[0] + fx2 * rad, q2[1] - 3); ctx.lineTo(q2[0] + fx2 * rad, q2[1] + 3); ctx.closePath(); ctx.fill(); }
+        else if (rad >= 3) drawText(ctx, (NAMES[role] || role)[0], q2[0] - 1, q2[1] - 2, '#fff', '#10081c', 1);
+      }
+      ROLES.forEach(function (rl) { if (rl !== active) who(rl, false); }); who(active, true);
+      ctx.restore();
+      var cur = z === az;   // marco y rotulo
+      ctx.save(); ctx.beginPath(); ctx.rect(0, 0, vw, vh); ctx.clip();
+      ctx.strokeStyle = cur ? '#ffd24a' : '#8a7aa0'; ctx.lineWidth = 1; ctx.strokeRect(v.fx - 0.5, v.fy - 0.5, v.fw + 1, v.fh + 1);
+      if (v.lab) {
+        var ly = big ? v.fy : v.fy - lh; ctx.fillStyle = big ? (cur ? 'rgba(58,42,20,0.82)' : 'rgba(16,8,28,0.78)') : cur ? '#3a2a14' : '#1c1230'; ctx.fillRect(v.fx, ly, v.fw, lh);
+        if (!big) { ctx.strokeStyle = cur ? '#ffd24a' : '#8a7aa0'; ctx.strokeRect(v.fx - 0.5, ly - 0.5, v.fw + 1, lh); }
+        var nm = (z + 1) + ' ' + MM_NAMES[z]; if (textW(nm) * ls > v.fw - 6) nm = String(z + 1);
+        drawText(ctx, nm, v.fx + 3, ly + 3, cur ? '#ffe9a0' : '#f0e4ff', '#10081c', ls);
+        if (cur) { var st2 = 'AQUI'; if (v.fw > textW(nm) * ls + textW(st2) * ls + 14) drawText(ctx, st2, v.fx + v.fw - 3 - textW(st2) * ls, ly + 3, '#ffd24a', '#10081c', ls); }
+      } else if (v.mini) drawText(ctx, String(z + 1), v.fx + 2, v.fy + 2, cur ? '#ffe9a0' : '#f0e4ff', '#10081c', 1);
+      ctx.restore();
     }
     ctx.save(); ctx.imageSmoothingEnabled = false;
     ctx.fillStyle = '#0a0712'; ctx.fillRect(0, 0, w, h);
     rr2(1, 1, w - 2, h - 2, 4); ctx.clip();
-    ctx.drawImage(mmS.bg, ox, oy); ctx.drawImage(mmWater(dw, dh, sc, t), ox, oy);
-    if (mmS.fogDirty || !mmS.fog || mmS.fog.width !== n * SECW) mmFog(n);
-    ctx.imageSmoothingEnabled = true; ctx.drawImage(mmS.fog, ox, oy, dw, dh); ctx.imageSmoothingEnabled = false;
-    // limites y rotulos de zona
-    var lh = 5 * ls + 2, ly = oy - lh - 1 >= 2 ? oy - lh - 1 : oy + 2;
-    for (k = 0; k < n; k++) {
-      var zx = ox + Math.round(k * SECW * sc);
-      if (k) { ctx.fillStyle = 'rgba(230,210,255,0.45)'; for (var yy = oy; yy < oy + dh; yy += 4) ctx.fillRect(zx, yy, 1, 2); }
-      var nm = (k + 1) + ' ' + MM_NAMES[k]; if (textW(nm) * ls > SECW * sc - 4) nm = String(k + 1);
-      drawText(ctx, nm, zx + 3, ly, k < n - 1 || mmX.length ? '#f0e4ff' : '#fff', '#10081c', ls);
-    }
-    // puntos de interes
-    var pu = 0.5 + 0.5 * Math.sin(t * 0.12);
-    for (k in pois) {
-      var p = pois[k]; if ((p.kind === 'secreto' && !p.disc && !p.used) || p.x / T >= n * SECW || !seen(p.x, p.y)) continue;
-      var q = pt(p.x, p.y - 8);
-      if (p.used) { diamond(q, r - 1, '#7a788a', '#3a384a'); ctx.strokeStyle = '#e8e8f0'; ctx.beginPath(); ctx.moveTo(q[0] - 1.5, q[1]); ctx.lineTo(q[0] - 0.5, q[1] + 1.5); ctx.lineTo(q[0] + 2, q[1] - 1.5); ctx.stroke(); }
-      else diamond(q, r - 0.5 + pu * 1.2, '#ffd24a', '#7a4a10');
-    }
-    // puertas de habilidad
-    GT.forEach(function (g0) { if (g0.zone > n || !seen(g0.x, g0.y)) return; lock(pt(g0.x, g0.y - 6), ROLE_COL[g0.role].coat, g0.open); });
-    // camara de Lia
-    if (n >= 5) { var ql = pt(wd.lia.x, wd.lia.y - 6); ctx.fillStyle = '#10081c'; ctx.fillRect(ql[0] - r - 1, ql[1] - r + 1, 2 * r + 3, 2 * r - 1); ctx.fillStyle = '#ff7ac8'; ctx.fillRect(ql[0] - r, ql[1] - r + 2, 2 * r + 1, 2 * r - 3); ctx.fillRect(ql[0] - 2, ql[1] - r, 3, 2); ctx.fillStyle = '#10081c'; ctx.beginPath(); ctx.arc(ql[0], ql[1] + 0.5, r * 0.45 + 0.5, 0, TAU); ctx.fill(); ctx.fillStyle = '#fff'; ctx.fillRect(ql[0], ql[1] - 1, 1, 1); }
-    // destino de la guia
-    var gp = guideT === null ? null : targetPos(guideT);
-    if (gp && gp.x / T < n * SECW) {
-      var qg = pt(gp.x, gp.y - 8), ph2 = (t * 0.04) % 1, bob2 = Math.round(Math.abs(Math.sin(t * 0.12)) * 2);
-      ctx.strokeStyle = 'rgba(255,255,255,' + (0.95 - ph2 * 0.7) + ')'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(qg[0], qg[1], r + 2 + ph2 * 5, 0, TAU); ctx.stroke();
-      ctx.strokeStyle = '#ffe070'; ctx.beginPath(); ctx.arc(qg[0], qg[1], r + 2, 0, TAU); ctx.stroke();
-      var ay = qg[1] - r - 6 - bob2; ctx.fillStyle = '#ffe070'; ctx.strokeStyle = '#10081c'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(qg[0], ay + 5); ctx.lineTo(qg[0] - 4, ay - 1); ctx.lineTo(qg[0] + 4, ay - 1); ctx.closePath(); ctx.fill(); ctx.stroke();
-    }
-    // companeros y tu
-    function who(role, me) {
-      var bb = bodies[role]; if (!bb || bb.x / T >= n * SECW) return; var q = pt(bb.x, bb.y - 6), col = (ROLE_COL[role] || ROLE_COL.guia).coat, rad = me ? r + 1 : r;
-      if (me) { ctx.strokeStyle = blink ? '#fff' : 'rgba(255,255,255,0.35)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(q[0], q[1], rad + 1.5, 0, TAU); ctx.stroke(); }
-      ctx.fillStyle = col; ctx.strokeStyle = '#10081c'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(q[0], q[1], rad, 0, TAU); ctx.fill(); if (!me) ctx.stroke();
-      if (me) { var fx = bb.face >= 0 ? 1 : -1; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(q[0] + fx * (rad + 4), q[1]); ctx.lineTo(q[0] + fx * (rad), q[1] - 3); ctx.lineTo(q[0] + fx * (rad), q[1] + 3); ctx.closePath(); ctx.fill(); }
-      else if (rad >= 3) drawText(ctx, (NAMES[role] || role)[0], q[0] - 1, q[1] - 2, '#fff', '#10081c', 1);
-    }
-    ROLES.forEach(function (rl) { if (rl !== active) who(rl, false); }); who(active, true);
-    // leyenda
+    V.forEach(drawView);
+    // flechas de subida n -> n+1 
+    ctx.save(); ctx.beginPath(); ctx.rect(0, 0, vw, vh); ctx.clip(); ctx.lineWidth = 2; ctx.setLineDash([3, 2]); ctx.lineDashOffset = -(t >> 1) % 5; ctx.strokeStyle = '#ffd24a';
     if (big) {
-      var items = [['TU', 0], ['AMIGOS', 1], ['PUNTOS', 2], ['PUERTAS', 3]], lw = 0; items.forEach(function (it) { lw += 16 + textW(it[0]) * 2 + 10; });
-      var lx = 6, lyy = h - 18; ctx.fillStyle = 'rgba(10,7,18,0.8)'; ctx.fillRect(lx - 3, lyy - 4, lw + 2, 16);
-      items.forEach(function (it) {
-        var q = [lx + 6, lyy + 4]; if (it[1] === 0) { ctx.fillStyle = (ROLE_COL[active] || ROLE_COL.guia).coat; ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(q[0], q[1], 4, 0, TAU); ctx.fill(); ctx.stroke(); }
-        else if (it[1] === 1) { ctx.fillStyle = ROLE_COL.medica.coat; ctx.strokeStyle = '#10081c'; ctx.beginPath(); ctx.arc(q[0], q[1], 4, 0, TAU); ctx.fill(); ctx.stroke(); }
-        else if (it[1] === 2) diamond(q, 4, '#ffd24a', '#7a4a10'); else lock(q, ROLE_COL.ing.coat, false);
-        drawText(ctx, it[0], lx + 14, lyy, '#f0e4ff', '#10081c', 2); lx += 16 + textW(it[0]) * 2 + 10;
-      });
+      for (k = 0; k + 1 < V.length; k++) {
+        var a = V[k], b2 = V[k + 1], ex, ey;
+        ctx.beginPath(); ctx.strokeStyle = '#ffd24a'; ctx.lineWidth = 2; ctx.setLineDash([3, 2]);
+        if (!(k & 1)) { var ay2 = a.fy + Math.round(a.fh / 2); ctx.moveTo(a.fx + a.fw + 1, ay2); ctx.lineTo(b2.fx - 5, ay2); ex = b2.fx - 1; ey = ay2; ctx.stroke(); ctx.setLineDash([]); arrowHead(ex - 1, ey, 1, 0, 5); ctx.setLineDash([3, 2]); }
+        else { var sx2 = a.fx + Math.round(a.fw / 2), sy2 = a.fy - 1, tx2 = b2.fx + Math.round(b2.fw / 2), ty2 = b2.fy + b2.fh + 1, my = Math.round((sy2 + ty2) / 2) + 1; ctx.moveTo(sx2, sy2); ctx.lineTo(sx2, my); ctx.lineTo(tx2, my); ctx.lineTo(tx2, ty2 + 5); ctx.stroke(); ctx.setLineDash([]); arrowHead(tx2, ty2 + 1, 0, -1, 5); ctx.setLineDash([3, 2]); }
+      }
     }
+    ctx.restore();
+    if (!big && V.length > 1) { ctx.save(); ctx.beginPath(); ctx.rect(0, 0, vw, vh); ctx.clip(); for (k = 1; k < n; k++) { var mv = V[k + 1]; arrowHead(mv.fx + (mv.fw >> 1), mv.fy - 2 + (blink ? 0 : 1), 0, -1, 3); } ctx.restore(); }   // miniaturas: flecha de subida entre zonas
+    if (big) {
+      var items = [['TU', 0], ['AMIGOS', 1], ['PUNTOS', 2], ['PUERTAS', 3]], lyy = h - 12 - items.length * 12;   // leyenda vertical (hueco lateral de la rejilla)
+      ctx.fillStyle = 'rgba(10,7,18,0.8)'; ctx.fillRect(4, lyy - 3, 78, items.length * 12 + 4);
+      items.forEach(function (it, ii) {
+        var q = [12, lyy + ii * 12 + 4]; if (it[1] === 0) { ctx.fillStyle = (ROLE_COL[active] || ROLE_COL.guia).coat; ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(q[0], q[1], 3, 0, TAU); ctx.fill(); ctx.stroke(); }
+        else if (it[1] === 1) { ctx.fillStyle = ROLE_COL.medica.coat; ctx.strokeStyle = '#10081c'; ctx.beginPath(); ctx.arc(q[0], q[1], 3, 0, TAU); ctx.fill(); ctx.stroke(); }
+        else if (it[1] === 2) diamond(q, 3, '#ffd24a', '#7a4a10'); else lock(q, ROLE_COL.ing.coat, false, 3);
+        drawText(ctx, it[0], 20, lyy + ii * 12 + 1, '#f0e4ff', '#10081c', 1);
+      });
+      drawText(ctx, 'EL AGUA SUBE', w - 8 - textW('EL AGUA SUBE'), h - 12, '#ffd24a', '#10081c', 1);
+    }
+    if (zoom > 1) { var zt = 'x' + (Math.round(zoom * 10) / 10); drawText(ctx, zt, w - 6 - textW(zt) * ls, 4, '#fff', '#10081c', ls); }
     ctx.restore(); ctx.save();
     ctx.strokeStyle = '#8a7aa0'; ctx.lineWidth = 1; rr2(1.5, 1.5, w - 3, h - 3, 4); ctx.stroke();
     ctx.fillStyle = '#ffd24a'; [[0, 0], [w - 2, 0], [0, h - 2], [w - 2, h - 2]].forEach(function (c2) { ctx.fillRect(c2[0], c2[1], 2, 2); });
@@ -2398,13 +2468,13 @@ global.Engine = { create: create, demoLoop: demoLoop, waterY: waterY, W: W, H: H
   pan: function (r) { if (this.current) this.current.pan(r); },
   fx: function (t, x, y) { if (this.current) this.current.fx(t, x, y); },
   camShake: function (a) { if (this.current) this.current.camShake(a); },
-  sectionOf: function (x) { return clamp(Math.floor(x / SPW), 0, NS - 1) + 1; }, version: '12.0',
+  sectionOf: function (x) { return clamp(Math.floor(x / SPW), 0, NS - 1) + 1; }, version: '13.0',
   setGuide: function (t, o) { if (this.current) this.current.setGuide(t, o); },
   getPoiPos: function (id) { return this.current ? this.current.getPoiPos(id) : null; },
   getRoute: function (id) { return this.current ? this.current.getRoute(id) : null; },
   focus: function (x, y, o) { if (this.current) this.current.focus(x, y, o); },
   setViewInsets: function (o) { if (this.current) this.current.setViewInsets(o); },
-  drawMinimap: function (c, w, h) { return this.current ? this.current.drawMinimap(c, w, h) : false; },
+  drawMinimap: function (c, w, h, o) { return this.current ? this.current.drawMinimap(c, w, h, o) : false; },
   setUnlocked: function (n) { if (this.current) this.current.setUnlocked(n); }, getZone: function (r) { return this.current ? this.current.getZone(r) : 1; },
   getGates: function () { return this.current ? this.current.getGates() : []; }, openGate: function (id, now) { return this.current ? this.current.openGate(id, now) : false; },
   nearGate: function (r) { return this.current ? this.current.nearGate(r) : null; }, useAbility: function (r) { return this.current ? this.current.useAbility(r) : { ok: false, reason: 'sin motor' }; },

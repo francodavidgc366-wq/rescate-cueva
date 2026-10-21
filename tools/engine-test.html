@@ -95,6 +95,17 @@ T.travel=function(water,kind,outcome,ms,from){inst.stop();inst.resetGates();inst
     var sp=inst.world.spawns[to-1],d=['guia','medica','ing'].map(function(r,i){var b=inst.bodies[r];return Math.round(Math.hypot(b.x-(sp.x+i*16),b.y-sp.y))}),bots=['guia','medica','ing'].map(function(r){return inst.bodies[r].bot});
     res.push({from:a,to:to,ok:ok,wasCs:wasCs,unl:unl,s:+(done/60).toFixed(1),calls:calls,atDone:atDone,dist:d,bots:bots.join(','),fadeBots:fadeBots,cam:Math.round(Math.abs(inst.cam.x-(inst.bodies.guia.x-160)))})});
   inst.start();return res};
+// v13: T.travel13(kind, outcome, ms, from): como T.travel pero muestrea cada tick el cuerpo del jugador (guia): salto maximo entre fotogramas, planos (onShot), zoom, llegada de los 3. shots=[tick por plano]. caps=[ticks] -> T.frames
+T.frames={};
+T.travel13=function(kind,outcome,ms,caps,water){inst.stop();inst.resetGates();inst.setWaterRate(0);var res=[],R=['guia','medica','ing'];
+  [[1,2],[2,3],[3,4],[4,5]].forEach(function(z){var a=z[0],to=z[1];inst.resetGates();inst.setUnlocked(a);state.round=a;inst.gather(a);R.forEach(function(x){inst.setBot(x,x!=='guia')});inst.setLocal('guia');inst.setWater(water===undefined?5:water);inst.setWaterRate(0);for(var k=0;k<300;k++)inst.step();
+    var shots=[],calls=0,done=-1,t0=inst.tick,atDone='',warpsT=[],ok=inst.playTravel({toZone:to,kind:kind,outcome:outcome,ms:ms,onShot:function(i,nm){shots.push([i,nm,inst.tick-t0])}},function(){calls++;done=inst.tick-t0;var sp0=inst.world.spawns[to-1];atDone=R.map(function(r,i){var b=inst.bodies[r];return Math.round(Math.hypot(b.x-(sp0.x+i*16),b.y-sp0.y))}).join('/')});
+    var g=inst.bodies.guia,px=g.x,py=g.y,mx=0,mxAt=0,camJ=0,pc={x:inst.cam.x,y:inst.cam.y},maxZ=1,fade=0,snap;
+    for(var k=0;k<1200&&inst.isCutscene();k++){inst.step();var d=Math.hypot(g.x-px,g.y-py);if(d>mx){mx=d;mxAt=k}px=g.x;py=g.y;var cj=Math.hypot(inst.cam.x-pc.x,inst.cam.y-pc.y);if(cj>camJ)camJ=cj;pc={x:inst.cam.x,y:inst.cam.y};var s=inst.snapshot();if(s.cs){if(s.cs[4]>=0)fade++;if(s.cs[6]/100>maxZ)maxZ=s.cs[6]/100}
+      if(caps&&caps.indexOf(k)>=0){inst.render();T.frames[kind+'_'+to+'_'+k]=document.getElementById('c').toDataURL()}}
+    for(var k=0;k<30;k++)inst.step();var sp=inst.world.spawns[to-1];
+    res.push({from:a,to:to,ok:ok,calls:calls,s:+(done/60).toFixed(1),shots:shots.map(function(q){return q[0]+':'+q[1]+'@'+(q[2]/60).toFixed(1)}).join(' '),atDone:atDone,dist:R.map(function(r,i){var b=inst.bodies[r];return Math.round(Math.hypot(b.x-(sp.x+i*16),b.y-sp.y))}).join('/'),maxStep:+mx.toFixed(1),maxStepAt:mxAt,camJump:+camJ.toFixed(1),fadeTicks:fade,maxZoom:maxZ,bots:R.map(function(r){return inst.bodies[r].bot?1:0}).join('')})});
+  inst.start();return res};
 T.dump=function(z){var o=[],g=inst.world.g;for(var r=0;r<40;r++){var l='';for(var c=0;c<100;c++){var v=g[r*500+(z-1)*100+c];l+=v==1?'#':v==2?'=':'.'}o.push(l)}return o.join('\n')};
 T.rmap=function(z,role){var seen={},b=inst.bodies[role||'guia'],sp=inst.world.spawns[z-1];inst.setUnlocked(5);inst.gather(z);var st=Math.round(sp.y/16)*500+Math.floor(sp.x/16);var o=inst.nav.out;var q=[st];seen[st]=1;
   while(q.length){var n=q.shift();(o[n]||[]).forEach(function(e){if(!seen[e.to]){seen[e.to]=1;q.push(e.to)}})}

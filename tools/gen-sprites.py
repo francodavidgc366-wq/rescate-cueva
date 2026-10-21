@@ -483,5 +483,6 @@ if __name__ == '__main__':
     import art_portraits7; art_portraits7.gen7(); art_portraits7.preview7(os.path.join(OUT, '..', 'preview_cast7.png'))  # v7: retratos 96x96 gotico (sobrescribe portrait_*)
     META.update(artlib.META); art_icons4.props_baselines(META)
     import art_faces8; META.update(art_faces8.gen())  # v8: face_<id> 48x48 Celeste + face_frame + preview_cast8.png
+    import art_ends13; META.update(art_ends13.gen())  # v13: end_good_1..3 / end_bad_1..3 (480x270)
     json.dump(META, open(os.path.join(OUT, 'meta.json'), 'w'), indent=1)
     print('ok', {k: (v['w'], v['h']) for k, v in META.items()})

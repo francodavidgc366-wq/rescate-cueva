@@ -1100,5 +1100,35 @@
   "h": 16,
   "slice": 5,
   "note": "v8 9-slice: oscuro 2px, claro 2px, filete lila 1px; centro transparente (poner meta.bg del retrato detras)"
+ },
+ "end_good_1": {
+  "w": 480,
+  "h": 270,
+  "note": "ilustracion de final 480x270 (mas ancha que 16:9) para Ken Burns/paneo; sin alfa"
+ },
+ "end_good_2": {
+  "w": 480,
+  "h": 270,
+  "note": "ilustracion de final 480x270 (mas ancha que 16:9) para Ken Burns/paneo; sin alfa"
+ },
+ "end_good_3": {
+  "w": 480,
+  "h": 270,
+  "note": "ilustracion de final 480x270 (mas ancha que 16:9) para Ken Burns/paneo; sin alfa"
+ },
+ "end_bad_1": {
+  "w": 480,
+  "h": 270,
+  "note": "ilustracion de final 480x270 (mas ancha que 16:9) para Ken Burns/paneo; sin alfa"
+ },
+ "end_bad_2": {
+  "w": 480,
+  "h": 270,
+  "note": "ilustracion de final 480x270 (mas ancha que 16:9) para Ken Burns/paneo; sin alfa"
+ },
+ "end_bad_3": {
+  "w": 480,
+  "h": 270,
+  "note": "ilustracion de final 480x270 (mas ancha que 16:9) para Ken Burns/paneo; sin alfa"
  }
 }

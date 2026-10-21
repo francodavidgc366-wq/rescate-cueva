@@ -16,3 +16,6 @@ V7 (retratos 96x96 gotico, sprites de cuerpo rehechos): 100% procedural y propio
 ## v8 (ART): face_*, face_frame, sprites de cuerpo
 - `face_<guia|medica|ing|lia>`, `face_<id>_dead`, `face_frame`: pixel art dibujado a mano en rejilla ASCII (tools/art_faces8.py), originales del proyecto, CC0 1.0. Estilo inspirado (no copiado) en los dialogos de Celeste.
 - `player_guia|medica|ing`, `lia`: rehechos en tools/gen-sprites.py (cabezas chibi ASCII), originales, CC0 1.0.
+
+## v13 (ART): end_good_1..3, end_bad_1..3
+- Ilustraciones de final 480x270: 100% procedurales y propias (tools/art_ends13.py), sin material de terceros, CC0 1.0.

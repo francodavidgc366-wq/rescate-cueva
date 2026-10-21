@@ -30,7 +30,7 @@ const ROLES = {
     persona: 'Metódica y firme: un dato cada vez, sin adornos.', traits: { honesty: .85, coop: .85, risk: .3 } },
   ing: { id: 'ing', name: 'Samuel, el ingeniero', short: 'Samuel', hat: '#4aa0e8', body: '#7a5a3a', color: '#4aa0e8', portrait: 'portrait_ing', stat: 'material', min: 35, points: 250,
     goal: 'Que el material acabe en 35 o más (el equipo es tuyo y es caro).',
-    secret: 'Tu caudalímetro marca que el agua sube un 30 % más rápido de lo que has dicho, y guardas una reserva personal de material sin declarar. Si hablas, cunde el pánico; si callas, el agua los alcanzará antes.',
+    secret: 'Tu medidor de agua marca que el agua sube un 30 % más rápido de lo que has dicho, y guardas una reserva personal de material sin declarar. Si hablas, cunde el pánico; si callas, el agua los alcanzará antes.',
     persona: 'Calculador y protector de su equipo: todo tiene un precio.', traits: { honesty: .5, coop: .6, risk: .45 } }
 };
 
@@ -62,28 +62,28 @@ const ROUND_D = [
       O('el pozo', 'Descender directo por el pozo', 'Ahorra una hora entera. Los anclajes del pozo son viejos y nadie los revisó.', 'Ahorra mucho tiempo; el equipo antiguo es una incógnita.', [-6, -2, -3, -1], .42, [6, -10, -8, -5]),
       O('la balsa', 'Montar una balsa en el río subterráneo', 'Aprovechas el caudal en vez de pelear contra él. Gasta mucho material.', 'Rápido si el río colabora. Consume mucho material.', [-3, 0, -15, 2], .28, [6, -5, -10, -3], 25)],
     poi: [{ label: 'Mapa del campamento', icon: 'mapa', cards: {
-        guia: ['gem', 'Rutas de campamento', 'Mis anotaciones del campamento marcan {o} como lo mejor asegurado. Lo pisé hace dos semanas y estaba firme.'],
-        medica: ['trap', 'Corriente de aire', 'El aire que sale por {o} es húmedo y frío: por ahí se acumula agua. Para trasladar a una herida, es una trampa.'],
-        ing: ['trap', 'Anclajes viejos', 'Los anclajes de {o} son de hace veinte años y están oxidados. Yo no me fiaría de ellos: es peligroso.'] } },
+        guia: ['gem', 'Camino marcado en el mapa', 'Mis anotaciones del campamento marcan {o} como lo mejor asegurado. Lo pisé hace dos semanas y estaba firme.'],
+        medica: ['trap', 'Aire húmedo y frío: hay agua', 'El aire que sale por {o} es húmedo y frío: por ahí se acumula agua. Para trasladar a una herida, es una trampa.'],
+        ing: ['trap', 'Clavos de la pared oxidados', 'Los anclajes de {o} son de hace veinte años y están oxidados. Yo no me fiaría de ellos: es peligroso.'] } },
       { label: 'Arroyo de la entrada', icon: 'agua', cards: {
-        guia: ['trap', 'Huellas de barro', 'Hay barro fresco y huellas arrastradas junto a {o}. Por ahí ya baja agua: peligro de arrastre.'],
-        medica: ['gem', 'El camino de Lía', 'Si Lía cayó donde creo, {o} es el camino más corto y seco hasta ella. Es lo más seguro para evacuarla.'],
-        ing: ['gem', 'Roca firme', 'Golpeé la pared de {o} con el martillo: roca sana y sin grietas. Es sólida, aguanta peso.'] } }],
-    rec: { label: 'Mochila abandonada', icon: 'material', text: 'Cuerdas, mosquetones y una caja de fusibles. Alguien la dejó con prisas.', e: [0, 0, 10, 0] },
+        guia: ['trap', 'Barro fresco: por ahí baja agua', 'Hay barro fresco y huellas arrastradas junto a {o}. Por ahí ya baja agua: peligro de arrastre.'],
+        medica: ['gem', 'Por dónde pudo ir Lía', 'Si Lía cayó donde creo, {o} es el camino más corto y seco hasta ella. Es lo más seguro para evacuarla.'],
+        ing: ['gem', 'La roca suena sana', 'Golpeé la pared de {o} con el martillo: roca sana y sin grietas. Es sólida, aguanta peso.'] } }],
+    rec: { label: 'Mochila abandonada', icon: 'material', text: 'Cuerdas, anillas de acero y una caja de fusibles. Alguien la dejó con prisas.', e: [0, 0, 10, 0] },
     sec: { label: 'Grieta de la pared', icon: 'secreto', h: { title: 'La libreta de Lía', text: 'Una libreta empapada. Lía anotó que la galería baja «respira» con la lluvia. En la tapa, a lápiz: «Si me pasa algo, que no sea culpa de nadie».', e: [0, 0, 0, 2] } } },
   { ev: [E('derrumbe', 'Un derrumbe corta la galería', 'Un estruendo sacude las paredes. Una nube de polvo cubre las linternas. Cuando se asienta, la galería principal queda cortada a medias y el techo sigue soltando piedras.', 'event_derrumbe', '¡Oí un golpe enorme! ¿Están bien? Díganme que están bien.', 'roca', [2, 0, -5, -2], .08),
       E('grieta', 'Se abre una grieta en el techo', 'Una línea negra recorre el techo y gotea sin parar. La roca cruje cada vez que alguien respira fuerte, y nadie quiere ser el primero en comprobar hasta cuándo aguanta.', 'event_grieta', 'Se me cae polvo encima... ¿qué es ese crujido?', 'roca', [4, 0, 0, -1], .06)],
     opts: [O('el desvío seco', 'Rodear por el desvío seco', 'Más largo, pero la roca es estable y no hay agua.', 'Roca estable y seca; añade tiempo.', [5, -2, -4, 3], .15, [4, -4, -4, -2]),
       O('el paso estrecho', 'Forzar el paso estrecho', 'Se pasa de lado y sin mochila. El agua les llega a las rodillas.', 'Directo; muy angosto y con agua.', [-6, -1, -3, 0], .45, [6, -8, -6, -4]),
-      O('el apuntalamiento', 'Apuntalar y ensanchar el paso', 'Con puntales y cuñas se agranda el agujero para pasar con la camilla.', 'Seguro si hay material; lento.', [-2, 0, -13, 3], .25, [3, -3, -8, -2], 20)],
+      O('el refuerzo con maderos', 'Reforzar el techo con maderos y ensanchar el paso', 'Con maderos y cuñas (trozos de madera) se agranda el agujero para pasar con la camilla.', 'Seguro si hay material; lento.', [-2, 0, -13, 3], .25, [3, -3, -8, -2], 20)],
     poi: [{ label: 'Caseta con el mapa de la mina', icon: 'mapa', cards: {
-        guia: ['gem', 'Marcas de rescate', 'Las marcas de la última expedición llevan hacia {o}. Se ve que esa ruta aguantó: es la más segura.'],
-        medica: ['trap', 'Pulso y respiración', 'Lía respira peor cada hora. Por {o} habría que arrastrarla y su costado no lo soportaría: es una trampa. Otra cosa: el GPS de Mateo guarda un track de ayer fuera del mapa oficial. No sé qué hacía ahí.', 'guia'],
-        ing: ['trap', 'Sondeo del techo', 'El techo sobre {o} suena a hueco: hay roca suelta. Es peligroso pasar por ahí con prisa.'] } },
+        guia: ['gem', 'Marcas de otros rescatistas', 'Las marcas de la última expedición llevan hacia {o}. Se ve que esa ruta aguantó: es la más segura.'],
+        medica: ['trap', 'Lía respira cada vez peor', 'Lía respira peor cada hora. Por {o} habría que arrastrarla y su costado no lo soportaría: es una trampa. Otra cosa: el GPS de Mateo guarda un track de ayer fuera del mapa oficial. No sé qué hacía ahí.', 'guia'],
+        ing: ['trap', 'El techo suena a hueco', 'El techo sobre {o} suena a hueco: hay roca suelta. Es peligroso pasar por ahí con prisa.'] } },
       { label: 'Pared del derrumbe', icon: 'alerta', cards: {
-        guia: ['trap', 'Goteos nuevos', 'Veo goteos nuevos sobre {o}. Ahí el agua ya está comiendo la roca: peligro de derrumbe. Por cierto, ayer vi en la libreta de Samuel una lectura de 4 cm/min; a nosotros nos dijo 3.', 'ing'],
-        medica: ['gem', 'Espacio para la camilla', 'Midiendo con la camilla, {o} permite pasar a Lía sin doblarla. Es lo más seguro para ella.'],
-        ing: ['gem', 'Cuñas y puntales', 'Tengo cuñas de sobra: con {o} el techo queda firme. Es una opción sólida.'] } }],
+        guia: ['trap', 'Gotea agua nueva del techo', 'Veo goteos nuevos sobre {o}. Ahí el agua ya está comiendo la roca: peligro de derrumbe. Por cierto, ayer vi en la libreta de Samuel una lectura de 4 cm/min; a nosotros nos dijo 3.', 'ing'],
+        medica: ['gem', 'Cabe la camilla de Lía', 'Midiendo con la camilla, {o} permite pasar a Lía sin doblarla. Es lo más seguro para ella.'],
+        ing: ['gem', 'Maderos para sujetar el techo', 'Tengo maderos de sobra para sujetar el techo: con {o} queda firme. Es una opción sólida.'] } }],
     rec: { label: 'Botiquín de pared', icon: 'botiquin', text: 'Un botiquín de la antigua mina, con vendas secas, suero y un termo con algo caliente.', e: [0, 6, 0, 0] },
     sec: { label: 'Escombros del derrumbe', icon: 'secreto', h: { title: 'El casco del minero', text: 'Un casco tallado con «J.M. 1931». Dentro, un mapa de pozos de ventilación señala una cámara que no figura en ningún plano oficial.', e: [0, 0, 3, 0] } } },
   { ev: [E('gas', 'Bolsa de gas en la sala', 'Un olor dulzón cuelga del aire. Las linternas parpadean y a Elena le zumban los oídos: hay poco oxígeno y cada palabra cuesta.', 'event_gas', 'Me duele la cabeza... y me cuesta... respirar.', 'aire', [0, -5, 0, -1], .06),
@@ -92,28 +92,28 @@ const ROUND_D = [
       O('la sima', 'Bajar por la sima', 'Una cuerda de cuarenta metros hasta la sala siguiente. Rápido, pero con Lía a cuestas es peligroso.', 'Atajo vertical; peso y altura.', [-7, -3, -4, 0], .45, [6, -10, -7, -4]),
       O('la ventilación', 'Abrir la ventilación artificial', 'Instalar el ventilador de campaña y esperar a que el aire sea respirable.', 'Mejora el aire; gasta batería y tiempo.', [3, 2, -12, 2], .22, [4, -4, -8, -1], 20)],
     poi: [{ label: 'Sala de cristales', icon: 'estrella', cards: {
-        guia: ['trap', 'Rastro de gas', 'Mi detector de gas pita más cerca de {o}: ahí hay una bolsa de gas. Peligro de asfixia.'],
-        medica: ['gem', 'Saturación de Lía', 'Con el pulsioxímetro, Lía respira mejor cerca de {o}. Ahí el aire es limpio: lo más seguro.'],
-        ing: ['trap', 'Peso en la cuerda', 'La cuerda de {o} tiene un nudo viejo cosido que no me gusta. Con peso muerto cede: peligro.'] } },
+        guia: ['trap', 'El detector de gas pita', 'Mi detector de gas pita más cerca de {o}: ahí hay una bolsa de gas. Peligro de asfixia.'],
+        medica: ['gem', 'Lía respira mejor aquí', 'Con mi aparato que mide el oxígeno en el dedo, Lía respira mejor cerca de {o}. Ahí el aire es limpio: lo más seguro.'],
+        ing: ['trap', 'Una cuerda con un nudo viejo', 'La cuerda de {o} tiene un nudo viejo cosido que no me gusta. Con peso muerto cede: peligro.'] } },
       { label: 'Pozo de ventilación', icon: 'cuerda', cards: {
-        guia: ['gem', 'Flecha de minero', 'Un minero dejó una flecha pintada hacia {o}. Esa ruta sí llegó a algún sitio: es segura.'],
-        medica: ['trap', 'Temblor de manos', 'A Mateo le tiemblan las manos y a mí me falla el pulso; con {o} hay que ir muy rápido y en esas condiciones es una trampa.'],
-        ing: ['gem', 'Aire y batería', 'Mi medidor dice que {o} deja aire respirable y gasta poca batería: es la opción más sólida. Y otra cosa: en el botiquín de Elena hay analgésicos para dolor abdominal abiertos. No dijo nada.', 'medica'] } }],
+        guia: ['gem', 'Flecha pintada por un minero', 'Un minero dejó una flecha pintada hacia {o}. Esa ruta sí llegó a algún sitio: es segura.'],
+        medica: ['trap', 'Manos temblorosas del equipo: están agotados', 'A Mateo le tiemblan las manos y a mí me falla el pulso; con {o} hay que ir muy rápido y en esas condiciones es una trampa.'],
+        ing: ['gem', 'Aire limpio y poca batería gastada', 'Mi medidor dice que {o} deja aire respirable y gasta poca batería: es la opción más sólida. Y otra cosa: en el botiquín de Elena hay analgésicos para dolor abdominal abiertos. No dijo nada.', 'medica'] } }],
     rec: { label: 'Bombona de oxígeno', icon: 'salud', text: 'Una bombona pequeña, medio llena. Para Lía vale su peso en oro.', e: [0, 5, -2, 0] },
     sec: { label: 'Cristal que canta', icon: 'secreto', h: { title: 'La sala que escucha', text: 'Los cristales vibran con la voz. Por eso Lía puede oíros desde tan lejos: cada palabra que decís baja hasta ella amplificada.', e: [0, 2, 0, 0] } } },
   { ev: [E('hipotermia', 'El frío muerde', 'El agua no baja de los seis grados. A Lía le castañean los dientes, a Mateo se le pusieron los labios morados y las manos de todos empiezan a fallar.', 'event_hipotermia', 'Tengo frío... mucho frío. Ya no noto los dedos.', 'frio', [2, -5, 0, 0], .06),
       E('linterna', 'Se apagan las linternas', 'Una a una, las linternas se rinden: batería baja. Quedan tres frontales y ninguna pila de repuesto. En la oscuridad, las voces suenan distintas.', 'event_linterna', 'Se ha ido la luz... no veo nada. ¿Seguís ahí?', 'luz', [0, 0, -6, -2], .1)],
-    opts: [O('el sifón', 'Nadar por el sifón', 'Cuatro metros bajo el agua helada. La salida está al otro lado.', 'Directo; agua helada y sin aire.', [-8, -4, -3, -1], .48, [7, -12, -6, -5]),
+    opts: [O('el sifón', 'Nadar por el sifón (un tramo de túnel lleno de agua)', 'Cuatro metros bajo el agua helada. La salida está al otro lado.', 'Directo; agua helada y sin aire.', [-8, -4, -3, -1], .48, [7, -12, -6, -5]),
       O('la cornisa', 'Avanzar por la cornisa', 'Una repisa estrecha sobre el agua. Seca, pero un resbalón y se acabó.', 'Seca; estrecha y resbaladiza.', [0, -2, -4, 2], .28, [5, -8, -5, -3]),
       O('el bombeo', 'Bombear la galería', 'Tres bombas de achique vacían el tramo en una hora. Cuesta energía y material.', 'Baja el nivel; gasta mucho material.', [-5, 1, -15, 2], .25, [3, -3, -9, -2], 25)],
     poi: [{ label: 'Marca de crecida', icon: 'agua', cards: {
-        guia: ['trap', 'Marca en la pared', 'La marca de crecida llega hasta el techo en {o}. Si el agua sube, los atrapa: peligro.'],
-        medica: ['gem', 'Temperatura del agua', 'El agua es menos fría en {o}: corre más rápido y pierde el frío. Es lo más seguro para el cuerpo de Lía.'],
-        ing: ['trap', 'Corriente en el sifón', 'Hay una corriente fuerte que tira hacia dentro en {o}. Es peligroso: no hay forma de nadar contra eso.'] } },
+        guia: ['trap', 'Señal de agua hasta el techo', 'La marca de crecida llega hasta el techo en {o}. Si el agua sube, los atrapa: peligro.'],
+        medica: ['gem', 'El agua aquí está menos fría', 'El agua es menos fría en {o}: corre más rápido y pierde el frío. Es lo más seguro para el cuerpo de Lía.'],
+        ing: ['trap', 'Corriente fuerte en el paso bajo el agua', 'Hay una corriente fuerte que tira hacia dentro en {o}. Es peligroso: no hay forma de nadar contra eso.'] } },
       { label: 'Cruces blancas de Lía', icon: 'botiquin', cards: {
-        guia: ['gem', 'Pintadas de Lía', 'Lía pintó cruces blancas hacia {o}. Es la ruta bien señalizada: segura.'],
-        medica: ['trap', 'Frío en los dedos', 'Con este frío, los dedos de todos fallan. En {o} se necesita agarre fino. Para mí es un riesgo enorme.'],
-        ing: ['gem', 'Bombas listas', 'Las bombas funcionan en {o}: el desagüe está libre. Es lo más fiable que tenemos.'] } }],
+        guia: ['gem', 'Cruces blancas que dejó Lía', 'Lía pintó cruces blancas hacia {o}. Es la ruta bien señalizada: segura.'],
+        medica: ['trap', 'Dedos helados: cuesta agarrar', 'Con este frío, los dedos de todos fallan. En {o} se necesita agarre fino. Para mí es un riesgo enorme.'],
+        ing: ['gem', 'Las bombas de agua funcionan', 'Las bombas funcionan en {o}: el desagüe está libre. Es lo más fiable que tenemos.'] } }],
     rec: { label: 'Manta térmica', icon: 'salud', text: 'Una manta dorada, doblada en una bolsa estanca. Cualquiera la querría para sí.', e: [0, 5, 0, 2] },
     sec: { label: 'Líneas de crecida pintadas', icon: 'secreto', h: { title: 'La marca de la expedición', text: 'Líneas de crecida pintadas por una expedición de 1978. La última, a la altura de sus cabezas. Alguien escribió debajo: «No esperen».', e: [-2, 0, 0, 0] } } },
   { ev: [E('eco', 'El eco de la cámara', 'Una voz débil llega rebotada por la roca. Lía está cerca. Cerca también está el estruendo del agua. Ya no queda tiempo para dudas.', 'event_eco', 'Los oigo... ¡los oigo! Estoy en la cámara alta. ¡Dense prisa!', 'final', [3, 0, 0, 3], 0),
@@ -122,13 +122,13 @@ const ROUND_D = [
       O('la cuerda doble', 'Montar la cuerda doble', 'Dos anclajes, dos personas a la vez. Lleva tiempo, pero aguanta peso.', 'Seguro si hay material.', [-3, 1, -12, 4], .2, [4, -5, -7, -2], 20),
       O('la compuerta', 'Forzar la compuerta', 'Una puerta de mina atascada: si cede, sacas a Lía en minutos; si no, pierden lo que queda.', 'Salida directa; mecanismo atascado.', [-10, -3, -4, 0], .48, [8, -12, -6, -6])],
     poi: [{ label: 'Cámara de Lía', icon: 'ojo', cards: {
-        guia: ['trap', 'El eco', 'El eco de {o} suena a vacío roto: ahí se hundió el suelo. Peligro.'],
-        medica: ['gem', 'Lía despierta', 'Lía me ha oído y apunta hacia {o}. Es seguro que ahí hay aire y suelo firme.'],
-        ing: ['trap', 'La compuerta', 'Las bisagras de {o} están atascadas por el óxido; forzar eso es peligroso.'] } },
+        guia: ['trap', 'El eco suena a suelo roto', 'El eco de {o} suena a vacío roto: ahí se hundió el suelo. Peligro.'],
+        medica: ['gem', 'Lía señala el camino seguro', 'Lía me ha oído y apunta hacia {o}. Es seguro que ahí hay aire y suelo firme.'],
+        ing: ['trap', 'Puerta de mina oxidada', 'Las bisagras de {o} están atascadas por el óxido; forzar eso es peligroso.'] } },
       { label: 'Compuerta de la cámara', icon: 'llave', cards: {
-        guia: ['gem', 'Mi ruta', 'Conozco {o} de memoria. Es la más segura, se los juro.'],
-        medica: ['trap', 'Pronóstico', 'Por la respiración de Lía, {o} la sacudiría demasiado. Es un riesgo que no podemos asumir.'],
-        ing: ['gem', 'Cálculo de cargas', 'Calculé las cargas de {o}: aguanta con margen. Es lo más seguro.'] } }],
+        guia: ['gem', 'Una ruta que conoces de memoria', 'Conozco {o} de memoria. Es la más segura, se los juro.'],
+        medica: ['trap', 'Lía no aguantaría las sacudidas', 'Por la respiración de Lía, {o} la sacudiría demasiado. Es un riesgo que no podemos asumir.'],
+        ing: ['gem', 'Esta cuerda aguanta el peso', 'Calculé las cargas de {o}: aguanta con margen. Es lo más seguro.'] } }],
     rec: { label: 'Cuerda de emergencia', icon: 'cuerda', text: 'Cincuenta metros de cuerda nueva, sin estrenar, con la etiqueta todavía puesta.', e: [-2, 0, 8, 0] },
     sec: { label: 'Rendija junto a la cámara', icon: 'secreto', h: { title: 'La carta de Lía', text: 'Una carta sin enviar, dirigida a los tres: «Sé que cada uno guarda algo. No importa. Ven a por mí igualmente».', e: [0, 0, 0, 3] } } }
 ];
@@ -143,17 +143,17 @@ const SA = {
     [A('Cargar con la camilla en el tramo más duro', [-3, 2, -1, -1]), A('Ordenar un descanso para que todos recobren el aliento', [3, 0, -1, 7]), A('Adelantarte a explorar sin avisar a nadie', [-6, 0, 0, 3], .5, [7, -4, -2, -6])],
     [A('Sostener la cuerda el último, aunque te quemen las manos', [-4, 2, -1, -1]), A('Prometer ante todos que nadie se queda atrás', [2, -1, 0, 8]), A('Saltar la repisa de golpe, sin red', [-7, 0, 0, 4], .5, [8, -5, -2, -7])]],
   medica: [
-    [A('Preparar una férula improvisada para Lía', [0, 5, -3, 0]), A('Reservar todo el botiquín para Lía, sin repartir', [1, 7, -5, -3]), A('Practicar un drenaje improvisado con lo que tienes', [0, 9, -3, 0], .5, [2, -9, -3, -4])],
+    [A('Preparar una férula improvisada para Lía', [0, 5, -3, 0]), A('Reservar todo el botiquín para Lía, sin repartir', [1, 7, -5, -3]), A('Intentar sacar el líquido del pecho de Lía con lo que tienes', [0, 9, -3, 0], .5, [2, -9, -3, -4])],
     [A('Reanimar y abrigar a Lía durante la espera', [0, 5, -2, 1]), A('Exigir silencio y calma absoluta junto a Lía', [2, 6, 0, -3]), A('Probar una dosis alta de analgésico', [0, 9, -2, 0], .5, [2, -9, -2, -4])],
-    [A('Controlar el pulso de todos y repartir agua', [0, 3, -1, 2]), A('Usar todos tus sueros con Lía ahora mismo', [1, 7, -6, -2]), A('Reanimación forzada con lo que haya', [0, 9, -3, 0], .5, [2, -9, -3, -4])],
+    [A('Controlar el pulso de todos y repartir agua', [0, 3, -1, 2]), A('Usar todos tus sueros con Lía ahora mismo', [1, 7, -6, -2]), A('Intentar despertarla a la fuerza con lo que haya', [0, 9, -3, 0], .5, [2, -9, -3, -4])],
     [A('Dar tu manta térmica a quien más la necesite', [0, 4, 0, 2]), A('Dedicarle todo tu tiempo, aunque se retrase el grupo', [3, 7, -2, -3]), A('Calentarla con un baño de agua tibia', [0, 9, -3, 0], .5, [2, -9, -3, -4])],
-    [A('Preparar el traslado paso a paso con el equipo', [-1, 4, -2, 1]), A('Sedar a Lía para el traslado, sin consultar', [0, 8, -4, -4]), A('Inmovilizarla en marcha, sin parar', [-2, 9, -3, 0], .5, [3, -10, -3, -4])]],
+    [A('Preparar el traslado paso a paso con el equipo', [-1, 4, -2, 1]), A('Dormir a Lía con medicina para el traslado, sin consultar', [0, 8, -4, -4]), A('Inmovilizarla en marcha, sin parar', [-2, 9, -3, 0], .5, [3, -10, -3, -4])]],
   ing: [
-    [A('Reforzar los anclajes con tu mejor equipo', [-4, 0, -6, 1]), A('Cerrar la mochila y racionar cada pieza', [2, -1, 6, -3]), A('Improvisar un polipasto con lo que queda', [-7, 0, -4, 2], .5, [8, -4, -8, -5])],
-    [A('Montar un pasamanos para todo el grupo', [-3, 0, -5, 2]), A('Recuperar el material gastado y llevar la cuenta', [2, 0, 7, -3]), A('Voladura mínima para ganar espacio', [-7, 0, -4, 2], .5, [8, -4, -8, -5])],
+    [A('Reforzar los anclajes con tu mejor equipo', [-4, 0, -6, 1]), A('Cerrar la mochila y racionar cada pieza', [2, -1, 6, -3]), A('Improvisar poleas con lo que queda', [-7, 0, -4, 2], .5, [8, -4, -8, -5])],
+    [A('Montar un pasamanos para todo el grupo', [-3, 0, -5, 2]), A('Recuperar el material gastado y llevar la cuenta', [2, 0, 7, -3]), A('Hacer una explosión pequeña para ganar espacio', [-7, 0, -4, 2], .5, [8, -4, -8, -5])],
     [A('Instalar la bomba pequeña para achicar agua', [-4, 0, -5, 0]), A('Guardar las baterías «para emergencias»', [1, -1, 7, -3]), A('Conectar el ventilador a la batería de repuesto', [-7, 1, -4, 2], .5, [8, -4, -8, -5])],
     [A('Compartir tus baterías con Elena y Mateo', [-1, 2, -6, 2]), A('Negarte a prestar nada hasta el final', [2, -2, 8, -4]), A('Derivar el caudal con una presa improvisada', [-8, 0, -4, 2], .5, [9, -4, -8, -5])],
-    [A('Asegurar la cuerda final con tu último mosquetón', [-4, 1, -4, 1]), A('Reservar lo mejor para el viaje de vuelta', [1, -1, 7, -3]), A('Cargar la compuerta con todo lo que queda', [-8, 0, -4, 2], .5, [9, -4, -8, -5])]]
+    [A('Asegurar la cuerda final con tu última anilla de acero', [-4, 1, -4, 1]), A('Reservar lo mejor para el viaje de vuelta', [1, -1, 7, -3]), A('Cargar la compuerta con todo lo que queda', [-8, 0, -4, 2], .5, [9, -4, -8, -5])]]
 };
 const CONFESS = {
   guia: { text: 'Confesar a todos que ayer te desviaste de la ruta', e: [0, 0, 0, -5], msg: 'Tengo que deciros algo. Ayer me salí de la ruta marcada para ganar tiempo. Por eso cayó Lía. Lo siento.' },
@@ -165,15 +165,15 @@ const CONFESS = {
 const ACH = [
   ['confesion', 'Confesión', 'Confiesa tu secreto antes de que lo descubran.', 'role'],
   ['cero_bajas', 'Cero bajas', 'Rescata a Lía con la salud en 50 o más.', 'team'],
-  ['cartografo', 'Cartógrafo', 'Encuentra los 5 hallazgos de la cueva.', 'team'],
-  ['lengua_plata', 'Lengua de plata', 'Engaña al equipo con una mentira que nadie descubre y que acaba en un plan con éxito.', 'role'],
+  ['cartografo', 'Explorador', 'Encuentra los 5 hallazgos de la cueva.', 'team'],
+  ['lengua_plata', 'Mentira perfecta', 'Engaña al equipo con una mentira que nadie descubre y que acaba en un plan con éxito.', 'role'],
   ['detective', 'Detective de mentiras', 'Descubre una mentira de un compañero.', 'role'],
-  ['al_borde', 'Al borde', 'Rescata a Lía con el agua en 85 o más, o su salud en 15 o menos.', 'team'],
+  ['al_borde', 'Por los pelos', 'Rescata a Lía con el agua en 85 o más, o su salud en 15 o menos.', 'team'],
   ['todos_cumplen', 'Todo el equipo cumple', 'Los tres cumplen su objetivo individual.', 'team'],
   ['sin_pausas', 'Sin pausas', 'Gasta las 3 acciones en los 5 tramos.', 'role'],
   ['everest', 'Everest', 'Rescata a Lía en dificultad Everest.', 'team'],
   ['cartas_arriba', 'Cartas boca arriba', 'Comparte 8 tarjetas sin cambiar una coma.', 'role'],
-  ['riesgo_calculado', 'Riesgo calculado', 'Supera con éxito 2 planes de riesgo alto.', 'team'],
+  ['riesgo_calculado', 'Riesgo bien medido', 'Supera con éxito 2 planes de riesgo alto.', 'team'],
   ['hombro', 'Hombro con hombro', 'Elige la acción de equipo en 4 tramos.', 'role'],
   ['manos_limpias', 'Manos limpias', 'Rescata a Lía sin una sola mentira en la partida.', 'team'],
   ['cada_uno', 'Cada uno a lo suyo', 'Cumple tu objetivo aunque Lía no se salve.', 'role'],
@@ -327,13 +327,13 @@ function poiInteract(st, role, poiId) {
   if (meta.seen.includes(role)) return fail('ya_visto'); if (meta.used) return fail('agotado');
   const gb = blockedBy(st, poiId); if (gb) return { ok: false, reason: 'puerta', gateId: gb.id, role: gb.role };
   const r = st.round, D = ROUND_D[r - 1], hd = st.hid, out = { ok: true, poi: poiId, kind: poi.kind, ap: 0, msgs: [] };
-  pv.ap--; out.ap = pv.ap; syncAp(st, role); if (poi.hintRole === role) { out.special = meta.hint; pv.notes = (pv.notes || []).concat({ poi: poiId, text: meta.hint }); } meta.seen.push(role); poi.seen = meta.seen.slice();
+  pv.ap--; out.ap = pv.ap; syncAp(st, role); if (poi.hintRole === role) { out.special = meta.hint; pv.notes = (pv.notes || []).concat({ poi: poiId, text: meta.hint }); } meta.seen.push(role); poi.seen = meta.seen.slice(); if (poiId === 'r5_0') hd.liaFound = true; /* Lía se «encuentra» al investigar la cámara (zona 5) */
   if (poi.kind === 'info') {
     const tpl = D.poi[meta.idx].cards[role], kind = tpl[0], id = 'c' + r + '_' + meta.idx + '_' + role, S = sc_(st), target = kind === 'trap' ? S.trap : S.gem;
     const rel = clamp(({ guia: .78, medica: .84, ing: .8 })[role] + (H(hd.struct.length, st.seed, 'rel', id) - .5) * .3 + dif(st).rel / 100, .6, .95);
     const truth = H(st.seed, 'truth', id) < rel, others = [0, 1, 2].filter(p => p !== target), opt = truth ? target : others[hi(2, st.seed, 'lie', id)];
     const card = { id, round: r, poi: poiId, title: tpl[1], text: tpl[2].replace('{o}', st.plan.options[opt].n).replace(/\b([Dd])e el /g, '$1el ').replace(/\b([Aa]) el /g, '$1l '), reliability: Math.round(rel * 100) / 100, shared: false };
-    const oo = st.plan.options[opt]; card.uses = 'Sirve para decidir en la votación: apunta a que «' + oo.n + '» (opción ' + oo.id + ') ' + (kind === 'trap' ? 'es peligrosa; si otro compañero lo confirma, evítala.' : 'es la más segura; si otro compañero coincide, vótala.'); card.use = 'votacion';
+    const oo = st.plan.options[opt]; card.uses = 'Sirve para elegir entre «' + st.plan.options.map(x => x.n).slice(0, 2).join('», «') + '» o «' + st.plan.options[2].n + '» en la votación: apunta a que «' + oo.n + '» (opción ' + oo.id + ') ' + (kind === 'trap' ? 'es peligrosa; si otro compañero lo confirma, evítala.' : 'es la más segura; si otro compañero coincide, vótala.'); card.use = 'votacion';
     out.explain = 'Has encontrado «' + tpl[1] + '» → te dice que «' + oo.n + '» (' + oo.id + ') parece ' + (kind === 'trap' ? 'peligrosa' : 'la más segura') + ' → úsalo en: la votación, y cuéntaselo al equipo para contrastarlo.'; out.use = 'votacion';
     pv.intel.push(card); hd.truth[id] = truth; hd.cards[id] = { opt, pol: kind === 'trap' ? -1 : 1, kind, truth, role, round: r, leak: tpl[3] || null, orig: card.text };
     out.card = card; addScore(st, role, 'info', 4);
@@ -471,7 +471,7 @@ function resolve(st) {
   const narrative = [short, reveals.filter(x => x.type === 'lie' || x.type === 'secret').map(x => x.text).join(' ')].filter(Boolean).join(' ');
   const scoreDelta = { total: st.score.total - before.total, equipo: st.score.equipo - before.equipo, info: st.score.info - before.info, honestidad: st.score.honestidad - before.honestidad, riesgo: st.score.riesgo - before.riesgo };
   const have = new Set(st.achievements); const newA = checkAchievements(st, false).filter(a => !have.has(a.id));
-  const res = { round: r, planId: st.plan.chosen, plan: st.plan.options[pos], ok, delta: applied, rolls, reveals, scoreDelta, achievements: newA, narrative, blame: Object.fromEntries(Object.keys(blame).map(k => [k, blame[k].role])), picks, votes: Object.assign({}, st.plan.votes), msgs: [], parts, pos, isTrap: pos === S.trap, isGem: pos === S.gem, after: Object.assign({}, st.s) };
+  const res = { opts: st.plan.options.map(o => o.n), round: r, planId: st.plan.chosen, plan: st.plan.options[pos], ok, delta: applied, rolls, reveals, scoreDelta, achievements: newA, narrative, blame: Object.fromEntries(Object.keys(blame).map(k => [k, blame[k].role])), picks, votes: Object.assign({}, st.plan.votes), msgs: [], parts, pos, isTrap: pos === S.trap, isGem: pos === S.gem, after: Object.assign({}, st.s) };
   msgs.forEach(m => res.msgs.push(m));
   res.msgs.push(say(st, 'sys', short, 'sys'));
   const pd = {}; RK.forEach(k => pd[k] = hd.pts[k] - ptsB[k]); res.pointsByRole = pd;
@@ -585,7 +585,7 @@ const POIV = [
    { why: 'Alguien la dejó con prisas: puede traer material para todo el equipo.', hr: 'medica', hint: 'El botiquín cosido al asa es el de Lía: reconoces sus vendas.' },
    { why: 'Algo brilla dentro de la grieta alta: puede ser un objeto de Lía y contar qué pasó.', hr: 'medica', hint: 'Hay una gota de sangre seca y un trozo de vendaje: Lía pasó por aquí herida.' }],
   [{ why: 'Los mineros dibujaron aquí los pasos que aguantan: te dice por dónde rodear el derrumbe.', hr: 'guia', hint: 'En el mapa hay un paso tachado a mano que no figura en la leyenda.' },
-   { why: 'Se ve cómo ha caído la roca: te dice si el paso estrecho aguanta o vuelve a caer.', hr: 'ing', hint: 'Lees el estrés de la roca: las grietas finas aún se mueven.' },
+   { why: 'Se ve cómo ha caído la roca: te dice si el paso estrecho aguanta o vuelve a caer.', hr: 'ing', hint: 'Lees cómo está la roca: las grietas finas aún se mueven.' },
    { why: 'Un botiquín antiguo en la galería: vendas y suero para Lía.', hr: 'medica', hint: 'Reconoces el suero: sigue siendo válido.' },
    { why: 'Entre las piedras caídas asoma algo: puede ser de una expedición anterior.', hr: 'ing', hint: 'Las piedras tienen marcas de cuña: alguien abrió ese hueco a mano.' }],
   [{ why: 'Los cristales marcan dónde hay gas y dónde el aire es limpio: cruzar a ciegas puede asfixiaros.', hr: 'medica', hint: 'Notas el dolor de cabeza: el aire es peor pegado al techo.' },
@@ -596,22 +596,22 @@ const POIV = [
    { why: 'Lía marcó con cruces el camino que siguió: te dice por dónde fue y dónde cayó.', hr: 'guia', hint: 'Las cruces cambian de lado donde ella dudó: ahí cayó.' },
    { why: 'Una manta en bolsa estanca: ayuda contra el frío que los debilita.', hr: 'medica', hint: 'Por la humedad de la bolsa, alguien la usó hace poco y la dejó aquí.' },
    { why: 'Una expedición pintó líneas en la roca: avisan de cuánto sube el agua en esta galería.', hr: 'ing', hint: 'La línea de 1978 coincide con tu medidor: el agua sube a ese ritmo.' }],
-  [{ why: 'Aquí está Lía: escuchar su respiración dice qué camino puede soportar el traslado.', hr: 'medica', hint: 'Sus constantes: pulso rápido y superficial, no aguanta una sacudida fuerte.' },
+  [{ why: 'Aquí está Lía: escuchar su respiración dice qué camino puede soportar el traslado.', hr: 'medica', hint: 'Su pulso y su respiración: rápidos y superficial, no aguanta una sacudida fuerte.' },
    { why: 'La compuerta es la salida directa: su mecanismo dice si forzarla es viable.', hr: 'ing', hint: 'Las bisagras están rotas por dentro: forzarla es más fácil de lo que parece.' },
    { why: 'Cuerda nueva atada junto a la cámara: sirve para asegurar el traslado.', hr: 'guia', hint: 'El nudo es de Lía: lo ató para no soltarse.' },
    { why: 'Entre las rocas asoma un papel: lo dejó Lía antes de caer.', hr: 'medica', hint: 'La letra tiembla: la escribió ya con frío y con dolor.' }]];
 // Puertas de habilidad: id z<zona>_<kind>. poi = índice (0..3) del POI de la zona que bloquean.
 // Regla anti-bloqueo: una puerta protege el POI COMÚN (extra) o el POI propio de quien la abre; nadie depende de otro para su tarea propia.
 const GATES = [
-  ['z1_anclaje', 1, 'guia', 'anclaje', 'Anclaje en la pared de la grieta', 2, 'La grieta está en alto: hay que clavar un anclaje para trepar.'],
+  ['z1_anclaje', 1, 'guia', 'anclaje', 'Anclaje en la pared de la grieta', 2, 'La grieta está en alto: hay que clavar un anclaje (un clavo grande para atar la cuerda) y trepar.'],
   ['z2_puente', 2, 'ing', 'puente', 'Puente sobre el foso del derrumbe', 1, 'Un foso corta el paso a la pared: hace falta un puente.'],
   ['z2_anclaje', 2, 'guia', 'anclaje', 'Anclaje en los escombros altos', 3, 'Los escombros están en un saliente: se sube con cuerda.'],
-  ['z3_reptadero', 3, 'medica', 'reptadero', 'Reptadero con gas', 2, 'Hay gas en el pasaje: hay que estabilizar a quien pasa.'],
+  ['z3_reptadero', 3, 'medica', 'reptadero', 'Pasadizo bajo (para reptar) con gas', 2, 'Hay gas en este pasadizo bajo (reptadero): Elena debe cuidar a quien se arrastra por él.'],
   ['z3_valvula', 3, 'ing', 'valvula', 'Válvula del pozo de ventilación', 3, 'La válvula cerrada impide que llegue aire al pozo.'],
   ['z4_anclaje', 4, 'guia', 'anclaje', 'Anclaje en la cornisa', 1, 'Las cruces de Lía están en una cornisa: se llega con cuerda.'],
   ['z4_valvula', 4, 'ing', 'valvula', 'Válvula del desagüe', 3, 'El desagüe cerrado inunda el pasaje de las líneas pintadas.'],
   ['z5_puente', 5, 'ing', 'puente', 'Puente hasta la compuerta', 1, 'La compuerta queda al otro lado de un tramo inundado.'],
-  ['z5_reptadero', 5, 'medica', 'reptadero', 'Reptadero junto a la cámara', 3, 'La rendija es muy baja: hay que ir reptando con aire.']
+  ['z5_reptadero', 5, 'medica', 'reptadero', 'Pasadizo bajo junto a la cámara', 3, 'La rendija es muy baja: hay que arrastrarse por ella (reptadero) con aire.']
 ].map(g => ({ id: g[0], zone: g[1], role: g[2], kind: g[3], label: g[4], poi: g[5], why: g[6], open: false }));
 const KIND_VERB = { anclaje: 'clavar el anclaje', puente: 'montar el puente', valvula: 'abrir la válvula', reptadero: 'abrir el reptadero' };
 const gatePoi = g => 'r' + g.zone + '_' + g.poi;
@@ -631,7 +631,7 @@ function openGate(st, role, gateId, o) {
   o = o || {}; const g = st.gates && gateOf(st, gateId);
   if (!g) return { ok: false, reason: 'puerta' }; if (g.role !== role) return { ok: false, reason: 'rol' }; if (g.zone > st.round) return { ok: false, reason: 'zona' };
   if (st.gatesOpen[g.id]) return { ok: false, reason: 'abierta' };
-  st.gatesOpen[g.id] = true; g.open = true; const hd = st.hid; if (hd.busy) delete hd.busy[role];
+  st.gatesOpen[g.id] = true; g.open = true; const hd = st.hid; (hd.gateRound = hd.gateRound || {})[g.id] = st.round; (hd.gateBy = hd.gateBy || {})[g.id] = role; if (hd.busy) delete hd.busy[role];
   addScore(st, role, 'equipo', 6); hd.pTrust[role] = clamp(hd.pTrust[role] + 3, 0, 100);
   if (o.helpFor && o.helpFor !== role) applyStat(st, [0, 0, 0, 1]);
   const up = st.pois.find(p => p.id === gatePoi(g)); return { ok: true, gateId: g.id, kind: g.kind, unlocks: gatePoi(g), use: 'puerta', explain: 'Has abierto «' + g.label + '» → sirve para que el equipo llegue a «' + (up ? up.name : 'un punto nuevo') + '» → úsalo en: ir allí a investigar y avisar al equipo.', msgs: [say(st, 'sys', ROLES[role].short + ' hizo: ' + KIND_VERB[g.kind] + '. Se abre «' + g.label + '».', 'sys')] };
@@ -674,13 +674,15 @@ function request(st, fromRole, toRole, o) {
   o = o || {}; const hd = st.hid, g = st.gates && gateOf(st, o.gateId || ''), P = st.players[toRole]; if (RK.includes(fromRole)) (hd.coachAsk = hd.coachAsk || {})[fromRole] = 1;
   if (!g || !RK.includes(fromRole) || !RK.includes(toRole) || fromRole === toRole) return { ok: false, reason: 'datos' };
   if (g.role !== toRole) return { ok: false, reason: 'rol' }; if (st.gatesOpen[g.id]) return { ok: false, reason: 'abierta' }; if (g.zone > st.round) return { ok: false, reason: 'zona' };
-  if (!P.ai) { const m = say(st, fromRole, NAMES[toRole] + ', ¿puedes ' + KIND_VERB[g.kind] + '? ' + g.why, 'chat', { mood: 'talk' }); m.rnd = st.round; return { ok: true, human: true, accept: null, delay: 0, line: null, msg: m, msgs: [m] }; }
+  const ask = o.typed || !P.ai ? null : say(st, fromRole, NAMES[toRole] + ', ¿puedes ' + KIND_VERB[g.kind] + '? ' + g.why, 'chat', { mood: 'talk' }); if (ask) ask.rnd = st.round; // lo escrito a mano ya está en el chat
+  const pre = ask ? [ask] : [];
+  if (!P.ai) { const m = say(st, fromRole, NAMES[toRole] + ', ¿puedes ' + KIND_VERB[g.kind] + '? ' + g.why, 'chat', { mood: 'talk' }); m.rnd = st.round; return { ok: true, human: true, accept: null, delay: 0, line: null, msg: m, ask: m, msgs: [m] }; }
   const n = hd.reqN = (hd.reqN || 0) + 1, ln = (A, k) => A[hi(A.length, st.seed, 'rl', g.id, k, n)];
   if (needsHuman(st, g, fromRole)) { // nunca dejar bloqueado a un humano: acepta siempre, con ETA corta; solo se encola si está abriendo OTRA puerta
     const T = now(), bz = (hd.busy = hd.busy || {})[toRole], queued = bz && bz.until > T && bz.gateId !== g.id, delay = queued ? 15000 : 2500 + hi(3000, st.seed, 'rd', g.id, n);
     const line = queued ? 'Termino esta y voy: 15 s, ' + NAMES[fromRole] + '.' : 'Voy, tardo unos segundos, ' + NAMES[fromRole] + '.';
     hd.busy[toRole] = { gateId: g.id, until: T + delay }; const m = say(st, toRole, line, 'chat', { mood: 'talk' }); m.delay = delay; m.rnd = st.round; hd.pTrust[toRole] = clamp(hd.pTrust[toRole] + 2, 0, 100);
-    return { ok: true, accept: true, delay, line, queued: queued || undefined, msg: m, msgs: [m], gateId: g.id };
+    return { ok: true, accept: true, delay, line, queued: queued || undefined, msg: m, ask, msgs: pre.concat(m), gateId: g.id };
   }
   const base = P.style === 'persona' ? ROLES[toRole].traits.coop : P.style === 'coop' ? .92 : P.style === 'ego' ? .35 : .55;
   let p = base + (hd.pTrust[fromRole] - 50) / 220 + dif(st).rel / 70 + (dname(st.difficulty) === 'facil' ? .12 : 0) + (o.typed ? .12 : 0) - (g.kind === 'puente' && toRole === 'ing' && st.s.material < st.priv.ing.goal.min + 8 ? .2 : 0) + (st.s.agua >= 70 ? .08 : 0);
@@ -691,7 +693,7 @@ function request(st, fromRole, toRole, o) {
   const m = say(st, toRole, line, 'chat', { mood: accept || lie ? 'talk' : 'angry' }); m.delay = delay; m.rnd = st.round;
   if (lie) { hd.stat.lieCount++; hd.gateLies = (hd.gateLies || 0) + 1; }
   hd.pTrust[toRole] = clamp(hd.pTrust[toRole] + (accept ? 2 : lie ? -1 : 0), 0, 100);
-  return { ok: true, accept, delay, line, lie: lie || undefined, msg: m, msgs: [m], gateId: g.id };
+  return { ok: true, accept, delay, line, lie: lie || undefined, msg: m, ask, msgs: pre.concat(m), gateId: g.id };
 }
 // Un compañero IA pide al jugador humano que abra una puerta suya (máx. 1 cada 45 s por puerta). null si no toca.
 function botRequest(st) {
@@ -760,6 +762,67 @@ function scene(st, kind) {
     }
   }
   return L.slice(0, kind === 'final' ? 7 : 4);
+}
+// ================= v13: estado de Lía, diario del tramo, resumen y paneles finales =================
+// 'no_encontrada' hasta investigar la cámara (POI r5_0); 'encontrada' tras eso; 'rescatada'/'perdida' al terminar la partida.
+function liaStatus(st) { return isOver(st) ? (saved(st) ? 'rescatada' : 'perdida') : st.hid.liaFound ? 'encontrada' : 'no_encontrada'; }
+const J_ICON = { agua: 'agua', salud: 'salud', material: 'material', confianza: 'confianza' };
+function journalEntries(st, r, res) {
+  const hd = st.hid, out = [], pos = res.pos, plan = res.plan;
+  RK.forEach(k => st.priv[k].intel.filter(c => c.round === r).forEach(c => {
+    const nm = NAMES[k], cd = hd.cards[c.id];
+    if (!cd) { // recurso o hallazgo
+      const rec = /^rec/.test(c.id); out.push({ icon: rec ? 'material' : 'estrella', title: c.title, text: nm + ' encontró «' + c.title + '». ' + c.text, use: rec ? 'Nos ayudó a aguantar el tramo (ya estaba aplicado).' : 'Nos dio puntos y un pequeño empujón al equipo; no cambió el voto.' }); return; }
+    const o = { n: (res.opts || [])[cd.opt] || '?' }, onChosen = cd.opt === pos, good = cd.truth, warn = cd.pol < 0, what = 'apuntaba a que «' + o.n + '» ' + (warn ? 'era peligrosa' : 'era la más segura');
+    let use;
+    if (c.shared) use = !good ? (onChosen ? 'Era una pista dudosa y nos despistó.' : 'Era dudosa; la dejamos de lado.') : onChosen ? (warn ? 'Avisaba de este camino y no le hicimos caso.' : 'Nos sirvió para elegir bien.') : warn ? 'Nos sirvió para evitar un camino peligroso.' : 'Apuntaba a otro camino seguro y no lo elegimos.';
+    else use = good && (warn ? onChosen : !onChosen) ? 'No la compartimos a tiempo y lo pagamos.' : 'Nadie la compartió, pero no cambió el resultado.';
+    out.push({ icon: 'ojo', title: c.title, text: nm + ' encontró «' + c.title + '»: ' + what + (c.shared ? '. Lo contó al equipo.' : '. No lo contó.'), use });
+  }));
+  GATES.filter(g => hd.gateRound && hd.gateRound[g.id] === r).forEach(g => out.push({ icon: 'llave', title: g.label, text: NAMES[hd.gateBy[g.id]] + ' abrió «' + g.label + '» para que el equipo llegara más lejos.', use: 'Nos dio acceso a un lugar nuevo para investigar.' }));
+  res.reveals.filter(x => x.type === 'lie').forEach(x => out.push({ icon: 'alerta', title: 'Mentira descubierta', text: x.text, use: 'La confianza del equipo bajó.' }));
+  res.reveals.filter(x => x.type === 'secret').forEach(x => out.push({ icon: 'secreto', title: 'Un secreto sale a la luz', text: x.text, use: x.how === 'confesion' ? 'Confesarlo a tiempo nos ayudó a seguir juntos.' : 'Salió tarde y nos costó confianza.' }));
+  return out;
+}
+// Diario del tramo r (por defecto el actual): válido tras resolver, antes de avanzar. null si ese tramo aún no se resolvió.
+function journal(st, round) {
+  const r = round || st.round, res = st.hid.resolved[r]; if (!res) return null;
+  const entries = journalEntries(st, r, res), unshared = entries.filter(e => /No la compartimos/.test(e.use)).length, ev = ROUND_D[r - 1].ev[st.hid.struct[r - 1].ev];
+  const eff = SK.filter(k => res.delta[k]).map(k => ({ icon: J_ICON[k], text: STATS[k][0] + (res.delta[k] > 0 ? ' sube ' : ' baja ') + Math.abs(res.delta[k]), delta: res.delta[k] }));
+  return { day: r, title: 'Día ' + r + ': ' + ZONES[r - 1].name,
+    intro: 'Entramos en ' + ZONES[r - 1].name.toLowerCase() + '. ' + ev.title + '. Cada uno salió a mirar y esto fue lo que trajimos.',
+    entries, decision: { title: res.plan.title, text: 'Votamos «' + res.plan.title + '». ' + (res.ok ? 'Salió bien.' : 'Se nos torció.') + (res.isTrap ? ' Era el camino peligroso.' : res.isGem ? ' Era el camino más sólido.' : ''), outcome: res.ok ? 'bien' : 'mal', effects: eff },
+    note: unshared ? 'La próxima vez hablemos antes de votar: lo que no se cuenta, no sirve.' : res.ok ? 'Hablamos, votamos y funcionó. Seguimos juntos.' : 'Lo hicimos con lo que sabíamos. Toca recuperarse.' };
+}
+// Resumen de toda la partida: un diario por tramo resuelto + lista plana de lo encontrado y su efecto.
+function recap(st) {
+  const days = Object.keys(st.hid.resolved).map(Number).sort((a, b) => a - b).map(r => journal(st, r)), entries = [];
+  days.forEach(d => d.entries.forEach(e => entries.push(Object.assign({ day: d.day }, e))));
+  return { title: 'Resumen de la expedición', saved: isOver(st) ? saved(st) : null, liaStatus: liaStatus(st), days, entries,
+    note: entries.filter(e => /nos sirvió|Nos sirvió|evitar/.test(e.use)).length + ' hallazgos nos ayudaron a decidir; ' + entries.filter(e => /No la compartimos|no le hicimos caso|despistó/.test(e.use)).length + ' nos costaron caro.' };
+}
+// Paneles cinematográficos del final (5-7): img end_good_1..3 / end_bad_1..3, texto <= 110.
+function endingPanels(st) {
+  const win = saved(st), hd = st.hid, fs = st.fates || fates(st, win), hurtF = fs.filter(x => x.id !== 'lia' && x.status !== 'vivo'), P = [], add = (img, text, who, mood) => P.push({ img, text: shortT(text, 110), who, mood });
+  const best = RK.slice().sort((a, b) => (hd.pts[b] || 0) - (hd.pts[a] || 0))[0], lost = Math.min(st.log.length + (st.log.length < st.round ? 1 : 0), ROUNDS) || 1, tight = st.s.agua >= 85;
+  if (win) {
+    add('end_good_1', 'En el fondo de la cámara, una linterna se mueve. ¡Encontramos a Lía!', 'director', 'happy');
+    add('end_good_1', 'Sabía que vendrían. Tengo frío, pero sigo aquí.', 'lia', st.s.salud < 35 ? 'hurt' : 'happy');
+    add('end_good_2', tight ? 'La cargamos con el agua pisándonos los talones. Nadie se detuvo.' : 'La sacamos con cuidado, paso a paso, por el camino que ya conocíamos.', 'director', tight ? 'alert' : 'neutral');
+    add('end_good_2', 'Ya pasó, Lía. Mírame: ya pasó.', best, 'happy');
+    add('end_good_3', 'La luz del día entra por la boca de la cueva. Lía respira aire de verdad.', 'director', 'happy');
+    add('end_good_3', 'Gracias. Pensé que no volvería a ver el cielo.', 'lia', 'happy');
+    add('end_good_3', hurtF.length ? 'Epílogo: ' + hurtF.map(x => NAMES[x.id]).join(' y ') + ' salió herido y tardará en recuperarse, pero volvieron todos.' : st.s.salud < 35 ? 'Epílogo: Lía pasará semanas en el hospital. Vivirá, y los tres estarán a su lado.' : 'Epílogo: sin heridos graves. Mañana habrá cosas que contarse; hoy, descansar.', 'director', hurtF.length || st.s.salud < 35 ? 'neutral' : 'happy');
+  } else {
+    add('end_bad_1', hd.liaFound ? 'Supimos dónde estaba Lía, pero no logramos llegar hasta ella.' : 'No encontramos a Lía a tiempo: seguía lejos cuando todo se perdió.', 'director', 'hurt');
+    add('end_bad_1', st.s.agua >= 100 ? 'En el tramo ' + lost + ' el agua cubrió la galería y cortó el paso.' : 'En el tramo ' + lost + ' la salud de Lía llegó al límite y no pudimos hacer más.', 'director', 'hurt');
+    add('end_bad_2', '(radio, voz débil) Los oigo... pero cada vez más lejos.', 'lia', 'hurt');
+    add('end_bad_2', '(radio) No fue culpa de nadie. Cuídense entre ustedes, ¿sí?', 'lia', 'hurt');
+    add('end_bad_3', 'Su linterna parpadea una última vez y se apaga.', 'director', 'hurt');
+    add('end_bad_3', 'Salimos de la cueva en silencio. La lluvia no paraba.', best, 'hurt');
+    add('end_bad_3', 'Volvimos los tres. Lía no. Lo que dijimos y lo que callamos nos acompañará siempre.', 'director', 'neutral');
+  }
+  return { saved: win, panels: P };
 }
 // Título y subtítulo de la pantalla final
 function endingTitle(st) {
@@ -1152,10 +1215,10 @@ const DO = [['buscar qué bajada está asegurada', 'medir cuánto sube el agua',
   ['buscar el paso que aguanta', 'comprobar si la roca aguanta', 'tomar suero y vendas del botiquín', 'rebuscar entre las piedras'],
   ['comprobar dónde el aire es limpio', 'mirar cómo está la roca y las cuerdas del pozo', 'agarrar la bombona para Lía', 'escuchar de dónde viene el zumbido'],
   ['medir hasta dónde llegó el agua', 'seguir las cruces blancas de Lía', 'recoger la manta contra el frío', 'leer las líneas pintadas'],
-  ['revisar las constantes de Lía', 'ver si se puede forzar la compuerta', 'agarrar la cuerda para el traslado', 'mirar qué hay en la rendija']];
+  ['revisar el pulso y la respiración de Lía', 'ver si se puede forzar la compuerta', 'agarrar la cuerda para el traslado', 'mirar qué hay en la rendija']];
 const ZASK = ['¿Cómo bajamos a la galería?', '¿Cómo pasamos el derrumbe?', '¿Cómo cruzamos la sala del gas?', '¿Cómo cruzamos el agua helada?', '¿Cómo llegamos a Lía?'];
 const WHAT = { 'la galería alta': 'Bajan por un camino largo y seco, con cuerdas ya puestas.', 'el pozo': 'Bajan directos por un pozo con anclajes muy viejos.', 'la balsa': 'Montan una balsa y dejan que el río los lleve.',
-  'el desvío seco': 'Rodean el derrumbe por un camino más largo pero firme.', 'el paso estrecho': 'Se cuelan de lado por un hueco angosto con agua.', 'el apuntalamiento': 'Ponen puntales para ensanchar el paso y pasar con la camilla.',
+  'el desvío seco': 'Rodean el derrumbe por un camino más largo pero firme.', 'el paso estrecho': 'Se cuelan de lado por un hueco angosto con agua.', 'el refuerzo con maderos': 'Ponen puntales para ensanchar el paso y pasar con la camilla.',
   'el corredor de cristal': 'Cruzan un pasillo estrecho de cristales con buen aire.', 'la sima': 'Bajan a cuerda por un agujero vertical de 40 metros.', 'la ventilación': 'Montan un ventilador y esperan a que el aire sea respirable.',
   'el sifón': 'Nadan cuatro metros bajo el agua helada.', 'la cornisa': 'Avanzan por una repisa estrecha sobre el agua.', 'el bombeo': 'Vacían la galería con bombas antes de pasar.',
   'la repisa': 'Rodean la cámara por un camino alto y seco.', 'la cuerda doble': 'Montan dos anclajes con cuerda doble para subir a Lía.', 'la compuerta': 'Fuerzan la puerta de la mina para llegar a Lía.' };
@@ -1167,7 +1230,7 @@ const TRAVEL = {
   'la balsa': TV('balsa', 'Navegan en la balsa por el río subterráneo', [L('ing', 'talk', 'La corriente nos lleva. Mantengan el peso al centro.'), L('guia', 'alert', 'Curva a la izquierda. ¡Remen!')], 'La balsa vuelca y el agua helada los empapa', [L('medica', 'alert', '¡Agarren a Lía!'), L('ing', 'hurt', 'Perdí material en el río.')]),
   'el desvío seco': TV('galeria', 'Rodean el derrumbe por el desvío seco', [L('guia', 'talk', 'Más largo, pero la roca es firme.'), L('medica', 'talk', 'Prefiero eso a correr riesgos.')], 'Una roca suelta cae en el desvío y los frena', [L('ing', 'alert', '¡Atrás, cae piedra!'), L('guia', 'hurt', 'Un golpe en el hombro, nada más.')]),
   'el paso estrecho': TV('paso', 'Se cuelan de lado por el paso estrecho con el agua a las rodillas', [L('guia', 'talk', 'De lado y sin mochila.'), L('ing', 'alert', 'El agua está helada. Rápido.')], 'Se atascan en el hueco y el agua sube mientras forcejean', [L('ing', 'alert', '¡Estoy atascado!'), L('medica', 'hurt', 'Me raspé las costillas al salir.')]),
-  'el apuntalamiento': TV('puntales', 'Colocan puntales y ensanchan el paso con la camilla', [L('ing', 'talk', 'Cuña aquí, puntal allá. Ya cabe la camilla.'), L('medica', 'talk', 'Con cuidado: Lía va encima.')], 'Un puntal cede y el techo suelta tierra sobre ellos', [L('ing', 'alert', '¡Fuera, se mueve!'), L('guia', 'hurt', 'Polvo en los ojos, pero pasamos.')]),
+  'el refuerzo con maderos': TV('puntales', 'Colocan puntales y ensanchan el paso con la camilla', [L('ing', 'talk', 'Cuña aquí, puntal allá. Ya cabe la camilla.'), L('medica', 'talk', 'Con cuidado: Lía va encima.')], 'Un puntal cede y el techo suelta tierra sobre ellos', [L('ing', 'alert', '¡Fuera, se mueve!'), L('guia', 'hurt', 'Polvo en los ojos, pero pasamos.')]),
   'el corredor de cristal': TV('corredor', 'Cruzan el corredor de cristal con cuidado', [L('guia', 'talk', 'No toquen los cristales con las manos.'), L('medica', 'talk', 'El aire aquí es bueno. Sigan.')], 'Los cristales cortan guantes y manos en el pasillo', [L('medica', 'alert', '¡Alto, estás sangrando!'), L('guia', 'hurt', 'Un corte en la mano. Sigo.')]),
   'la sima': TV('cuerda', 'Descienden por la sima colgados de la cuerda', [L('guia', 'alert', 'Cuarenta metros. Bajo yo primero.'), L('ing', 'talk', 'Aseguro arriba. Ahora Lía.')], 'La cuerda se tensa y Lía se golpea contra la pared de la sima', [L('medica', 'alert', '¡Lía, aguanta!'), L('ing', 'hurt', 'Se me escapó la cuerda un momento.')]),
   'la ventilación': TV('ventilador', 'Montan el ventilador y esperan a que el aire limpie la sala', [L('ing', 'talk', 'Conectado. Ya empieza a moverse el aire.'), L('medica', 'talk', 'Lía respira mejor. Un poco más.')], 'El ventilador falla y tienen que esperar con el aire viciado', [L('ing', 'alert', 'Se acabó la batería.'), L('medica', 'hurt', 'Me mareo. Hablen menos.')]),
@@ -1315,7 +1378,7 @@ function fates(st, win) {
   return out;
 }
 
-const Story = { travelScene, teamInfo, planBrief, tasks, taskLine, parseRequest, answerChat, botStuck, defaultDifficulty, explainResult, coach, SURVIVORS, ownerOf, TIMES, chatCadence: CAD, mission, readyLabel, ROLES, STATS, ROUNDS, LIM, RK, SK, NAMES, PROMPTS, intro, introShots, now: () => Date.now(),
+const Story = { journal, recap, endingPanels, liaStatus, travelScene, teamInfo, planBrief, tasks, taskLine, parseRequest, answerChat, botStuck, defaultDifficulty, explainResult, coach, SURVIVORS, ownerOf, TIMES, chatCadence: CAD, mission, readyLabel, ROLES, STATS, ROUNDS, LIM, RK, SK, NAMES, PROMPTS, intro, introShots, now: () => Date.now(),
   newGame, privOf, publicState, roundStart, setPhase, poiInteract, share, accuse, vote, tally, secretPick, ready, allReady, tickWater, waterRate, resolve, advance, isOver, saved, objectives, finish, verdict: async st => st.verdict || buildVerdict(st, saved(st), objectives(st), 'guia'),
   achievementsList: () => ACH.map(a => Object.assign({}, a)), loadAchievements: loadAch, difficulty, botAct, exec, botChat, botsReact, liaLine, say, roleBrief, dialogue, outro, parseClaim: (st, t) => parseClaim(st, t),
   request, botRequest, scene, endingTitle, chatSuggest, statusLabels, crisisReady, convene, allConvened, openGate, poiHints, ZONES, GATES: GATES.map(g => Object.assign({}, g)),
