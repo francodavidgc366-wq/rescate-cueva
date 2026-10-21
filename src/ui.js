@@ -389,7 +389,6 @@ function showMenu() {
   $('div', 'sub rel', t, 'Cuatro cabezas, tres rescatadores, una cueva que se inunda. Habla, comparte lo que sabes... y decide en quién confías.');
   const dv = $('div', 'diff rel', s); $('span', 'lab', dv, 'DIFICULTAD'); const chips = {};
   [['facil', 'Fácil'], ['normal', 'Normal'], ['everest', 'Everest']].forEach(([k, n]) => { const c = chips[k] = $('button', 'chip' + (S.diff === k ? ' on' : ''), dv, n); c.onclick = () => setDiff(k); });
-  const qk = $('button', 'chip rel' + (S.quick ? ' on' : ''), s, 'Partida rápida (vídeo)'); qk.setAttribute('role', 'switch'); qk.setAttribute('aria-checked', !!S.quick); qk.onclick = () => { S.quick = !S.quick; try { saveS(); } catch (e) { } qk.classList.toggle('on', S.quick); qk.setAttribute('aria-checked', !!S.quick); sfx('select'); };
   function setDiff(k) { S.diff = k; saveS(); Object.keys(chips).forEach(x => chips[x].classList.toggle('on', x === k)); sfx('select'); }
   const L = $('div', 'mlist rel', s);
   const act = { solo: () => startFlow('solo'), host: () => startFlow('host'), join: () => joinDialog(), tut: () => showTutorial(), ach: () => showAchievements(), set: () => openSettings(), cred: () => showCredits() };
@@ -721,7 +720,7 @@ function playEnding(o) {
       const fates = Array.isArray(o.fates) ? o.fates.filter(f => f && f.id) : []; if (fates.length) { fates.slice(0, 4).forEach(f => { const e = $('div', 'f ' + (f.status || 'vivo'), fatesEl); const c = fateFace(f); e.appendChild(c); $('div', '', e, '<b>' + esc(f.name || (f.id === 'lia' ? 'Lía' : rinfo(f.id).n)) + '</b>'); }); }
       setTimeout(() => { if (!done) title.classList.add('on'); }, 1800); setTimeout(() => { if (!done) { fatesEl.classList.add('on'); hint.classList.add('on'); } }, 4200); }
     let stopT = () => { }; function end() { if (done) return; done = true; stopT(); snd('stopSpeak'); s.style.transition = 'opacity 1.1s'; s.style.opacity = 0; setTimeout(() => { s.style.opacity = ''; s.style.transition = ''; s.classList.remove('on'); cur = null; res(); }, 1150); }
-    function advance() { if (closing) { if (tC > 4.5) end(); return; } if (typed < text.length) { typed = text.length; return; } if (t > 1.2) { sfx('click'); nextPanel(); } }
+    function advance() { if (closing) { if (tC > 4.5) end(); return; } if (typed < text.length) { if (t < 1.2) return; typed = text.length; if (sub._a) { sub._a.textContent = text; sub._b.textContent = ''; } return; } if (t > 3.5) { sfx('click'); nextPanel(); } }
     go('end', { music: saved ? 'win' : 'lose', keys: e => { if (e.key === 'Escape') { if (closing) end(); else startClose(); return; } if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight') { advance(); return; } return false; } });
     s.onclick = e => { if (e.target === skip) return; advance(); }; skip.onclick = e => { e.stopPropagation(); sfx('back'); if (closing) end(); else { i = panels.length; startClose(); } };
     nextPanel(); noise();

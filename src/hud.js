@@ -1873,7 +1873,7 @@
       for (var d = dust.length - 1; d >= 0; d--) { var p = dust[d]; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += p.gy * dt; p.l -= dt; if (p.l <= 0) { dust.splice(d, 1); continue; } g.globalAlpha = Math.min(1, p.l * 2); g.fillStyle = p.c; g.fillRect(p.x | 0, p.y | 0, 2, 2); } g.globalAlpha = 1;
     };
   }
-  var mgCur = null, mgStreak = 0, mgKinds = { timing: ['ESCANEAR', 'ojo', 'ESPACIO'], mash: ['ANCLAR', 'cuerda', 'MACHACA E'], hold: ['VÁLVULA', 'agua', 'MANTÉN E · SUELTA'], sequence: ['PUENTE', 'material', 'FLECHAS / WASD'] };
+  var mgCur = null, mgStreak = 0, mgKinds = { timing: ['ESCANEAR', 'ojo', 'ESPACIO'], mash: ['ANCLAR', 'cuerda', 'MACHACA E'], hold: ['VÁLVULA', 'agua', 'MANTÉN E = sube · SUELTA = baja · déjalo en lo VERDE'], sequence: ['PUENTE', 'material', 'FLECHAS / WASD'] };
   var SEQ = [['↑', 'arrowup', 'w'], ['→', 'arrowright', 'd'], ['↓', 'arrowdown', 's'], ['←', 'arrowleft', 'a']];
   function reduced() { return opts.noflash || (W.matchMedia && W.matchMedia('(prefers-reduced-motion:reduce)').matches); }
   function setStreak(n) {
@@ -1932,11 +1932,19 @@
         upd = function (t, dt) { S.f = Math.max(0, S.f - dec * dt); fi.style.width = S.f * 100 + '%'; };
         press = function () { S.sw = performance.now(); S.rot = (S.rot || 0) + .5; S.sp && S.sp(o.theme === 'valvula' ? 60 : 80, 30, 4, o.theme === 'valvula' ? '#e8f4ff' : '#b8a890'); S.f = Math.min(1, S.f + inc); fl('+10', 20 + Math.random() * 60, 30); pop(2, '#ffe08a', S.f * 100, 55); snd('tick'); box.classList.remove('bmp'); void box.offsetWidth; box.classList.add('bmp'); fi.style.width = S.f * 100 + '%'; if (S.f >= 1) end((performance.now() - t0) / 1000 < dur * .65 ? 'perfect' : 'ok', 100 - ((performance.now() - t0) / 1000 / dur) * 40); };
       } else if (kind === 'hold') {
-        var hh = [.09, .065, .045][lv - 1], hc = .6 + Math.random() * .25, R = 52, C = 2 * Math.PI * R, rate = 1 / 2.4; S.p = 0; S.on = false; S.hc = hc; S.hh = hh;
-        mb.innerHTML = '<svg viewBox="0 0 140 140"><circle class="bg" cx="70" cy="70" r="' + R + '"/><circle class="zn" cx="70" cy="70" r="' + R + '" stroke-dasharray="' + hh * 2 * C + ' ' + C + '" stroke-dashoffset="' + -(hc - hh) * C + '" transform="rotate(-90 70 70)"/><circle class="fi" cx="70" cy="70" r="' + R + '" stroke-dasharray="0 ' + C + '" transform="rotate(-90 70 70)"/></svg><div class="big2">MANTÉN</div>';
-        var ring = mb.querySelector('.fi'); mb.querySelector('.zn').style.strokeLinecap = 'butt';
-        upd = function (t, dt) { if (S.on) { S.p += rate * dt; if (S.p >= 1) { S.p = 1; end('fail', 10, false, 'Te pasaste'); } } ring.setAttribute('stroke-dasharray', S.p * C + ' ' + C); };
-        press = function () { if (!S.on) { S.on = true; box.classList.add('hld'); snd('tick'); } }; var rr = function () { if (!S.on) return; S.on = false; box.classList.remove('hld'); var d = Math.abs(S.p - hc); if (d <= hh * .35) { pop(12, '#ffd34d', 50, 50); fl('+25', 50, 40, '#ffd34d'); end('perfect', 100 - d / hh * 10); } else if (d <= hh) { pop(6, '#9bffc0', 50, 50); fl('+10', 50, 40); end('ok', 85 - d / hh * 25); } else end('fail', Math.max(0, 40 - d * 60), false, d < hh * 2.2 ? 'Casi…' : 'Fallo'); }; rel = rr;
+        // Mantén E: el nivel sube; suelta: baja. Hay que dejarlo en la franja verde (que se mueve un poco) el tiempo necesario.
+        var hh = [.17, .13, .1][lv - 1], need = [1.6, 2, 2.4][lv - 1]; S.p = .15; S.on = false; S.hh = hh; S.hc = .6; S.in = 0; S.ph = Math.random() * 6;
+        mb.innerHTML = '<div class="bar"><div class="zn"><u></u></div><div class="cu"></div></div><div class="big2">0%</div>';
+        var zn = mb.querySelector('.zn'), cu2 = mb.querySelector('.cu'), pc = mb.querySelector('.big2'); zn.style.width = hh * 200 + '%'; mb.querySelector('.bar').appendChild(zn);
+        upd = function (t, dt) {
+          S.p = clamp(S.p + (S.on ? .55 : -.4) * dt, 0, 1); S.hc = .55 + .15 * Math.sin(t * 1.3 + S.ph);
+          zn.style.left = (S.hc - hh) * 100 + '%'; cu2.style.left = S.p * 100 + '%';
+          var inside = Math.abs(S.p - S.hc) <= hh; box.classList.toggle('hld', S.on);
+          if (inside) { S.in += dt; if (!S.fl || t - S.fl > .5) { S.fl = t; fl('+', S.p * 100, 30, '#9bffc0'); } } else S.in = Math.max(0, S.in - dt * .6);
+          pc.textContent = Math.round(S.in / need * 100) + '%'; pc.style.color = inside ? '#9bffc0' : '#ffe08a';
+          if (S.in >= need) { pop(12, '#ffd34d', S.p * 100, 50); end((performance.now() - t0) / 1000 < dur * .6 ? 'perfect' : 'ok', 100 - (performance.now() - t0) / 100); }
+        };
+        press = function () { if (!S.on) { S.on = true; snd('tick'); } }; rel = function () { S.on = false; };
       } else {
         var n = lv > 2 ? 4 : 3; S.q = []; S.i = 0; S.err = 0; for (var q = 0; q < n; q++) S.q.push(Math.floor(Math.random() * 4));
         mb.innerHTML = '<div class="sq">' + S.q.map(function (d, i) { return '<span class="ar" style="animation-delay:' + i * .08 + 's">' + SEQ[d][0] + '</span>'; }).join('') + '</div><div class="dp">' + SEQ.map(function (s, i) { return '<button data-d="' + s[2] + '">' + s[0] + '</button>'; }).join('') + '</div>';

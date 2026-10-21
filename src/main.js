@@ -184,7 +184,7 @@
     const hostMode = o.host && !o.solo && window.Net && Net.role === 'host';
     mode = hostMode ? 'host' : 'solo'; myRole = o.role || 'ing'; myId = hostMode ? Net.localId : 'solo';
     const hs = hostMode ? Net.players.filter(p => !p.bot && RK.includes(p.role)).map(p => p.role) : [myRole];
-    st = Story.newGame({ quick: !!(o.quick || /[?&]rapido=1/.test(location.search)), seed: (Date.now() % 1000000) | 0, difficulty: Story.defaultDifficulty && Story.defaultDifficulty() === 'facil' ? 'facil' : (o.difficulty || (UI.settings && UI.settings().diff) || 'normal'), humans: hs, demo: !Story.hasKey() });
+    st = Story.newGame({ quick: true, seed: (Date.now() % 1000000) | 0, difficulty: Story.defaultDifficulty && Story.defaultDifficulty() === 'facil' ? 'facil' : (o.difficulty || (UI.settings && UI.settings().diff) || 'normal'), humans: hs, demo: !Story.hasKey() });
     if (hostMode) { Net.lock(true); Net.players.forEach(p => { if (!p.bot && RK.includes(p.role)) { st.players[p.role].owner = p.id; st.players[p.role].connected = true; } }); }
     else st.players[myRole].owner = 'solo';
     started = true; ensureGame(); makeEngine(true); setupBots(); eng.resetGates(); eng.setWater(st.s.agua); eng.setWaterRate(0);

@@ -513,14 +513,14 @@ const SA = {
     [A('Abrir camino y marcar los anclajes antes que nadie', [-3, 0, -3, -1]), A('Dar una arenga que levante el ánimo del equipo', [1, 0, 0, 6]), A('Tomar tú solo el atajo que conoces de ayer', [-6, 0, 0, 4], .5, [7, -4, -2, -6])],
     [A('Tantear la roca con el piolet delante del grupo', [-3, 1, -2, -1]), A('Cargar con la culpa de cualquier fallo', [2, -1, 0, 6]), A('Cruzar primero sin cuerda para ganar tiempo', [-6, 0, 0, 3], .5, [7, -4, -2, -6])],
     [A('Guiar al grupo con tu última linterna, tú a oscuras', [-2, 2, -2, -1]), A('Contar un recuerdo con Lía para calmar al grupo', [2, 0, 0, 6]), A('Marcar una ruta nueva por intuición', [-6, 1, 0, 3], .5, [7, -4, -2, -6])],
-    [A('Cargar con la camilla en el tramo más duro', [-3, 2, -1, -1]), A('Ordenar un descanso para recobrar el aliento', [3, 0, -1, 7]), A('Adelantarte a explorar sin avisar a nadie', [-6, 0, 0, 3], .5, [7, -4, -2, -6])],
+    [A('Cargar con el equipo pesado en el tramo más duro', [-3, 2, -1, -1]), A('Ordenar un descanso para recobrar el aliento', [3, 0, -1, 7]), A('Adelantarte a explorar sin avisar a nadie', [-6, 0, 0, 3], .5, [7, -4, -2, -6])],
     [A('Sostener la cuerda el último, aunque queme', [-4, 2, -1, -1]), A('Prometer ante todos que nadie se queda atrás', [2, -1, 0, 8]), A('Saltar la repisa de golpe, sin red', [-7, 0, 0, 4], .5, [8, -5, -2, -7])]],
   medica: [
-    [A('Preparar una férula improvisada para Lía', [0, 5, -3, 0]), A('Reservar todo el botiquín para Lía, sin repartir', [1, 7, -5, -3]), A('Drenar el pecho de Lía con lo que tienes', [0, 9, -3, 0], .5, [2, -9, -3, -4])],
-    [A('Reanimar y abrigar a Lía durante la espera', [0, 5, -2, 1]), A('Exigir silencio y calma absoluta junto a Lía', [2, 6, 0, -3]), A('Probar una dosis alta de analgésico', [0, 9, -2, 0], .5, [2, -9, -2, -4])],
-    [A('Controlar el pulso de todos y repartir agua', [0, 3, -1, 2]), A('Usar todos tus sueros con Lía ahora mismo', [1, 7, -6, -2]), A('Intentar despertarla a la fuerza con lo que haya', [0, 9, -3, 0], .5, [2, -9, -3, -4])],
-    [A('Dar tu manta térmica a quien más la necesite', [0, 4, 0, 2]), A('Dedicarle todo tu tiempo, aunque se retrase el grupo', [3, 7, -2, -3]), A('Calentarla con un baño de agua tibia', [0, 9, -3, 0], .5, [2, -9, -3, -4])],
-    [A('Preparar el traslado paso a paso con el equipo', [-1, 4, -2, 1]), A('Sedar a Lía para el traslado, sin consultar', [0, 8, -4, -4]), A('Inmovilizarla en marcha, sin parar', [-2, 9, -3, 0], .5, [3, -10, -3, -4])]],
+    [A('Preparar férula y botiquín para cuando lleguemos', [0, 5, -3, 0]), A('Reservar todo el botiquín para Lía, sin repartir', [1, 7, -5, -3]), A('Pedirle por radio que se mueva sola, aunque duela', [0, 9, -3, 0], .5, [2, -9, -3, -4])],
+    [A('Guiar a Lía por radio para que se abrigue', [0, 5, -2, 1]), A('Exigir silencio y calma absoluta en la radio', [2, 6, 0, -3]), A('Decirle por radio que tome un analgésico fuerte', [0, 9, -2, 0], .5, [2, -9, -2, -4])],
+    [A('Controlar el pulso de todos y repartir agua', [0, 3, -1, 2]), A('Gastar tus sueros pensando solo en Lía, sin guardar', [1, 7, -6, -2]), A('Pedirle por radio que no se duerma, a toda costa', [0, 9, -3, 0], .5, [2, -9, -3, -4])],
+    [A('Dar tu manta térmica a quien más la necesite', [0, 4, 0, 2]), A('Dedicarle todo tu tiempo, aunque se retrase el grupo', [3, 7, -2, -3]), A('Indicarle por radio cómo calentarse con agua tibia', [0, 9, -3, 0], .5, [2, -9, -3, -4])],
+    [A('Preparar el traslado paso a paso con el equipo', [-1, 4, -2, 1]), A('Aplicar el sedante a Lía al llegar, sin consultar', [0, 8, -4, -4]), A('Inmovilizarla en marcha, sin parar', [-2, 9, -3, 0], .5, [3, -10, -3, -4])]],
   ing: [
     [A('Reforzar los anclajes con tu mejor equipo', [-4, 0, -6, 1]), A('Cerrar la mochila y racionar cada pieza', [2, -1, 6, -3]), A('Improvisar poleas con lo que queda', [-7, 0, -4, 2], .5, [8, -4, -8, -5])],
     [A('Montar un pasamanos para todo el grupo', [-3, 0, -5, 2]), A('Recuperar el material gastado y llevar la cuenta', [2, 0, 7, -3]), A('Hacer una explosión pequeña para ganar espacio', [-7, 0, -4, 2], .5, [8, -4, -8, -5])],
@@ -618,8 +618,8 @@ function ctxSentence(st) {
 const sc3 = v => Math.sign(v) * Math.min(3, Math.ceil(Math.abs(v) / 3)); // magnitud 1..3 con el signo real (agua +  = sube = malo)
 const fxList = e => { const o = Array.isArray(e) ? { agua: e[0], salud: e[1], material: e[2], confianza: e[3] } : e; return SK.filter(k => o[k]).map(k => ({ k, d: sc3(o[k]) })).sort((a, b) => Math.abs(b.d) - Math.abs(a.d)).slice(0, 3); };
 const SAT = {
-  guia: [['Marcar anclajes primero', 'Arenga para animar', 'Atajo tú solo'], ['Tantear la roca', 'Cargar con la culpa', 'Cruzar sin cuerda'], ['Guiar con tu linterna', 'Recuerdo de Lía', 'Ruta nueva a ojo'], ['Cargar la camilla', 'Ordenar un descanso', 'Explorar sin avisar'], ['Sostener la cuerda', 'Prometer a todos', 'Saltar sin red']],
-  medica: [['Férula para Lía', 'Todo el botiquín a Lía', 'Drenar el pecho'], ['Abrigar a Lía', 'Pedir silencio', 'Dosis alta'], ['Repartir agua', 'Todos los sueros a Lía', 'Despertarla a la fuerza'], ['Dar tu manta', 'Todo el tiempo a Lía', 'Baño de agua tibia'], ['Preparar el traslado', 'Sedar a Lía', 'Moverla sin parar']],
+  guia: [['Marcar anclajes primero', 'Arenga para animar', 'Atajo tú solo'], ['Tantear la roca', 'Cargar con la culpa', 'Cruzar sin cuerda'], ['Guiar con tu linterna', 'Recuerdo de Lía', 'Ruta nueva a ojo'], ['Cargar el equipo', 'Ordenar un descanso', 'Explorar sin avisar'], ['Sostener la cuerda', 'Prometer a todos', 'Saltar sin red']],
+  medica: [['Preparar botiquín', 'Todo el botiquín a Lía', 'Pedirle que se mueva'], ['Abrigarla por radio', 'Pedir silencio', 'Analgésico fuerte'], ['Repartir agua', 'Sueros solo para Lía', 'Que no se duerma'], ['Dar tu manta', 'Hablar con Lía sin parar', 'Calentarla con agua'], ['Preparar el traslado', 'Sedar a Lía', 'Moverla sin parar']],
   ing: [['Reforzar anclajes', 'Racionar piezas', 'Poleas improvisadas'], ['Montar pasamanos', 'Contar el material', 'Mini explosión'], ['Bomba pequeña', 'Guardar baterías', 'Ventilador a batería'], ['Compartir baterías', 'No prestar nada', 'Presa improvisada'], ['Asegurar la cuerda', 'Reservar lo mejor', 'Forzar la compuerta']] };
 function buildSecretOptions(st, role) {
   const r = st.round, base = SA[role][r - 1], sec = st.hid.secrets[role], out = [];
@@ -1650,13 +1650,13 @@ const SHORT = { 'la galería alta': ['Galería alta', 'Suben por una galería se
 // Cómo viajan: kind (7 tipos) manda; caption y líneas salen de KT para que casen con lo que se ve. anim = escena antigua.
 const L = (who, mood, text) => ({ who, mood, text });
 const KT = {
-  balsa: ['Navegan en balsa', [L('ing', 'talk', 'Remen despacio.'), L('guia', 'talk', 'Peso al centro.')], 'La balsa vuelca en el agua', [L('medica', 'alert', '¡Agarren a Lía!'), L('ing', 'hurt', 'Se mojó el material.')]],
+  balsa: ['Navegan en balsa', [L('ing', 'talk', 'Remen despacio.'), L('guia', 'talk', 'Peso al centro.')], 'La balsa vuelca en el agua', [L('medica', 'alert', '¡Agarren las mochilas!'), L('ing', 'hurt', 'Se mojó el material.')]],
   pozo: ['Bajan por el pozo', [L('guia', 'talk', 'Uno a uno, despacio.'), L('ing', 'talk', 'Los anclajes aguantan.')], 'Un anclaje cede en el pozo', [L('ing', 'alert', '¡El anclaje se soltó!'), L('guia', 'hurt', 'Me quemó la cuerda.')]],
-  galeria: ['Caminan por la galería', [L('guia', 'talk', 'Paso a paso, sin prisa.'), L('medica', 'talk', 'Voy detrás de Lía.')], 'Resbalan en la galería', [L('guia', 'alert', '¡Cuidado, resbala!'), L('medica', 'hurt', 'Me torcí el pie.')]],
+  galeria: ['Caminan por la galería', [L('guia', 'talk', 'Paso a paso, sin prisa.'), L('medica', 'talk', 'Yo cierro la fila.')], 'Resbalan en la galería', [L('guia', 'alert', '¡Cuidado, resbala!'), L('medica', 'hurt', 'Me torcí el pie.')]],
   cuerda: ['Suben con cuerdas', [L('guia', 'talk', 'Sube Lía. Despacio.'), L('ing', 'talk', 'Aseguro la cuerda.')], 'Se suelta un anclaje', [L('ing', 'alert', '¡Uno se soltó!'), L('guia', 'hurt', 'Me quemó las manos.')]],
   puente: ['Cruzan el puente', [L('guia', 'talk', 'De uno en uno.'), L('ing', 'talk', 'El puente aguanta.')], 'El puente se tambalea', [L('guia', 'alert', '¡Agárrense fuerte!'), L('ing', 'hurt', 'Casi caigo al agua.')]],
   tunel: ['Gatean por el túnel', [L('guia', 'talk', 'De lado y sin mochila.'), L('ing', 'alert', 'Está helado. Sigan.')], 'Se atascan en el túnel', [L('ing', 'alert', '¡Estoy atascado!'), L('medica', 'hurt', 'Me raspé al salir.')]],
-  compuerta: ['Cruzan la compuerta', [L('ing', 'alert', 'Cede. ¡Pasen ya!'), L('guia', 'talk', 'Uno por uno.')], 'La compuerta suelta agua', [L('ing', 'alert', '¡No cede!'), L('medica', 'hurt', 'Lía está empapada.')]] };
+  compuerta: ['Cruzan la compuerta', [L('ing', 'alert', 'Cede. ¡Pasen ya!'), L('guia', 'talk', 'Uno por uno.')], 'La compuerta suelta agua', [L('ing', 'alert', '¡No cede!'), L('medica', 'hurt', 'Estamos empapados.')]] };
 const K7 = { 'la galería alta': ['galeria', 'Suben por una galería seca con cuerdas'], 'el pozo': ['pozo', 'Bajan con cuerdas por el pozo'], 'la balsa': ['balsa', 'Cruzan el río en una balsa'], 'el desvío seco': ['galeria', 'Dan la vuelta por un desvío de roca'], 'el paso estrecho': ['tunel', 'Se arrastran por un hueco angosto'], 'el refuerzo con maderos': ['puente', 'Ponen maderos y pasan la camilla'],
   'el corredor de cristal': ['galeria', 'Caminan por el corredor de cristales'], 'la sima': ['pozo', 'Bajan 40 metros por la sima'], 'la ventilación': ['galeria', 'Encienden el ventilador y esperan'], 'el sifón': ['tunel', 'Nadan bajo el agua por el sifón'], 'la cornisa': ['puente', 'Cruzan una repisa sobre el agua'], 'el bombeo': ['galeria', 'Usan bombas para vaciar la galería'],
   'la repisa': ['galeria', 'Van por la repisa alta y estrecha'], 'la cuerda doble': ['cuerda', 'Suben a Lía con dos cuerdas'], 'la compuerta': ['compuerta', 'Fuerzan la compuerta atascada'] };
@@ -5164,7 +5164,6 @@ function showMenu() {
   $('div', 'sub rel', t, 'Cuatro cabezas, tres rescatadores, una cueva que se inunda. Habla, comparte lo que sabes... y decide en quién confías.');
   const dv = $('div', 'diff rel', s); $('span', 'lab', dv, 'DIFICULTAD'); const chips = {};
   [['facil', 'Fácil'], ['normal', 'Normal'], ['everest', 'Everest']].forEach(([k, n]) => { const c = chips[k] = $('button', 'chip' + (S.diff === k ? ' on' : ''), dv, n); c.onclick = () => setDiff(k); });
-  const qk = $('button', 'chip rel' + (S.quick ? ' on' : ''), s, 'Partida rápida (vídeo)'); qk.setAttribute('role', 'switch'); qk.setAttribute('aria-checked', !!S.quick); qk.onclick = () => { S.quick = !S.quick; try { saveS(); } catch (e) { } qk.classList.toggle('on', S.quick); qk.setAttribute('aria-checked', !!S.quick); sfx('select'); };
   function setDiff(k) { S.diff = k; saveS(); Object.keys(chips).forEach(x => chips[x].classList.toggle('on', x === k)); sfx('select'); }
   const L = $('div', 'mlist rel', s);
   const act = { solo: () => startFlow('solo'), host: () => startFlow('host'), join: () => joinDialog(), tut: () => showTutorial(), ach: () => showAchievements(), set: () => openSettings(), cred: () => showCredits() };
@@ -5496,7 +5495,7 @@ function playEnding(o) {
       const fates = Array.isArray(o.fates) ? o.fates.filter(f => f && f.id) : []; if (fates.length) { fates.slice(0, 4).forEach(f => { const e = $('div', 'f ' + (f.status || 'vivo'), fatesEl); const c = fateFace(f); e.appendChild(c); $('div', '', e, '<b>' + esc(f.name || (f.id === 'lia' ? 'Lía' : rinfo(f.id).n)) + '</b>'); }); }
       setTimeout(() => { if (!done) title.classList.add('on'); }, 1800); setTimeout(() => { if (!done) { fatesEl.classList.add('on'); hint.classList.add('on'); } }, 4200); }
     let stopT = () => { }; function end() { if (done) return; done = true; stopT(); snd('stopSpeak'); s.style.transition = 'opacity 1.1s'; s.style.opacity = 0; setTimeout(() => { s.style.opacity = ''; s.style.transition = ''; s.classList.remove('on'); cur = null; res(); }, 1150); }
-    function advance() { if (closing) { if (tC > 4.5) end(); return; } if (typed < text.length) { typed = text.length; return; } if (t > 1.2) { sfx('click'); nextPanel(); } }
+    function advance() { if (closing) { if (tC > 4.5) end(); return; } if (typed < text.length) { if (t < 1.2) return; typed = text.length; if (sub._a) { sub._a.textContent = text; sub._b.textContent = ''; } return; } if (t > 3.5) { sfx('click'); nextPanel(); } }
     go('end', { music: saved ? 'win' : 'lose', keys: e => { if (e.key === 'Escape') { if (closing) end(); else startClose(); return; } if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight') { advance(); return; } return false; } });
     s.onclick = e => { if (e.target === skip) return; advance(); }; skip.onclick = e => { e.stopPropagation(); sfx('back'); if (closing) end(); else { i = panels.length; startClose(); } };
     nextPanel(); noise();
@@ -7531,7 +7530,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
       for (var d = dust.length - 1; d >= 0; d--) { var p = dust[d]; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += p.gy * dt; p.l -= dt; if (p.l <= 0) { dust.splice(d, 1); continue; } g.globalAlpha = Math.min(1, p.l * 2); g.fillStyle = p.c; g.fillRect(p.x | 0, p.y | 0, 2, 2); } g.globalAlpha = 1;
     };
   }
-  var mgCur = null, mgStreak = 0, mgKinds = { timing: ['ESCANEAR', 'ojo', 'ESPACIO'], mash: ['ANCLAR', 'cuerda', 'MACHACA E'], hold: ['VÁLVULA', 'agua', 'MANTÉN E · SUELTA'], sequence: ['PUENTE', 'material', 'FLECHAS / WASD'] };
+  var mgCur = null, mgStreak = 0, mgKinds = { timing: ['ESCANEAR', 'ojo', 'ESPACIO'], mash: ['ANCLAR', 'cuerda', 'MACHACA E'], hold: ['VÁLVULA', 'agua', 'MANTÉN E = sube · SUELTA = baja · déjalo en lo VERDE'], sequence: ['PUENTE', 'material', 'FLECHAS / WASD'] };
   var SEQ = [['↑', 'arrowup', 'w'], ['→', 'arrowright', 'd'], ['↓', 'arrowdown', 's'], ['←', 'arrowleft', 'a']];
   function reduced() { return opts.noflash || (W.matchMedia && W.matchMedia('(prefers-reduced-motion:reduce)').matches); }
   function setStreak(n) {
@@ -7590,11 +7589,19 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
         upd = function (t, dt) { S.f = Math.max(0, S.f - dec * dt); fi.style.width = S.f * 100 + '%'; };
         press = function () { S.sw = performance.now(); S.rot = (S.rot || 0) + .5; S.sp && S.sp(o.theme === 'valvula' ? 60 : 80, 30, 4, o.theme === 'valvula' ? '#e8f4ff' : '#b8a890'); S.f = Math.min(1, S.f + inc); fl('+10', 20 + Math.random() * 60, 30); pop(2, '#ffe08a', S.f * 100, 55); snd('tick'); box.classList.remove('bmp'); void box.offsetWidth; box.classList.add('bmp'); fi.style.width = S.f * 100 + '%'; if (S.f >= 1) end((performance.now() - t0) / 1000 < dur * .65 ? 'perfect' : 'ok', 100 - ((performance.now() - t0) / 1000 / dur) * 40); };
       } else if (kind === 'hold') {
-        var hh = [.09, .065, .045][lv - 1], hc = .6 + Math.random() * .25, R = 52, C = 2 * Math.PI * R, rate = 1 / 2.4; S.p = 0; S.on = false; S.hc = hc; S.hh = hh;
-        mb.innerHTML = '<svg viewBox="0 0 140 140"><circle class="bg" cx="70" cy="70" r="' + R + '"/><circle class="zn" cx="70" cy="70" r="' + R + '" stroke-dasharray="' + hh * 2 * C + ' ' + C + '" stroke-dashoffset="' + -(hc - hh) * C + '" transform="rotate(-90 70 70)"/><circle class="fi" cx="70" cy="70" r="' + R + '" stroke-dasharray="0 ' + C + '" transform="rotate(-90 70 70)"/></svg><div class="big2">MANTÉN</div>';
-        var ring = mb.querySelector('.fi'); mb.querySelector('.zn').style.strokeLinecap = 'butt';
-        upd = function (t, dt) { if (S.on) { S.p += rate * dt; if (S.p >= 1) { S.p = 1; end('fail', 10, false, 'Te pasaste'); } } ring.setAttribute('stroke-dasharray', S.p * C + ' ' + C); };
-        press = function () { if (!S.on) { S.on = true; box.classList.add('hld'); snd('tick'); } }; var rr = function () { if (!S.on) return; S.on = false; box.classList.remove('hld'); var d = Math.abs(S.p - hc); if (d <= hh * .35) { pop(12, '#ffd34d', 50, 50); fl('+25', 50, 40, '#ffd34d'); end('perfect', 100 - d / hh * 10); } else if (d <= hh) { pop(6, '#9bffc0', 50, 50); fl('+10', 50, 40); end('ok', 85 - d / hh * 25); } else end('fail', Math.max(0, 40 - d * 60), false, d < hh * 2.2 ? 'Casi…' : 'Fallo'); }; rel = rr;
+        // Mantén E: el nivel sube; suelta: baja. Hay que dejarlo en la franja verde (que se mueve un poco) el tiempo necesario.
+        var hh = [.17, .13, .1][lv - 1], need = [1.6, 2, 2.4][lv - 1]; S.p = .15; S.on = false; S.hh = hh; S.hc = .6; S.in = 0; S.ph = Math.random() * 6;
+        mb.innerHTML = '<div class="bar"><div class="zn"><u></u></div><div class="cu"></div></div><div class="big2">0%</div>';
+        var zn = mb.querySelector('.zn'), cu2 = mb.querySelector('.cu'), pc = mb.querySelector('.big2'); zn.style.width = hh * 200 + '%'; mb.querySelector('.bar').appendChild(zn);
+        upd = function (t, dt) {
+          S.p = clamp(S.p + (S.on ? .55 : -.4) * dt, 0, 1); S.hc = .55 + .15 * Math.sin(t * 1.3 + S.ph);
+          zn.style.left = (S.hc - hh) * 100 + '%'; cu2.style.left = S.p * 100 + '%';
+          var inside = Math.abs(S.p - S.hc) <= hh; box.classList.toggle('hld', S.on);
+          if (inside) { S.in += dt; if (!S.fl || t - S.fl > .5) { S.fl = t; fl('+', S.p * 100, 30, '#9bffc0'); } } else S.in = Math.max(0, S.in - dt * .6);
+          pc.textContent = Math.round(S.in / need * 100) + '%'; pc.style.color = inside ? '#9bffc0' : '#ffe08a';
+          if (S.in >= need) { pop(12, '#ffd34d', S.p * 100, 50); end((performance.now() - t0) / 1000 < dur * .6 ? 'perfect' : 'ok', 100 - (performance.now() - t0) / 100); }
+        };
+        press = function () { if (!S.on) { S.on = true; snd('tick'); } }; rel = function () { S.on = false; };
       } else {
         var n = lv > 2 ? 4 : 3; S.q = []; S.i = 0; S.err = 0; for (var q = 0; q < n; q++) S.q.push(Math.floor(Math.random() * 4));
         mb.innerHTML = '<div class="sq">' + S.q.map(function (d, i) { return '<span class="ar" style="animation-delay:' + i * .08 + 's">' + SEQ[d][0] + '</span>'; }).join('') + '</div><div class="dp">' + SEQ.map(function (s, i) { return '<button data-d="' + s[2] + '">' + s[0] + '</button>'; }).join('') + '</div>';
@@ -7869,7 +7876,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
     const hostMode = o.host && !o.solo && window.Net && Net.role === 'host';
     mode = hostMode ? 'host' : 'solo'; myRole = o.role || 'ing'; myId = hostMode ? Net.localId : 'solo';
     const hs = hostMode ? Net.players.filter(p => !p.bot && RK.includes(p.role)).map(p => p.role) : [myRole];
-    st = Story.newGame({ quick: !!(o.quick || /[?&]rapido=1/.test(location.search)), seed: (Date.now() % 1000000) | 0, difficulty: Story.defaultDifficulty && Story.defaultDifficulty() === 'facil' ? 'facil' : (o.difficulty || (UI.settings && UI.settings().diff) || 'normal'), humans: hs, demo: !Story.hasKey() });
+    st = Story.newGame({ quick: true, seed: (Date.now() % 1000000) | 0, difficulty: Story.defaultDifficulty && Story.defaultDifficulty() === 'facil' ? 'facil' : (o.difficulty || (UI.settings && UI.settings().diff) || 'normal'), humans: hs, demo: !Story.hasKey() });
     if (hostMode) { Net.lock(true); Net.players.forEach(p => { if (!p.bot && RK.includes(p.role)) { st.players[p.role].owner = p.id; st.players[p.role].connected = true; } }); }
     else st.players[myRole].owner = 'solo';
     started = true; ensureGame(); makeEngine(true); setupBots(); eng.resetGates(); eng.setWater(st.s.agua); eng.setWaterRate(0);
