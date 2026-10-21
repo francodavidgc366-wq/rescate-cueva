@@ -1,0 +1,23 @@
+<!doctype html><meta charset="utf-8"><title>engine-test</title>
+<style>body{margin:0;background:#0b0816;color:#ddd;font:12px monospace}canvas{display:block;margin:0 auto}#bar{padding:4px;text-align:center}button{font:12px monospace}</style>
+<div id="bar">Flechas/AD mover, W/Arriba trepar, Espacio saltar, F interactuar (mantener = curar), Tab cambiar personaje |
+ <button onclick="T.inst.setWater(T.inst.water+18)">agua +18</button>
+ <button onclick="T.inst.setWater(10)">agua 10</button>
+ <button onclick="T.inst.spawnFx('rescue')">rescate</button>
+ <button onclick="T.inst.pan(((T.pr=(T.pr||0)%5+1)))">pan</button>
+ <button onclick="T.inst.gather(((T.gr=(T.gr||0)%5+1)))">gather</button> <span id="info"></span></div>
+<canvas id="c"></canvas>
+<script src="../src/assets.js"></script><script src="../src/engine.js"></script>
+<script>
+var state={round:1,players:{guia:{role:'guia',name:'Nico'},medica:{role:'medica',name:'Dra. Ona'},ing:{role:'ing',name:'Ivan'}}};
+var log=[];
+var inst=Engine.create(document.getElementById('c'),{assets:window.ASSETS,getState:function(){return state},localId:'guia',onInteract:function(p,z){log.push(p+':'+z)}});
+var T=window.T={inst:inst,state:state,log:log};
+var keys={},order=['guia','medica','ing'];
+function send(){inst.setInput(inst.active,{left:keys.ArrowLeft||keys.a,right:keys.ArrowRight||keys.d,jump:keys[' '],interact:keys.f,up:keys.ArrowUp||keys.w,down:keys.ArrowDown||keys.s});}
+addEventListener('keydown',function(e){if(e.key==='Tab'){e.preventDefault();inst.setActive(order[(order.indexOf(inst.active)+1)%3]);return}keys[e.key]=1;send();if(e.key.indexOf('Arrow')==0||e.key===' ')e.preventDefault()});
+addEventListener('keyup',function(e){keys[e.key]=0;send()});
+inst.fit(innerWidth,innerHeight-30);addEventListener('resize',function(){inst.fit(innerWidth,innerHeight-30)});
+inst.start();
+setInterval(function(){var b=inst.bodies[inst.active];document.getElementById('info').textContent=inst.active+' x='+(b.x|0)+' y='+(b.y|0)+' '+b.anim+' water='+inst.water.toFixed(1)},200);
+</script>

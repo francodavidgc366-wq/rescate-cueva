@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rescate en la Cueva</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#14121f;--panel:#232038;--line:#6c63a8;--txt:#e8e6f5;--dim:#9a96bd;--ok:#5fd38d;--bad:#ef5b5b;--warn:#f0b030;--water:#3a8fe0}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font:11px/1.8 'Press Start 2P',monospace;display:flex;justify-content:center;padding:16px}
+#app{width:100%;max-width:720px}
+h1{font-size:16px;color:var(--warn);text-align:center;margin:8px 0 16px}
+h2{font-size:12px;color:var(--warn);margin:0 0 10px}
+canvas{width:100%;image-rendering:pixelated;border:4px solid var(--line);display:block;background:#000}
+.box{background:var(--panel);border:4px solid var(--line);padding:14px;margin-top:12px}
+.dim{color:var(--dim)}.secret{color:var(--bad)}
+button{font:inherit;color:var(--txt);background:#3a3563;border:3px solid var(--line);padding:10px 12px;cursor:pointer;display:block;width:100%;text-align:left;margin-top:8px}
+button:hover:not(:disabled){background:#5148a0}button:disabled{opacity:.4;cursor:not-allowed}
+input{font:inherit;width:100%;padding:8px;background:#0d0b16;color:var(--txt);border:3px solid var(--line)}
+.bars{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 14px}
+.bar{height:10px;background:#0d0b16;border:2px solid var(--line);margin-top:4px}.bar i{display:block;height:100%}
+.center{text-align:center}
+.tag{display:inline-block;padding:2px 6px;border:2px solid;margin-right:6px}
+</style>
+</head>
+<body>
+<div id="app">
+  <h1>⛏ RESCATE EN LA CUEVA</h1>
+  <canvas id="cv" width="160" height="96"></canvas>
+  <div id="hud"></div>
+  <div id="ui"></div>
+</div>
+<script>
+// ---------- Datos ----------
+const MODEL = 'claude-haiku-5-5';
+const ROUNDS = 5, LIM = 25; // LIM: efecto máximo por opción aceptado de la IA
+const STATS = { agua:['Agua','#3a8fe0'], salud:['Salud de Lía','#5fd38d'], material:['Material','#f0b030'], confianza:['Confianza','#c77dff'] };
+const ROLES = {
+  guia:{ name:'Nico, el guía', hat:'#e0a030', body:'#c0392b', stat:'confianza', min:50,
+    goal:'Que la confianza del equipo acabe en 50 o más.',
+    secret:'Ayer te desviaste de la ruta marcada y por eso Lía cayó. Nadie lo sabe.' },
+  medica:{ name:'Dra. Ona', hat:'#e8e8f0', body:'#2e9e6b', stat:'salud', min:50,
+    goal:'Que la salud de Lía acabe en 50 o más.',
+    secret:'Por radio oyes a Lía respirar mal: puede haber lesión interna.' },
+  ing:{ name:'Iván, el ingeniero', hat:'#4aa0e8', body:'#7a5a3a', stat:'material', min:30,
+    goal:'Que el material acabe en 30 o más (el equipo es tuyo y es caro).',
+    secret:'Mediste el caudal: el agua sube más rápido de lo que dices a los demás.' }
+};
+const RK = Object.keys(ROLES);
+
+// ---------- Prompts versionados ----------
+const PROMPTS = { version:'v1',
+  system:'Eres el DIRECTOR DE PARTIDA de un juego de rol cooperativo de rescate en una cueva. Sé concreto, tenso y breve. Respondes SOLO JSON válido, sin texto fuera del JSON.',
+  rules:'Reglas: 3 roles (guia, medica, ing). Cada rol recibe una pista privada distinta que los otros no conocen. Cada rol tiene 3 opciones con efectos numéricos en agua, salud, material, confianza (enteros entre -'+LIM+' y '+LIM+'; agua positiva = peor). Las opciones deben reaccionar al estado y a las decisiones anteriores. Incluye al menos una opción arriesgada y una cautelosa por rol. La última ronda es la salida de la cueva.',
+  format:'Formato exacto: {"scene":"2-3 frases","private":{"guia":"...","medica":"...","ing":"..."},"options":{"guia":[{"text":"...","effects":{"agua":0,"salud":0,"material":0,"confianza":0}}x3],"medica":[x3],"ing":[x3]}}',
+  final:'Devuelve SOLO JSON: {"verdict":"4-5 frases que expliquen por qué acabó así la partida, citando decisiones concretas y los objetivos individuales"}'
+};
+const buildPrompt = (round) => [
+  '[PROMPT '+PROMPTS.version+']','[REGLAS]\n'+PROMPTS.rules,'[FORMATO]\n'+PROMPTS.format,
+  '[ESTADO]\n'+JSON.stringify(G.s)+'\nRonda '+round+' de '+ROUNDS,
+  '[HISTORIAL]\n'+(G.log.map(l=>'R'+l.r+': '+l.scene+' | decisiones: '+l.picks.map(p=>p.role+'='+p.text).join('; ')).join('\n')||'(ninguno)'),
+  '[ROLES]\n'+RK.map(k=>k+': '+ROLES[k].name+'. Objetivo: '+ROLES[k].goal).join('\n')
+].join('\n\n');
+
+// ---------- Validación de la salida de la IA ----------
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function validRound(j){
+  if(typeof j.scene!=='string'||!j.private||!j.options) throw new Error('formato');
+  for(const k of RK){
+    if(typeof j.private[k]!=='string') throw new Error('privado '+k);
+    if(!Array.isArray(j.options[k])||j.options[k].length!==3) throw new Error('opciones '+k);
+    j.options[k].forEach(o=>{ if(typeof o.text!=='string') throw new Error('texto');
+      const e={}; for(const s in STATS) e[s]=clamp(Math.round(+(o.effects||{})[s]||0),-LIM,LIM); o.effects=e; });
+  }
+  return j;
+}
+
+// ---------- Modo demo (sin red ni clave) ----------
+const o=(text,agua,salud,material,confianza,req)=>({text,effects:{agua,salud,material,confianza},req});
+const DEMO=[
+ {scene:'Lía ha caído por un pozo a 40 metros y no puede mover la pierna. Llueve fuera y el agua empieza a subir en la galería.',
+  private:{guia:ROLES.guia.secret,medica:ROLES.medica.secret,ing:ROLES.ing.secret},
+  options:{guia:[o('Tomar la ruta corta (la del desvío) sin avisar',-8,-2,0,-10),o('Confesar el desvío y marcar la ruta segura',-2,0,0,8),o('Mandar a otro a explorar y esperar',6,0,5,-3)],
+   medica:[o('Estabilizar con una férula improvisada',0,10,-8,2),o('Analgésicos y priorizar la velocidad',-4,4,-3,0),o('Esperar a ver cómo evoluciona',3,-8,0,0)],
+   ing:[o('Instalar la cuerda de rescate',-5,2,-15,3),o('Abrir la galería lateral para desviar agua',-12,0,-8,0),o('Ahorrar material y avanzar a mano',4,-2,5,-4)]}},
+ {scene:'Un paso estrecho separa al equipo de Lía. El agua ya moja las botas y las linternas parpadean.',
+  private:{guia:'Recuerdas un atajo sobre el paso, pero es inestable.',medica:'Lía tiene la piel fría: empieza la hipotermia.',ing:'Quedan dos anclajes buenos; más cuerda es imposible.'},
+  options:{guia:[o('Usar el atajo inestable',-10,-3,-5,-6),o('Cruzar por el paso con cuerda',-3,0,-8,4),o('Proponer retroceder y replantear',8,-2,0,-2)],
+   medica:[o('Preparar mantas térmicas',0,9,-6,2),o('Hablar con Lía para mantenerla despierta',-1,5,0,5),o('Ignorar y centrarse en el avance',-5,-7,0,-3)],
+   ing:[o('Reforzar anclajes con tu mejor equipo',-6,0,-12,4),o('Improvisar un puente con la mochila',-8,-2,-4,-2),o('Gastar el material extra (-30 mínimo)',-14,0,-25,0,{material:30})]}},
+ {scene:'Lía pierde la consciencia unos segundos. El equipo discute a gritos qué hacer primero.',
+  private:{guia:'Ona sospecha de ti: ha visto que la ruta no cuadra con el mapa.',medica:'Necesitas silencio absoluto para evaluar su respiración.',ing:'El nivel del agua ha subido 20 cm en minutos; no se lo has dicho a nadie.'},
+  options:{guia:[o('Admitir el error ante todos',0,0,0,12),o('Culpar a la lluvia y callar',2,0,0,-12),o('Dar órdenes claras y avanzar',-4,-2,0,-3)],
+   medica:[o('Reanimación completa (gasta suministros)',3,15,-8,3),o('Mantenerla estable y moverla ya',-6,-3,-2,0),o('Pedir un descanso corto',8,4,0,3)],
+   ing:[o('Avisar a todos del caudal real',-3,0,0,8),o('Callar para no crear pánico',4,0,0,-8),o('Cavar un canal con el equipo',-12,0,-10,0)]}},
+ {scene:'El agua llega a la cintura. Hay dos caminos: uno largo y seguro, otro corto con riesgo de derrumbe.',
+  private:{guia:'Sabes que el camino corto no está en el mapa.',medica:'Lía no soportará más de dos horas sin evacuación.',ing:'Una carga del techo podría desplomarse si se mueve la roca.'},
+  options:{guia:[o('Elegir el camino largo y seguro',6,-5,0,5),o('Arriesgarte por el corto',-12,0,0,-4),o('Dejar que el grupo vote',0,0,0,8)],
+   medica:[o('Presionar para llegar ya',-8,-4,0,-3),o('Insistir en estabilizarla antes',4,8,-5,2),o('Dar un tratamiento fuerte de choque',0,12,-8,-3)],
+   ing:[o('Apuntalar el techo antes de pasar',-6,0,-15,3),o('Cruzar rápido sin apuntalar',-12,-2,0,-6),o('Usar la reserva de explosivos de control',-15,0,-30,-3,{material:35})]}},
+ {scene:'La salida está cerca, pero la cuerda final está a medio tramo y el agua cubre el último paso. Es ahora o nunca.',
+  private:{guia:'Conoces una repisa que reduce el recorrido a la mitad.',medica:'Lía tolera un traslado rápido, pero no un golpe.',ing:'La cuerda aguanta solo a dos personas a la vez.'},
+  options:{guia:[o('Guiar por la repisa',-15,-4,0,2),o('Tomar la ruta conocida',-6,0,0,4),o('Quedarte atrás para liberar peso',-8,0,0,10)],
+   medica:[o('Sedarla para el traslado',-4,10,-5,0),o('Llevarla despierta y hablando',-2,6,0,3),o('Sostenerla tú misma sin ayuda',-6,-2,0,-2)],
+   ing:[o('Montar la cuerda de doble anclaje',-12,2,-10,4),o('Improvisar con lo que queda',-8,-3,-5,-3),o('Cortar el material pesado para ir ligero',-15,0,-20,0)]}}
+];
+const demoRound = r => JSON.parse(JSON.stringify(DEMO[r-1]));
+const demoVerdict = () => {
+  const s=G.s, ok=s.agua<100&&s.salud>0, w=G.log.map(l=>l.picks).flat().sort((a,b)=>b.score-a.score);
+  return (ok?'El equipo sacó a Lía con vida. ':'La cueva ganó esta vez. ')+'Tu mejor decisión: "'+w[0].text+'". La peor: "'+w[w.length-1].text+'". Agua '+s.agua+'/100, salud '+s.salud+', material '+s.material+', confianza '+s.confianza+'.';
+};
+
+// ---------- IA ----------
+let KEY=''; try{KEY=localStorage.getItem('ck')||''}catch(e){}
+async function ai(system,user){
+  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+    headers:{'content-type':'application/json','x-api-key':KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:MODEL,max_tokens:1800,system,messages:[{role:'user',content:user}]})});
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  const t=(await r.json()).content[0].text;
+  return JSON.parse(t.slice(t.indexOf('{'),t.lastIndexOf('}')+1));
+}
+
+// ---------- Estado de la partida ----------
+let G;
+const newGame=(demo)=>({demo,r:1,s:{agua:10,salud:70,material:60,confianza:60},log:[],cur:null,picks:[],note:''});
+const $=id=>document.getElementById(id), ui=h=>$('ui').innerHTML=h;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+// ---------- Pixel art ----------
+const SPR=['..hhhh..','.hhhhhh.','.ssssss.','.sesses.','.ssssss.','..bbbb..','.bbbbbb.','sbbbbbbs','.bbbbbb.','.dd..dd.','.dd..dd.'];
+const cv=$('cv'), cx=cv.getContext('2d');
+function sprite(x,y,pal){ SPR.forEach((row,j)=>[...row].forEach((c,i)=>{ if(c==='.')return;
+  cx.fillStyle={h:pal.h,b:pal.b,s:'#f0c8a0',e:'#222',d:'#2a2438'}[c]; cx.fillRect(x+i,y+j,1,1); })); }
+function hash(i){ return ((i*2654435761)>>>0)%97; }
+function draw(t){
+  cx.fillStyle='#1b1830'; cx.fillRect(0,0,160,96);
+  for(let i=0;i<500;i++){ const x=i%160,y=(i/160|0)*3; if(hash(i)<30){cx.fillStyle='#262244';cx.fillRect(x,y+hash(i)%3,2,1);} }
+  cx.fillStyle='#0d0b16'; for(let x=0;x<160;x+=9){ const h=4+hash(x)%10; for(let j=0;j<h;j++) cx.fillRect(x+(j>>1),j,9-j,1); } // estalactitas
+  cx.fillStyle='#4a4066'; cx.fillRect(60,64,100,32); cx.fillRect(0,91,40,5); // repisa y fondo
+  cx.fillStyle='#5b507d'; cx.fillRect(60,64,100,2);
+  sprite(10,80,{h:'#ff8040',b:'#ff8040'}); // Lía
+  const act=G&&G.cur!==null?RK[G.picks.length]:null;
+  RK.forEach((k,i)=>{ sprite(80+i*20,53+((t/400|0)+i)%2*(k===act?1:0),{h:ROLES[k].hat,b:ROLES[k].body});
+    if(k===act){cx.fillStyle='#f0b030';cx.fillRect(83+i*20,48,3,1);cx.fillRect(84+i*20,49,1,1);} });
+  const wy=96-(G?G.s.agua:10)*0.6-6;
+  cx.fillStyle='rgba(58,143,224,.55)'; cx.fillRect(0,wy,160,96-wy);
+  cx.fillStyle='rgba(160,210,255,.8)'; for(let x=0;x<160;x+=2) cx.fillRect(x,wy+Math.sin((x+t/200)/4)*1,1,1);
+  requestAnimationFrame(draw);
+}
+requestAnimationFrame(draw);
+
+// ---------- HUD ----------
+function hud(){ if(!G){$('hud').innerHTML='';return;}
+  $('hud').innerHTML='<div class="box"><div class="center dim">RONDA '+G.r+' / '+ROUNDS+(G.demo?' · MODO DEMO':' · IA')+'</div><div class="bars">'+
+  Object.entries(STATS).map(([k,[n,c]])=>'<div>'+n+' '+G.s[k]+'<div class="bar"><i style="width:'+G.s[k]+'%;background:'+c+'"></i></div></div>').join('')+'</div></div>'; }
+
+// ---------- Pantallas ----------
+function start(){ G=null; hud(); ui('<div class="box"><h2>Misión</h2>Lía, una espeleóloga, está atrapada en una cueva que se inunda. Tres rescatadores, un solo dispositivo: pasadlo de mano en mano. Cada uno tiene información privada y un objetivo propio. Tenéis 5 rondas para sacarla viva.</div>'+
+ '<div class="box"><h2>Modo de juego</h2><span class="dim">Con IA: pega tu clave de Anthropic (se guarda solo en tu navegador).</span><input id="k" type="password" placeholder="sk-ant-..." value="'+esc(KEY)+'">'+
+ '<button id="bai">▶ JUGAR CON IA</button><button id="bdemo">▶ JUGAR EN MODO DEMO (sin red)</button></div>');
+  $('bai').onclick=()=>{ KEY=$('k').value.trim(); if(!KEY) return alert('Falta la clave. Usa el modo demo si no tienes.'); try{localStorage.setItem('ck',KEY)}catch(e){} begin(false); };
+  $('bdemo').onclick=()=>begin(true); }
+
+async function begin(demo){ G=newGame(demo); await loadRound(); }
+
+async function loadRound(){
+  hud(); ui('<div class="box center">El director prepara la ronda '+G.r+'...</div>');
+  let rd;
+  if(G.demo) rd=demoRound(G.r);
+  else { try{ rd=validRound(await ai(PROMPTS.system,buildPrompt(G.r))); }
+         catch(e1){ try{ rd=validRound(await ai(PROMPTS.system,buildPrompt(G.r))); }
+                    catch(e2){ rd=demoRound(G.r); G.note='La IA falló ('+e2.message+'): ronda demo.'; } } }
+  G.cur=rd; G.picks=[]; scene();
+}
+
+function scene(){ hud(); const n=G.note; G.note='';
+  ui('<div class="box"><h2>Ronda '+G.r+'</h2>'+esc(G.cur.scene)+(n?'<p class="secret">'+esc(n)+'</p>':'')+'</div><button id="go">▶ EMPEZAR TURNOS</button>');
+  $('go').onclick=pass; }
+
+function pass(){ const k=RK[G.picks.length];
+  ui('<div class="box center"><h2>Pasa el dispositivo</h2>Turno de <b>'+ROLES[k].name+'</b><br><span class="dim">Que los demás no miren.</span></div><button id="ok">▶ SOY '+esc(ROLES[k].name.toUpperCase())+'</button>');
+  $('ok').onclick=()=>turn(k); }
+
+function turn(k){ const R=ROLES[k], s=G.s;
+  ui('<div class="box"><h2>'+esc(R.name)+'</h2><span class="tag" style="color:var(--warn)">OBJETIVO</span>'+esc(R.goal)+
+   '<p><span class="tag secret">SECRETO</span>'+esc(G.cur.private[k])+'</p></div><div class="box"><h2>Decide</h2>'+
+   G.cur.options[k].map((op,i)=>{ const dis=op.req&&Object.entries(op.req).some(([st,v])=>s[st]<v);
+     return '<button data-i="'+i+'"'+(dis?' disabled':'')+'>'+esc(op.text)+(dis?' <span class="secret">(necesita más '+Object.keys(op.req)[0]+')</span>':'')+'</button>'; }).join('')+'</div>');
+  document.querySelectorAll('button[data-i]').forEach(b=>b.onclick=()=>{ const op=G.cur.options[k][b.dataset.i];
+    G.picks.push({role:k,text:op.text,effects:op.effects,score:Object.values(op.effects).reduce((a,v,i)=>a+(i===0?-v:v),0)});
+    G.picks.length<RK.length?pass():resolve(); }); }
+
+function resolve(){ const d={agua:18,salud:-4,material:0,confianza:0}; G.picks.forEach(p=>{for(const s in d)d[s]+=p.effects[s];});
+  for(const s in d) G.s[s]=clamp(G.s[s]+d[s],0,100);
+  G.log.push({r:G.r,scene:G.cur.scene,picks:G.picks.map(p=>({role:p.role,text:p.text,score:p.score})),delta:d});
+  hud();
+  const sign=v=>(v>0?'+':'')+v, col=(s,v)=>(s==='agua'?-v:v)>=0?'var(--ok)':'var(--bad)';
+  ui('<div class="box"><h2>Consecuencias</h2>'+G.picks.map(p=>'<p>'+esc(ROLES[p.role].name)+': <span class="dim">'+esc(p.text)+'</span></p>').join('')+
+   '<p>'+Object.entries(d).map(([s,v])=>'<span class="tag" style="color:'+col(s,v)+'">'+STATS[s][0]+' '+sign(v)+'</span>').join('')+'</p></div><button id="nx">▶ CONTINUAR</button>');
+  $('nx').onclick=()=>{ if(G.s.agua>=100||G.s.salud<=0||G.r>=ROUNDS) return end(); G.r++; loadRound(); }; }
+
+async function end(){
+  ui('<div class="box center">El árbitro evalúa la partida...</div>');
+  let verdict;
+  if(G.demo) verdict=demoVerdict();
+  else try{ const j=await ai(PROMPTS.system+' '+PROMPTS.final,'Estado final: '+JSON.stringify(G.s)+'\nHistorial:\n'+JSON.stringify(G.log)+'\nObjetivos: '+RK.map(k=>ROLES[k].name+': '+ROLES[k].goal).join(' | '));
+              if(typeof j.verdict!=='string') throw 0; verdict=j.verdict; }
+       catch(e){ verdict=demoVerdict(); }
+  const s=G.s, saved=s.agua<100&&s.salud>0&&G.r>=ROUNDS;
+  ui('<div class="box center"><h2 style="font-size:16px;color:'+(saved?'var(--ok)':'var(--bad)')+'">'+(saved?'¡LÍA ESTÁ A SALVO!':'LA CUEVA GANÓ...')+'</h2></div>'+
+   '<div class="box"><h2>Objetivos individuales</h2>'+RK.map(k=>{ const R=ROLES[k], ok=s[R.stat]>=R.min;
+     return '<p><span class="tag" style="color:'+(ok?'var(--ok)':'var(--bad)')+'">'+(ok?'✔':'✘')+'</span>'+esc(R.name)+': '+esc(R.goal)+'</p>'; }).join('')+'</div>'+
+   '<div class="box"><h2>Qué pasó</h2>'+esc(verdict)+'</div><button id="again">▶ NUEVA PARTIDA</button>');
+  $('again').onclick=start; }
+
+start();
+</script>
+</body>
+</html>

@@ -1,0 +1,257 @@
+{
+ "tiles": {
+  "w": 128,
+  "h": 64,
+  "cell": 16,
+  "cols": 8,
+  "rows": 4,
+  "index": {
+   "solid_mask": "0..15 = bits N=1,E=2,S=4,W=8 (lado EXPUESTO al aire); 0=interior, 15=aislado",
+   "bg_a": 16,
+   "bg_b": 17,
+   "bg_vein": 18,
+   "crystal_block": 19,
+   "plank_oneway": 20,
+   "stalactite": 21,
+   "stalagmite": 22,
+   "snow_solid": 23,
+   "crystal_cluster": 24,
+   "moss": 25,
+   "chain": 26,
+   "rubble": 27
+  }
+ },
+ "player_guia": {
+  "w": 144,
+  "h": 120,
+  "fw": 24,
+  "fh": 24,
+  "cols": 6,
+  "anims": {
+   "idle": {
+    "row": 0,
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "run": {
+    "row": 1,
+    "frames": 6,
+    "fps": 12,
+    "loop": true
+   },
+   "jump": {
+    "row": 2,
+    "frames": 2,
+    "fps": 4,
+    "loop": false
+   },
+   "fall": {
+    "row": 3,
+    "frames": 2,
+    "fps": 4,
+    "loop": true
+   },
+   "interact": {
+    "row": 4,
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "facing": "derecha; espejar para izquierda",
+  "feet_y": 22
+ },
+ "player_medica": {
+  "w": 144,
+  "h": 120,
+  "fw": 24,
+  "fh": 24,
+  "cols": 6,
+  "anims": {
+   "idle": {
+    "row": 0,
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "run": {
+    "row": 1,
+    "frames": 6,
+    "fps": 12,
+    "loop": true
+   },
+   "jump": {
+    "row": 2,
+    "frames": 2,
+    "fps": 4,
+    "loop": false
+   },
+   "fall": {
+    "row": 3,
+    "frames": 2,
+    "fps": 4,
+    "loop": true
+   },
+   "interact": {
+    "row": 4,
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "facing": "derecha; espejar para izquierda",
+  "feet_y": 22
+ },
+ "player_ing": {
+  "w": 144,
+  "h": 120,
+  "fw": 24,
+  "fh": 24,
+  "cols": 6,
+  "anims": {
+   "idle": {
+    "row": 0,
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "run": {
+    "row": 1,
+    "frames": 6,
+    "fps": 12,
+    "loop": true
+   },
+   "jump": {
+    "row": 2,
+    "frames": 2,
+    "fps": 4,
+    "loop": false
+   },
+   "fall": {
+    "row": 3,
+    "frames": 2,
+    "fps": 4,
+    "loop": true
+   },
+   "interact": {
+    "row": 4,
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "facing": "derecha; espejar para izquierda",
+  "feet_y": 22
+ },
+ "lia": {
+  "w": 96,
+  "h": 24,
+  "fw": 24,
+  "fh": 24,
+  "frames": 4,
+  "fps": 2,
+  "anims": {
+   "idle": {
+    "row": 0,
+    "frames": 4
+   }
+  },
+  "feet_y": 22
+ },
+ "water_tile": {
+  "w": 64,
+  "h": 32,
+  "cell": 16,
+  "frames": 4,
+  "fps": 5,
+  "rows": {
+   "surface": 0,
+   "body": 1
+  },
+  "note": "semitransparente; fila 0 = superficie (ola en y~2..4), fila 1 = cuerpo tileable"
+ },
+ "props": {
+  "w": 64,
+  "h": 96,
+  "cell": 16,
+  "cols": 4,
+  "rows": {
+   "torch": {
+    "row": 0,
+    "frames": 4,
+    "fps": 8,
+    "note": "llama; anclar en tile de pared, luz en (8,4)"
+   },
+   "crystal": {
+    "row": 1,
+    "frames": 4,
+    "fps": 4,
+    "note": "brilla, luz cian"
+   },
+   "radio": {
+    "row": 2,
+    "frames": 4,
+    "fps": 3,
+    "note": "0-1 espera, 2-3 recibiendo"
+   },
+   "rope": {
+    "row": 3,
+    "frames": 3,
+    "note": "0 segmento vertical tileable, 1 gancho superior, 2 rollo"
+   },
+   "box": {
+    "row": 4,
+    "frames": 2,
+    "note": "0 cerrada, 1 abierta"
+   },
+   "marker": {
+    "row": 5,
+    "frames": 4,
+    "fps": 6,
+    "note": "icono \"!\" interactuable"
+   }
+  }
+ },
+ "cablecar": {
+  "w": 384,
+  "h": 72,
+  "fw": 96,
+  "fh": 72,
+  "frames": 4,
+  "fps": 2,
+  "pivot": [
+   48,
+   5
+  ],
+  "note": "cable en y=3..4 del frame; balanceo pendular"
+ },
+ "sky_layers": {
+  "w": 320,
+  "h": 900,
+  "fw": 320,
+  "fh": 180,
+  "frames": 5,
+  "tileable_x": true,
+  "layers": [
+   "sky (fijo, sol y nubes)",
+   "mountains_far",
+   "mountains_mid",
+   "ridge_pines_near",
+   "snow_foreground (con copos, alfa)"
+  ],
+  "parallax": [
+   0.0,
+   0.1,
+   0.25,
+   0.45,
+   0.8
+  ]
+ },
+ "ui_frame": {
+  "w": 24,
+  "h": 24,
+  "slice": 8,
+  "note": "9-slice: esquinas 8px, centro tileable; fondo interior violeta oscuro, borde naranja"
+ }
+}

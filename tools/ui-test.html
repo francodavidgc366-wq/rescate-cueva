@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>ui-test</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>html,body{margin:0;background:#000;height:100%}#dev{position:fixed;left:0;bottom:0;z-index:99999;display:flex;flex-wrap:wrap;gap:2px;max-width:60vw;font:10px monospace}#dev button{font:10px monospace;padding:1px 3px;opacity:.7}</style></head>
+<body>
+<script>
+// ?real=1 usa assets.js/story.js reales; si no, stubs (ASSETS vacio = prueba del fallback procedural)
+const Q = new URLSearchParams(location.search), real = Q.has('real');
+if (real) { document.write('<script src="../src/assets.js"><\/script><script src="../src/story.js"><\/script>'); }
+</script>
+<script>
+if (!real) {
+  window.ASSETS = { images: {}, meta: {}, credits: [] };
+  window.Story = {
+    ROUNDS: 5, STATS: { agua: ['Agua', '#3a8fe0'], salud: ['Salud de Lia', '#5fd38d'], material: ['Material', '#f0b030'], confianza: ['Confianza', '#c77dff'] },
+    ROLES: { guia: { short: 'Nico', goal: 'Confianza >= 50' }, medica: { short: 'Ona', goal: 'Salud >= 50' }, ing: { short: 'Ivan', goal: 'Material >= 30' } },
+    intro: ['Atardece sobre el macizo. Un teleferico viejo sube a tres rescatadores hacia la cueva.', 'Nico, Ona e Ivan llegan a la estacion alta mientras el cielo se oscurece.', 'En la cabina nadie habla. Cada uno guarda un secreto.', 'Una tormenta cae de golpe sobre la montana.', 'Un relampago. El cable se sacude y la cabina se detiene.', 'Radio: "Aqui Lia... estoy atrapada... el agua sube."', 'Cinco decisiones. Una sola salida.'],
+    dialogue: r => [{ who: 'Lia', text: 'Aqui Lia. Oigo agua, mucha agua.' }, { who: 'Ona', text: 'Respira despacio, Lia.' }],
+    objectives: s => [{ role: 'guia', ok: true, text: 'Confianza 60/50' }, { role: 'medica', ok: false, text: 'Salud 30/50' }, { role: 'ing', ok: true, text: 'Material 40/30' }],
+    verdict: s => Promise.resolve('Salisteis a duras penas. Lia respira, el equipo esta roto, pero vivo.'), saved: s => s.s.salud > 0, setKey: k => console.log('key', k)
+  };
+}
+window.Net = window.Net || { available: true, localId: 'p0', host: () => Promise.resolve({ roomCode: 'LUNA7', link: location.origin + location.pathname + '#sala=LUNA7' }), join: c => Promise.resolve({ id: 'p1', roomCode: c, role: 'medica' }), on() { }, send() { }, leave() { } };
+</script>
+<script src="../src/ui.js"></script>
+<script>
+const S = { phase: 'play', round: 2, s: { agua: 40, salud: 62, material: 55, confianza: 70 }, active: 'guia', picks: { medica: 1 },
+  players: { guia: { owner: 'p0' }, medica: { owner: 'p0' }, ing: { owner: 'p2' } },
+  roundData: { scene: 'La galeria se estrecha y el agua te lame los tobillos. Al fondo, la radio crepita.', private: { guia: 'Ayer te desviaste de la ruta marcada. Nadie lo sabe.', medica: 'Lia respira mal.', ing: 'El agua sube mas rapido de lo que dices.' },
+    options: { guia: [{ text: 'Guiar al equipo por el atajo, aunque no salga en el mapa.' }, { text: 'Confesar la desviacion y pedir ayuda al equipo.' }, { text: 'Usar cuerda de seguridad para el tramo inundado.', req: { material: 80 } }], medica: [{ text: 'a' }, { text: 'b' }, { text: 'c' }], ing: [{ text: 'a' }, { text: 'b' }, { text: 'c' }] } } };
+UI.onSwitch(r => { console.log('switch', r); S.active = r; UI.updateHud(S); });
+['start', 'play', 'role', 'restart'].forEach(e => UI.on(e, d => console.log('ev', e, JSON.stringify(d))));
+const T = {
+  title: () => UI.showTitle(), lobby: () => UI.showLobby(), intro: () => UI.playCinematic('intro').then(() => console.log('intro done')),
+  agua: () => UI.playCinematic('agua'), relampago: () => UI.playCinematic('relampago'), linterna: () => UI.playCinematic('linterna'),
+  decision: () => UI.decide(S, (r, n) => console.log('pick', r, n), () => console.log('decided')),
+  hud: () => { UI.updateHud(S); UI.say('Aqui Lia. Oigo agua, mucha agua.', 'Lia'); }, hudchg: () => { S.s.agua += 12; S.s.salud -= 9; UI.updateHud(S); },
+  win: () => UI.showFinal(Object.assign({}, S, { round: 5 })), lose: () => UI.showFinal(Object.assign({}, S, { s: { agua: 100, salud: 0, material: 5, confianza: 9 } })),
+  settings: () => UI.openSettings()
+};
+if (!Q.has('dev0')) { const d = document.createElement('div'); d.id = 'dev'; Object.keys(T).forEach(k => { const b = document.createElement('button'); b.textContent = k; b.onclick = () => T[k](); d.appendChild(b); }); document.body.appendChild(d); }
+T[Q.get('go') || 'title']();
+</script></body></html>
