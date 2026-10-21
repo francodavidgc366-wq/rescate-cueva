@@ -1270,7 +1270,7 @@ function mission(st, role, o) {
 
 // ================= DIÁLOGO DEMO (compañeros y Lía) =================
 const BR = { // briefing por categoría de evento
-  guia: { agua: ['El agua no perdona, pero conozco esto. Seguidme.', 'Si nos quedamos parados, nos ahogamos. Muévanse.', 'Aguanten. Esto ya lo pasé... casi.'], roca: ['La roca avisa antes de caer. Esta ya está avisando.', 'Nadie toca el techo. Yo voy delante.'], aire: ['Respiren por la nariz y despacio. Yo marco el ritmo.', 'El aire aquí es malo. No hagan tonterías.'], caos: ['¡Quietos! ¡Cuenten cabezas! No nos dispersemos.', 'Son solo bichos. Que nadie se asuste.'], frio: ['Muévanse, que el frío mata más que el agua.', 'Nadie quieto. Y nadie haciéndose el valiente.'], luz: ['Ahorren luz. Si hace falta, guío por el tacto.', 'Con tres frontales basta. Esto me lo sé de memoria.'], final: ['Esto lo arreglo yo. Le debo esta salida a Lía.', 'Estamos cerca. No voy a dejar que acabe mal otra vez.'] },
+  guia: { agua: ['Conozco esto. Síganme.', 'Si nos quedamos parados, nos ahogamos. Muévanse.', 'Aguanten. Esto ya lo pasé... casi.'], roca: ['La roca avisa antes de caer. Esta ya está avisando.', 'Nadie toca el techo. Yo voy delante.'], aire: ['Respiren por la nariz y despacio. Yo marco el ritmo.', 'El aire aquí es malo. No hagan tonterías.'], caos: ['¡Quietos! ¡Cuenten cabezas! No nos dispersemos.', 'Son solo bichos. Que nadie se asuste.'], frio: ['Muévanse, que el frío mata más que el agua.', 'Nadie quieto. Y nadie haciéndose el valiente.'], luz: ['Ahorren luz. Si hace falta, guío por el tacto.', 'Con tres frontales basta. Esto me lo sé de memoria.'], final: ['Esto lo arreglo yo. Le debo esta salida a Lía.', 'Estamos cerca. No voy a dejar que acabe mal otra vez.'] },
   medica: { agua: ['Tomo las constantes de Lía. Avisen antes de moverse.', 'El agua es un problema; el frío, el siguiente.'], roca: ['Sin carreras. Una roca suelta rompe huesos.', 'Protocolo: primero seguridad, luego velocidad.'], aire: ['Poco oxígeno: hablen menos y respiren mejor.', 'Si alguien se marea, que lo diga ya.'], caos: ['Cuenten cabezas. Los tres, ahora.', 'Nadie corre. Respiren.'], frio: ['Hipotermia: cúbranse, muévanse, coman azúcar. Ahora.', 'Los labios morados no son una opinión: son un síntoma.'], luz: ['Sin luz no hay diagnóstico. Racionen pilas.', 'Mi frontal para Lía. El de ustedes, a medias.'], final: ['Último tramo. Un paso, un dato, una decisión.', 'Lía necesita calma. Yo se la voy a dar.'] },
   ing: { agua: ['A este ritmo el margen es justo. No discutan.', 'El agua sube; el material no. Cada cosa en su sitio.'], roca: ['Esa roca no aguanta peso. Cuñas, no heroicidades.', 'Antes de pasar, lo reviso yo.'], aire: ['Mi medidor pita. Menos charla, más cabeza.', 'Con este aire, los esfuerzos largos cuestan el triple.'], caos: ['Calma. Reviso el equipo y cuento las piezas.', 'Que nadie suelte la mochila.'], frio: ['Las baterías aguantan peor con frío. Racionen.', 'El frío me estropea el equipo, y a ustedes también.'], luz: ['Sin luz, mi equipo es peso muerto. Hay que racionar.', 'Tres frontales, cero margen. Cada lumen cuenta.'], final: ['Último esfuerzo. Doy todo lo que tengo.', 'No cargué tanto equipo para quedarme a medias.'] }
 };
@@ -7464,6 +7464,11 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
     cv = document.createElement('canvas'); cv.width = 320; cv.height = 180; cv.style.imageRendering = 'pixelated';
     gameEl.appendChild(cv); document.body.appendChild(gameEl);
     addEventListener('resize', () => eng && eng.fit(innerWidth, innerHeight));
+    { const o = document.createElement('style'); o.textContent = '.h-pn[data-p=plan] .h-brief,.h-pn[data-p=plan] .h-opt .kn{display:none!important}'
+      + '.h-pn[data-p=plan] .h-opt .h-eff{display:flex;gap:10px;flex-wrap:wrap}.h-pn[data-p=plan] .h-opt .h-eff>div{display:flex;align-items:center;gap:2px}.h-pn[data-p=plan] .h-opt .h-eff{flex-direction:column;gap:4px}.h-pn[data-p=plan] .h-opt .h-eff>div>span:last-child{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;font-size:13px}'
+      + '.h-pn[data-p=plan] .h-opt p,.h-pn[data-p=plan] .h-opt .pv{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}'
+      + '.h-pn[data-p=plan]{max-height:none!important;overflow:hidden!important}.h-pn[data-p=plan] .h-opt .h-eff>div{min-width:0;max-width:100%}.h-pn[data-p=plan] .h-opt{min-width:0;overflow:hidden}.h-pn[data-p=plan] .h-pb{overflow:visible!important;max-height:none!important}';
+      document.head.appendChild(o); }
     Hud.mount(gameEl);
     Hud.onChat(onChat); Hud.onShare(onShare); Hud.onVote(onVote); Hud.onSecret(onSecret); Hud.onReady(onReady);
     Hud.onAsk && Hud.onAsk(onAsk); Hud.onAbility && Hud.onAbility(() => { if (!isClient() && eng) { const o = eng.useAbility(myRole); if (o && !o.ok) Hud.floatText(o.reason === 'rol' ? 'Esa puerta la abre otro compañero: pídeselo por radio' : 'Aquí no puedes usar tu habilidad', 'bad'); } });
@@ -7499,7 +7504,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
       Hud.setHelp && Hud.setHelp(ex ? gates.map(x => ({ role: x.role, label: 'Pedir a ' + { guia: 'Mateo', medica: 'Elena', ing: 'Samuel' }[x.role] + ': ' + x.kind, enabled: true, hint: x.why, gateId: x.id })) : null);
       try { const q = Story.chatSuggest(st, myRole) || []; quickMap = {}; q.forEach(c => quickMap[c.text] = c); Hud.setQuick && Hud.setQuick(q.map(c => ({ label: c.label, text: c.text }))); } catch (e) { }
     }
-    try { const c = st.phase === 'explore' || st.phase === 'plan' ? Story.coach(st, myRole, coachFlags(m)) : null; Hud.setCoach && Hud.setCoach(c ? { step: c.step, total: c.total, text: c.text } : null); } catch (e) { }
+    try { const c = st.phase === 'explore' ? Story.coach(st, myRole, coachFlags(m)) : null; Hud.setCoach && Hud.setCoach(c ? { step: c.step, total: c.total, text: c.text } : null); } catch (e) { }
     try { const gt = ex && m.now.task === 'ayuda' && m.now.gate ? (st.gates || []).find(x => x.id === m.now.gate && !st.gatesOpen[x.id]) : null;
       Hud.setBlocked && Hud.setBlocked(gt && gt.role !== myRole ? { role: gt.role, gateId: gt.id, text: 'Pedir a ' + { guia: 'Mateo', medica: 'Elena', ing: 'Samuel' }[gt.role] + ': abrir ' + (gt.label || gt.kind) } : null); } catch (e) { }
     const tgt = ex && m.now.target ? m.now.target : null; if (tgt !== guide.t) { guide.t = tgt; eng.setGuide(tgt, tgt ? { label: m.now.short ? m.now.short.replace(/^Ve a /, '') : '' } : undefined); }
@@ -7550,6 +7555,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
   function doAsk(from, to, gateId) {
     const q = Story.request(st, from, to, { gateId }); push(); if (!q || !q.ok || !q.accept || q.human) return;
     helpFor[gateId] = from; setTimeout(() => { if (st && st.phase === 'explore') eng.botOpenGate(to, gateId, () => { }); }, q.delay || 1500);
+    setTimeout(() => { if (st && st.phase === 'explore' && !(st.gatesOpen || {})[gateId]) { try { (eng.forceOpenGate || eng.openGate).call(eng, gateId); } catch (e) { } } }, (q.delay || 1500) + 25000); // red de seguridad: nadie se queda bloqueado
   }
   function setupBots() { RK.forEach(r => eng.setBot(r, r !== myRole && (!isClient() ? st.players[r].ai : true))); eng.setLocal(myRole); }
   function showGame() { gameEl.style.display = 'flex'; Hud.show && Hud.show(); eng.fit(innerWidth, innerHeight); }
@@ -7587,7 +7593,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
     (st.chat || []).forEach(m => { if (m.id > lastChatId) { lastChatId = m.id; lastChatAt = Date.now(); if (RK.includes(m.from) && (m.kind === 'chat' || m.kind === 'share') && eng) eng.say(m.from, String(m.text).slice(0, 70)); if (lastChatId0 && m.from !== myRole && (m.from === 'lia' || (RK.includes(m.from) && (m.kind === 'chat' || m.kind === 'share')))) Hud.say && Hud.say({ who: m.from, mood: m.mood || 'talk', text: String(m.text || (m.card && m.card.text) || '').slice(0, 110) }); } lastChatId0 = true; });
     const sk = st.round + ':' + st.phase;
     if (sk !== lastScene) {
-      lastScene = sk; const kind = st.phase === 'briefing' ? 'event' : st.phase === 'plan' ? 'plan' : null;
+      lastScene = sk; const kind = st.phase === 'briefing' ? 'event' : null;
       if (kind && Hud.dialogue) { let ls = []; try { ls = Story.scene(st, kind) || []; } catch (e) { } if (st.round === 1 && kind === 'event') { try { ls = ls.concat(Story.scene(st, 'lia') || []); } catch (e) { } }
         Hud.dialogue(ls).then(() => { if (kind === 'event' && mode !== 'client' && st && st.phase === 'briefing') advance(); }); }
     }
@@ -7728,7 +7734,8 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
     text = String(text || '').slice(0, 300).trim(); if (!text) return; Story.say(st, role, text, 'chat');
     let ans = null; try { ans = Story.answerChat(st, role, text); } catch (e) { }
     if (!ans) return react('chat', { from: role, text });
-    push(); if (ans.accept && ans.gateId && !ans.human) { helpFor[ans.gateId] = role; setTimeout(() => { if (st && st.phase === 'explore') eng.botOpenGate(ans.to, ans.gateId, () => { }); }, ans.delay || 1500); }
+    push(); if (ans.accept && ans.gateId && !ans.human) { helpFor[ans.gateId] = role; setTimeout(() => { if (st && st.phase === 'explore') eng.botOpenGate(ans.to, ans.gateId, () => { }); }, ans.delay || 1500);
+      setTimeout(() => { if (st && st.phase === 'explore' && !(st.gatesOpen || {})[ans.gateId]) { try { (eng.forceOpenGate || eng.openGate).call(eng, ans.gateId); } catch (e) { } } }, (ans.delay || 1500) + 25000); }
   }
   function doShare(role, d) { const out = Story.share(st, role, d.cardId, { asIs: d.asIs !== false, text: d.text }); if (out && out.ok) { if (out.lie && role === myRole) Hud.floatText('Has compartido información falsa', 'bad'); if (out.react) react(out.react.trigger, out.react.ctx); } push(); }
   function doVote(role, optId) { const out = Story.vote(st, role, optId); if (out && out.react) react(out.react.trigger, out.react.ctx); push(); }

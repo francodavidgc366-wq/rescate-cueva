@@ -19,6 +19,11 @@
     cv = document.createElement('canvas'); cv.width = 320; cv.height = 180; cv.style.imageRendering = 'pixelated';
     gameEl.appendChild(cv); document.body.appendChild(gameEl);
     addEventListener('resize', () => eng && eng.fit(innerWidth, innerHeight));
+    { const o = document.createElement('style'); o.textContent = '.h-pn[data-p=plan] .h-brief,.h-pn[data-p=plan] .h-opt .kn{display:none!important}'
+      + '.h-pn[data-p=plan] .h-opt .h-eff{display:flex;gap:10px;flex-wrap:wrap}.h-pn[data-p=plan] .h-opt .h-eff>div{display:flex;align-items:center;gap:2px}.h-pn[data-p=plan] .h-opt .h-eff{flex-direction:column;gap:4px}.h-pn[data-p=plan] .h-opt .h-eff>div>span:last-child{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;font-size:13px}'
+      + '.h-pn[data-p=plan] .h-opt p,.h-pn[data-p=plan] .h-opt .pv{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}'
+      + '.h-pn[data-p=plan]{max-height:none!important;overflow:hidden!important}.h-pn[data-p=plan] .h-opt .h-eff>div{min-width:0;max-width:100%}.h-pn[data-p=plan] .h-opt{min-width:0;overflow:hidden}.h-pn[data-p=plan] .h-pb{overflow:visible!important;max-height:none!important}';
+      document.head.appendChild(o); }
     Hud.mount(gameEl);
     Hud.onChat(onChat); Hud.onShare(onShare); Hud.onVote(onVote); Hud.onSecret(onSecret); Hud.onReady(onReady);
     Hud.onAsk && Hud.onAsk(onAsk); Hud.onAbility && Hud.onAbility(() => { if (!isClient() && eng) { const o = eng.useAbility(myRole); if (o && !o.ok) Hud.floatText(o.reason === 'rol' ? 'Esa puerta la abre otro compañero: pídeselo por radio' : 'Aquí no puedes usar tu habilidad', 'bad'); } });
@@ -54,7 +59,7 @@
       Hud.setHelp && Hud.setHelp(ex ? gates.map(x => ({ role: x.role, label: 'Pedir a ' + { guia: 'Mateo', medica: 'Elena', ing: 'Samuel' }[x.role] + ': ' + x.kind, enabled: true, hint: x.why, gateId: x.id })) : null);
       try { const q = Story.chatSuggest(st, myRole) || []; quickMap = {}; q.forEach(c => quickMap[c.text] = c); Hud.setQuick && Hud.setQuick(q.map(c => ({ label: c.label, text: c.text }))); } catch (e) { }
     }
-    try { const c = st.phase === 'explore' || st.phase === 'plan' ? Story.coach(st, myRole, coachFlags(m)) : null; Hud.setCoach && Hud.setCoach(c ? { step: c.step, total: c.total, text: c.text } : null); } catch (e) { }
+    try { const c = st.phase === 'explore' ? Story.coach(st, myRole, coachFlags(m)) : null; Hud.setCoach && Hud.setCoach(c ? { step: c.step, total: c.total, text: c.text } : null); } catch (e) { }
     try { const gt = ex && m.now.task === 'ayuda' && m.now.gate ? (st.gates || []).find(x => x.id === m.now.gate && !st.gatesOpen[x.id]) : null;
       Hud.setBlocked && Hud.setBlocked(gt && gt.role !== myRole ? { role: gt.role, gateId: gt.id, text: 'Pedir a ' + { guia: 'Mateo', medica: 'Elena', ing: 'Samuel' }[gt.role] + ': abrir ' + (gt.label || gt.kind) } : null); } catch (e) { }
     const tgt = ex && m.now.target ? m.now.target : null; if (tgt !== guide.t) { guide.t = tgt; eng.setGuide(tgt, tgt ? { label: m.now.short ? m.now.short.replace(/^Ve a /, '') : '' } : undefined); }
@@ -105,6 +110,7 @@
   function doAsk(from, to, gateId) {
     const q = Story.request(st, from, to, { gateId }); push(); if (!q || !q.ok || !q.accept || q.human) return;
     helpFor[gateId] = from; setTimeout(() => { if (st && st.phase === 'explore') eng.botOpenGate(to, gateId, () => { }); }, q.delay || 1500);
+    setTimeout(() => { if (st && st.phase === 'explore' && !(st.gatesOpen || {})[gateId]) { try { (eng.forceOpenGate || eng.openGate).call(eng, gateId); } catch (e) { } } }, (q.delay || 1500) + 25000); // red de seguridad: nadie se queda bloqueado
   }
   function setupBots() { RK.forEach(r => eng.setBot(r, r !== myRole && (!isClient() ? st.players[r].ai : true))); eng.setLocal(myRole); }
   function showGame() { gameEl.style.display = 'flex'; Hud.show && Hud.show(); eng.fit(innerWidth, innerHeight); }
@@ -142,7 +148,7 @@
     (st.chat || []).forEach(m => { if (m.id > lastChatId) { lastChatId = m.id; lastChatAt = Date.now(); if (RK.includes(m.from) && (m.kind === 'chat' || m.kind === 'share') && eng) eng.say(m.from, String(m.text).slice(0, 70)); if (lastChatId0 && m.from !== myRole && (m.from === 'lia' || (RK.includes(m.from) && (m.kind === 'chat' || m.kind === 'share')))) Hud.say && Hud.say({ who: m.from, mood: m.mood || 'talk', text: String(m.text || (m.card && m.card.text) || '').slice(0, 110) }); } lastChatId0 = true; });
     const sk = st.round + ':' + st.phase;
     if (sk !== lastScene) {
-      lastScene = sk; const kind = st.phase === 'briefing' ? 'event' : st.phase === 'plan' ? 'plan' : null;
+      lastScene = sk; const kind = st.phase === 'briefing' ? 'event' : null;
       if (kind && Hud.dialogue) { let ls = []; try { ls = Story.scene(st, kind) || []; } catch (e) { } if (st.round === 1 && kind === 'event') { try { ls = ls.concat(Story.scene(st, 'lia') || []); } catch (e) { } }
         Hud.dialogue(ls).then(() => { if (kind === 'event' && mode !== 'client' && st && st.phase === 'briefing') advance(); }); }
     }
@@ -283,7 +289,8 @@
     text = String(text || '').slice(0, 300).trim(); if (!text) return; Story.say(st, role, text, 'chat');
     let ans = null; try { ans = Story.answerChat(st, role, text); } catch (e) { }
     if (!ans) return react('chat', { from: role, text });
-    push(); if (ans.accept && ans.gateId && !ans.human) { helpFor[ans.gateId] = role; setTimeout(() => { if (st && st.phase === 'explore') eng.botOpenGate(ans.to, ans.gateId, () => { }); }, ans.delay || 1500); }
+    push(); if (ans.accept && ans.gateId && !ans.human) { helpFor[ans.gateId] = role; setTimeout(() => { if (st && st.phase === 'explore') eng.botOpenGate(ans.to, ans.gateId, () => { }); }, ans.delay || 1500);
+      setTimeout(() => { if (st && st.phase === 'explore' && !(st.gatesOpen || {})[ans.gateId]) { try { (eng.forceOpenGate || eng.openGate).call(eng, ans.gateId); } catch (e) { } } }, (ans.delay || 1500) + 25000); }
   }
   function doShare(role, d) { const out = Story.share(st, role, d.cardId, { asIs: d.asIs !== false, text: d.text }); if (out && out.ok) { if (out.lie && role === myRole) Hud.floatText('Has compartido información falsa', 'bad'); if (out.react) react(out.react.trigger, out.react.ctx); } push(); }
   function doVote(role, optId) { const out = Story.vote(st, role, optId); if (out && out.react) react(out.react.trigger, out.react.ctx); push(); }
