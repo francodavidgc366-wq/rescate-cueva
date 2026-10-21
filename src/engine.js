@@ -101,8 +101,8 @@ function buildWorld() {
   function lad(f, c) { A(f - 6, f - 5, c, c + 2); Pl(f - 2, c, c + 2); Pl(f - 4, c, c + 2); Pl(f - 6, c, c + 2); }   // agujero entre dos galerias con tablones cada 2 filas
   function well(c, fb, ft) { A(ft, fb - 1, c, c + 5); for (var r = fb - 3, sd = 0; r >= ft; r -= 3, sd ^= 1) Pl(r, sd ? c + 3 : c, sd ? c + 5 : c + 2); }   // pozo vertical con tablones en zigzag cada 3 filas
   var GSLOT = { z1_anclaje: 2, z2_puente: 2, z2_anclaje: 0, z3_reptadero: 4, z3_valvula: 2, z4_anclaje: 4, z4_valvula: 2, z5_puente: 2, z5_reptadero: 4 };
-  var WHO = { guia: 'NICO', medica: 'ONA', ing: 'IVAN' }, ROLE_OF = { anclaje: 'guia', puente: 'ing', valvula: 'ing', reptadero: 'medica' };
-  var LBL = { anclaje: 'ANCLAJE', puente: 'PUENTE', valvula: 'VALVULA', reptadero: 'REPTADERO' }, NM = { guia: 'Nico', medica: 'Ona', ing: 'Ivan' };
+  var WHO = { guia: 'MATEO', medica: 'ELENA', ing: 'SAMUEL' }, ROLE_OF = { anclaje: 'guia', puente: 'ing', valvula: 'ing', reptadero: 'medica' };
+  var LBL = { anclaje: 'ANCLAJE', puente: 'PUENTE', valvula: 'VALVULA', reptadero: 'REPTADERO' }, NM = { guia: 'Mateo', medica: 'Elena', ing: 'Samuel' };
   function mkGate(id, kind, cells, solid, spotC, spotR, cxp, cyp, sy, box) {
     var role = ROLE_OF[kind]; id = 'z' + (ZN + 1) + '_' + kind;
     GATES.push({ id: id, slot: GSLOT[id], zone: ZN + 1, role: role, kind: kind, cells: cells, solid: solid, spot: { x: (O + spotC) * T + 8, y: spotR * T }, x: cxp, y: cyp, sy: sy, box: box,
@@ -601,7 +601,7 @@ function create(canvas, opts) {
   function zoneSlope() { var b = bodies[active]; return b && b.x >= SPW ? (PH + 4 - (TB * T - 6)) / 100 : (PH + 4 - (TA * T - 6)) / 100; }
   var assets = opts.assets || global.ASSETS || null;
   var localId = null;
-  var ROLES = ['guia', 'medica', 'ing'], NAMES = { guia: 'Nico', medica: 'Dra. Ona', ing: 'Ivan' };
+  var ROLES = ['guia', 'medica', 'ing'], NAMES = { guia: 'Mateo', medica: 'Elena', ing: 'Samuel' };
   var SIM = false, active = ROLES.indexOf(opts.localRole) >= 0 ? opts.localRole : ROLES.indexOf(opts.localId) >= 0 ? opts.localId : 'guia';
   var dyn = new Uint8Array(LW * LH), gate = {}, bodiesInit = false, unlocked = 1;
   var bodies = {}, inputs = {}, parts = [], ripples = [], tick = 0, acc = 0, running = false, raf = 0, last = 0;
@@ -762,7 +762,7 @@ function create(canvas, opts) {
     }
     b.cl = 0;
     var onG = b.grounded, wdir = 0;
-    if (false) {                       // v5: sin escalada de pared (la habilidad de Nico es el anclaje; las puertas no se rodean)
+    if (false) {                       // v5: sin escalada de pared (la habilidad de Mateo es el anclaje; las puertas no se rodean)
       if (onG) b.stam = 150;
       if (hit(b.x + 1.5, b.y - 2)) wdir = 1; else if (hit(b.x - 1.5, b.y - 2)) wdir = -1;
       if (wdir && (dir === wdir || inp.up) && !onG || (wdir && inp.up)) {
@@ -2050,7 +2050,7 @@ function create(canvas, opts) {
     if (tick - gcache.t > 8) { gcache.t = tick; gcache.r = routeFrom(b, tp); }
     var r = gcache.r || { ok: false, dist: Math.hypot(tp.x - b.x, tp.y - b.y) / T, direct: true, wp: null }, m = Math.max(1, Math.round(r.dist));
     var tx = tp.x - cxr, ty = tp.y - cyr, onS = tx > VIS.x0 + 8 && tx < VIS.x1 - 8 && ty > VIS.y0 + 14 && ty < VIS.y1 - 4;
-    var useWp = r.ok && !r.direct && r.wp, col = '255,214,90', lab = (guideOpt.label ? String(guideOpt.label).slice(0, 22) + ' ' : '') + m + ' M';
+    var useWp = r.ok && !r.direct && r.wp, col = '255,214,90', lab = (guideOpt.label ? (function (t) { t = String(t); if (t.length <= 34) return t; var c = t.slice(0, 34), i = c.lastIndexOf(' '); return (i > 10 ? c.slice(0, i) : c) + '..'; })(guideOpt.label) + ' ' : '') + m + ' M';
     var bob = Math.abs(Math.sin(t * 0.13)) * 5, rp = (t * 0.025) % 1;
     if (onS) {   // anillo pulsante en el objetivo
       out.strokeStyle = 'rgba(255,230,140,' + (0.9 * (1 - rp)) + ')'; out.lineWidth = 1; out.beginPath(); out.ellipse(tx, ty - 12, 6 + rp * 14, 8 + rp * 14, 0, 0, TAU); out.stroke();
@@ -2237,6 +2237,7 @@ function create(canvas, opts) {
     maxW = maxW || global.innerWidth; maxH = maxH || global.innerHeight;
     // v10: factor entero en PIXELES FISICOS (devicePixelRatio 1.25/1.5 con factor CSS entero daba pixeles desiguales = texto borroso)
     var dpr = global.devicePixelRatio || 1, f = Math.min(maxW * dpr / W, maxH * dpr / H), s = Math.max(1, Math.floor(f + 1e-6)), st = canvas.style;
+    if (s / f < 0.85) s = f;   // el factor entero dejaría el juego pequeño con barras: mejor llenar (pixelated, sin suavizado)
     if (f < 1) s = f;   // ventana menor que 320x180 fisicos: no queda otra que fraccionario
     st.width = W * s / dpr + 'px'; st.height = H * s / dpr + 'px'; st.flex = 'none'; st.maxWidth = 'none'; st.imageRendering = 'pixelated';
     return s / dpr;
