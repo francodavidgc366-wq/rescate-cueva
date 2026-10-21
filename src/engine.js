@@ -1837,6 +1837,7 @@ function create(canvas, opts) {
 
   /* ---------- overlay: POI, prompt E, burbujas, avisos ---------- */
   var KEY_COL = { info: '#ffd24a', recurso: '#5ad2c8', secreto: '#c07aff' };
+  function clampIn(x, w) { var lo = VIS.x0 + 2, hi = VIS.x1 - w - 2; return Math.round(hi < lo ? lo : clamp(x, lo, hi)); }   // v10: cartel dentro del recuadro visible
   function pill(x, y, w, h, fill, border) {
     out.fillStyle = '#10081c'; out.fillRect(x + 1, y - 1, w - 2, h + 2); out.fillRect(x - 1, y + 1, w + 2, h - 2);
     out.fillStyle = border; out.fillRect(x + 1, y, w - 2, h); out.fillRect(x, y + 1, w, h - 2);
@@ -1884,7 +1885,7 @@ function create(canvas, opts) {
       var C2 = ROLE_COL[lb.role]; out.fillStyle = '#10081c'; out.fillRect(x + 6, py - 11, 9, 7); out.fillStyle = C2.coat; out.fillRect(x + 7, py - 10, 7, 5); out.fillStyle = '#fff'; out.fillRect(x + 8, py - 9, 5, 3); out.fillStyle = '#10081c'; out.fillRect(x + 10, py - 9, 1, 3);
     }
     if (near && shown) {
-      var lab = String(p.label || 'Examinar').slice(0, 26) + (blocked ? ' - ' + blocked : sub ? ' - BAJO EL AGUA' : ''), w = 13 + textW(lab) + 6, bx = clamp(Math.round(x - w / 2), 2, W - w - 2), by = py - 26 - Math.round(Math.sin(t * 0.12) * 1);
+      var lab = String(p.label || 'Examinar').slice(0, 26) + (blocked ? ' - ' + blocked : sub ? ' - BAJO EL AGUA' : ''), w = 13 + textW(lab) + 6, bx = clampIn(Math.round(x - w / 2), w), by = Math.max(VIS.y0 + 2, py - 26 - Math.round(Math.sin(t * 0.12) * 1));
       pill(bx, by, w, 13, '#1a1228', blocked ? '#5a5870' : sub ? '#4aa8e8' : col);
       keycap(bx + 2, by + 1, !!(lb && lb.interT > 0), !!blocked);
       drawText(out, lab, bx + 13, by + 4, blocked ? '#8a86a0' : sub ? '#bfeaff' : '#fff2d0');
@@ -1892,19 +1893,21 @@ function create(canvas, opts) {
   }
   function hexRGB(h) { var c = hex(h); return c[0] + ',' + c[1] + ',' + c[2]; }
   function wrap(s, n) { var words = s.split(' '), lines = [], cur = ''; words.forEach(function (w) { if ((cur + ' ' + w).trim().length > n && cur) { lines.push(cur); cur = w; } else cur = (cur + ' ' + w).trim(); }); if (cur) lines.push(cur); return lines; }
+  var bubPlaced = [];   // v10: rects de burbujas ya dibujadas este frame (no se solapan)
+  function bubY(bx, w, by, h) { for (var g = 0; g < 6 && bubPlaced.some(function (q) { return bx < q.x1 && bx + w > q.x0 && by < q.y1 && by + h > q.y0; }); g++) by -= h + 3; by = Math.max(VIS.y0 + 2, by); bubPlaced.push({ x0: bx, x1: bx + w, y0: by, y1: by + h }); return by; }
   function drawBubble(role, b, cxr, cyr, t, hy) {
     var bb = bub[role]; if (!bb) return; var x = Math.round(b.x - cxr), fade = bb.max - bb.t < 14 ? (bb.max - bb.t) / 14 : 1, C = ROLE_COL[b.role] || ROLE_COL.guia;
     var pic = EMO[bb.text.trim()] || null, thk = bb.think || (!pic && /^[^\x00-\x7F]{1,4}$/.test(bb.text.trim()));
     out.globalAlpha = fade;
     if (thk || pic) {
-      var w = 15, h = 13, bx = x - 7, by = hy - h - 4 - Math.round(Math.sin(t * 0.1) * 1);
+      var w = 15, h = 13, bx = clampIn(x - 7, w), by = bubY(bx, w, hy - h - 4 - Math.round(Math.sin(t * 0.1) * 1), h);
       pill(bx, by, w, h, '#f4ecdc', C.coat); out.fillStyle = '#10081c'; out.fillRect(x - 1, by + h, 3, 2); out.fillRect(x, by + h + 2, 1, 1); out.fillStyle = '#f4ecdc'; out.fillRect(x, by + h, 1, 1);
       if (thk) { for (var i = 0; i < 3; i++) { var up = Math.round(Math.sin(t * 0.2 - i * 0.9) * 1.5); out.fillStyle = '#2a1e2c'; out.fillRect(bx + 3 + i * 4, by + 6 + up, 2, 2); } }
       else for (var yy = 0; yy < 7; yy++) for (var xx = 0; xx < 7; xx++) { var ch = pic[yy][xx]; if (ch !== '.') { out.fillStyle = ICOL[ch]; out.fillRect(bx + 4 + xx, by + 3 + yy, 1, 1); } }
     } else {
       var shownN = Math.min(bb.text.length, Math.floor(bb.t / 1.5) + 1), full = wrap(bb.text, 20).slice(0, 3), lines = wrap(bb.text.slice(0, shownN), 20).slice(0, 3), mw = 0;
       full.forEach(function (l) { mw = Math.max(mw, textW(l)); });
-      var w2 = mw + 8, h2 = full.length * 7 + 5, bx2 = clamp(x - Math.round(w2 / 2), 2, W - w2 - 2), by2 = hy - h2 - 5;
+      var w2 = mw + 8, h2 = full.length * 7 + 5, bx2 = clampIn(x - Math.round(w2 / 2), w2), by2 = bubY(bx2, w2, hy - h2 - 5, h2);
       pill(bx2, by2, w2, h2, '#f4ecdc', C.coat);
       out.fillStyle = '#10081c'; out.fillRect(x - 1, by2 + h2, 3, 2); out.fillRect(x, by2 + h2 + 2, 1, 1); out.fillStyle = '#f4ecdc'; out.fillRect(x, by2 + h2, 1, 1);
       lines.forEach(function (l, i) { drawText(out, l, bx2 + 4, by2 + 3 + i * 7, '#2a1e2c'); });
@@ -1923,7 +1926,7 @@ function create(canvas, opts) {
     var px3 = lb ? Math.round(lb.x - cxr) : -999, py3 = lb ? Math.round(lb.y - cyr) : -999;
     if (!shownSign && !prompt) return;
     out.globalAlpha = g0.open ? Math.min(1, (240 - age) / 40) : 1;
-    var w = textW(txt) + 6, bx = clamp(gx - Math.round(w / 2), 2, W - w - 2), by = clamp(gy - 12, VIS.y0 + 2, H - 14);
+    var w = textW(txt) + 6, bx = clampIn(gx - Math.round(w / 2), w), by = clamp(gy - 12, VIS.y0 + 2, VIS.y1 - 14);
     var onMe = bx < px3 + 14 && bx + w > px3 - 14 && by + 9 > py3 - 58 && by < py3 + 4;
     if (!onMe) {
     pill(bx, by, w, 9, g0.open ? '#12281c' : '#1a1228', g0.open ? '#5ad28a' : C.coat);
@@ -1931,7 +1934,7 @@ function create(canvas, opts) {
     } else if (!prompt) { out.globalAlpha = 1; return; }
     if (!g0.open && !onMe) { out.fillStyle = '#10081c'; out.fillRect(gx - 2, by + 9, 5, 2); out.fillRect(gx - 1, by + 11, 3, 1); out.fillStyle = C.coat; out.fillRect(gx - 1, by + 9, 3, 1); }
     if (prompt) {
-      var lab = (g0.pend ? 'ABRIENDO...' : GVERB[g0.kind]), pw = 13 + textW(lab) + 6, px = clamp(gx - Math.round(pw / 2), 2, W - pw - 2), py = by - 16 - Math.round(Math.sin(t * 0.12));
+      var lab = (g0.pend ? 'ABRIENDO...' : GVERB[g0.kind]), pw = 13 + textW(lab) + 6, px = clampIn(gx - Math.round(pw / 2), pw), py = Math.max(VIS.y0 + 2, by - 16 - Math.round(Math.sin(t * 0.12)));
       pill(px, py, pw, 13, '#1a1228', C.coat); keycap(px + 2, py + 1, g0.pend > 0, false, 'Q'); drawText(out, lab, px + 13, py + 4, '#fff2d0');
       if (g0.pend) { out.fillStyle = '#10081c'; out.fillRect(px, py + 14, pw, 4); out.fillStyle = C.coat; out.fillRect(px + 1, py + 15, Math.round((pw - 2) * (1 - g0.pend / 38)), 2); }
     }
@@ -1946,7 +1949,7 @@ function create(canvas, opts) {
     if (hintText) { var hw2 = textW(hintText) + 10, hx = Math.round((VIS.x0 + VIS.x1 - hw2) / 2); pill(hx, VIS.y0 + 4, hw2, 12, '#1a1228', '#ffd24a'); drawText(out, hintText, hx + 5, VIS.y0 + 8, '#fff2d0'); }
     GT.forEach(function (g0) { drawGateSign(g0, cxr, cyr, t, lb); });
     // nombres y marcador local
-    var placed = [];
+    var placed = []; bubPlaced = [];
     order.slice().sort(function (a, b2) { return bodies[a].x - bodies[b2].x; }).forEach(function (id) {   // nombres sin solaparse: se apilan hacia arriba
       var b = bodies[id], x = Math.round(b.x - cxr), y = Math.round(b.y - cyr);
       if (x < -20 || x > W + 20) return;
@@ -1954,7 +1957,7 @@ function create(canvas, opts) {
       var nm = String(b.name || id).slice(0, 8), C = ROLE_COL[b.role] || ROLE_COL.guia, w = textW(nm), ny = y - 25 - (b.swim ? 6 : 0), guard = 0;
       while (guard++ < 5 && placed.some(function (q) { return Math.abs(q.y - ny) < 8 && x - w / 2 < q.x1 + 2 && x + w / 2 > q.x0 - 2; })) ny -= 8;
       placed.push({ x0: x - w / 2, x1: x + w / 2, y: ny });
-      drawText(out, nm, x - Math.floor(w / 2), ny, C.name, '#10081c');
+      drawText(out, nm, clampIn(x - Math.floor(w / 2) - 1, w + 2) + 1, Math.max(VIS.y0 + 8, ny), C.name, '#10081c');
       var lift = y - 25 - ny;
       if (b.air < 99.5 && (id === active || b.air < 60)) {   // v6: barra de aire sobre la cabeza (grande y parpadeante para el local)
         var aw = id === active ? 22 : 14, ax2 = x - (aw >> 1), ay2 = ny - (id === active ? 10 : 8), fr2 = Math.max(0, b.air) / 100, low2 = b.air < 30;
@@ -2232,8 +2235,11 @@ function create(canvas, opts) {
   function setFollow(role, on) { setBot(role, on); }
   function fit(maxW, maxH) {
     maxW = maxW || global.innerWidth; maxH = maxH || global.innerHeight;
-    var s = Math.max(1, Math.floor(Math.min(maxW / W, maxH / H)));
-    canvas.style.width = W * s + 'px'; canvas.style.height = H * s + 'px'; return s;
+    // v10: factor entero en PIXELES FISICOS (devicePixelRatio 1.25/1.5 con factor CSS entero daba pixeles desiguales = texto borroso)
+    var dpr = global.devicePixelRatio || 1, f = Math.min(maxW * dpr / W, maxH * dpr / H), s = Math.max(1, Math.floor(f + 1e-6)), st = canvas.style;
+    if (f < 1) s = f;   // ventana menor que 320x180 fisicos: no queda otra que fraccionario
+    st.width = W * s / dpr + 'px'; st.height = H * s / dpr + 'px'; st.flex = 'none'; st.maxWidth = 'none'; st.imageRendering = 'pixelated';
+    return s / dpr;
   }
 
   Object.assign(self, {

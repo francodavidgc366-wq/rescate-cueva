@@ -20,19 +20,53 @@
         { urls: 'stun:stun2.l.google.com:19302' },
         { urls: 'stun:stun.cloudflare.com:3478' },
         { urls: 'stun:global.stun.twilio.com:3478' },
-        { urls: 'stun:stun.nextcloud.com:3478' }
-        // TURN de reserva: NO hay ninguno público gratuito verificado (ver NOTES-net3.md). Añade el tuyo con
-        // Net.addTurn('turn:host:3478', 'user', 'pass') o Net.config.iceServers.push({urls,username,credential}).
+        { urls: 'stun:stun.nextcloud.com:3478' },
+        // TURN público gratuito de respaldo (Open Relay de Metered, credenciales públicas; sin garantías, ver NOTES-net10.md).
+        { urls: ['turn:openrelay.metered.ca:80', 'turn:openrelay.metered.ca:443', 'turns:openrelay.metered.ca:443'], username: 'openrelayproject', credential: 'openrelayproject' }
+        // TURN propio: Net.addTurn('turn:host:3478', 'user', 'pass').
       ],
-      iceTransportPolicy: 'all', // 'relay' fuerza TURN (solo para probarlo)
+      iceTransportPolicy: /[?&]relay=1\b/.test(location.search) ? 'relay' : 'all', // ?relay=1 fuerza TURN (para probarlo)
+      retries: 3, retryBaseMs: 1000,
       snapshotHz: 20, heartbeatMs: 2000, timeoutMs: 8000, connectTimeoutMs: 12000, graceMs: 30000, debug: false
     },
     role: null,       // 'host' | 'client' | null
     localId: null,    // 'p0' (host), 'p1', 'p2'
     roomCode: null, link: null,
     players: [],      // [{id,name,role,bot,ready,host,connected}] (copia del roster del host)
-    rtt: 0, locked: false
+    rtt: 0, locked: false,
+    status: 'conectando'  // 'conectando' | 'conectado directo' | 'conectado por relay' | 'falló'
   };
+  var FAIL_MSG = 'No se pudo conectar. Intenta de nuevo o cambia de red.';
+  function setStatus(s) { if (Net.status === s) return; Net.status = s; emit('status', s); }
+  // soft: error reintentable (no emite 'error'); retrying() lo reintenta con backoff y, agotado, emite el mensaje final.
+  function soft(msg) { var e = new Error(msg); e.retriable = true; return e; }
+  function retrying(fn) {
+    var n = 0;
+    return new Promise(function (resolve, reject) {
+      (function go() {
+        setStatus('conectando');
+        fn().then(resolve, function (e) {
+          if (e && e.retriable && !leaving && n < Net.config.retries) { var w = Net.config.retryBaseMs * Math.pow(2, n++); log('reintento', n, w); setTimeout(go, w); return; }
+          if (e && e.retriable) { setStatus('falló'); e = fail(FAIL_MSG); }
+          else if (e && !e.retriable && !leaving) setStatus('falló');
+          reject(e);
+        });
+      })();
+    });
+  }
+  // Tras abrir un canal: mira el par de candidatos elegido; 'relay' => por TURN.
+  function checkPath(c, tries) {
+    var pc = c && c.peerConnection; tries = tries || 0;
+    if (!pc || !pc.getStats) return setStatus('conectado directo');
+    pc.getStats().then(function (rep) {
+      var sel = null, cands = {};
+      rep.forEach(function (r) { if (r.type === 'local-candidate' || r.type === 'remote-candidate') cands[r.id] = r; });
+      rep.forEach(function (r) { if (r.type === 'transport' && r.selectedCandidatePairId) sel = rep.get(r.selectedCandidatePairId); if (!sel && r.type === 'candidate-pair' && r.selected) sel = r; });
+      if (!sel && tries < 5) return setTimeout(function () { checkPath(c, tries + 1); }, 400);
+      var l = sel && cands[sel.localCandidateId], r2 = sel && cands[sel.remoteCandidateId];
+      setStatus((l && l.candidateType === 'relay') || (r2 && r2.candidateType === 'relay') ? 'conectado por relay' : 'conectado directo');
+    }).catch(function () { setStatus('conectado directo'); });
+  }
 
   var handlers = {}, peer = null, brokerIdx = 0;
   var conns = {};           // host: id -> {r, u, last, token}; client: {host:{r,u}}
@@ -70,7 +104,7 @@
           if (done) return; done = true; clearTimeout(t); try { p.destroy(); } catch (x) {}
           if (e.type === 'unavailable-id' && onCollision) { wantedId = onCollision(); return attempt(); }
           if (brokerIdx + 1 < Net.config.brokers.length) { brokerIdx++; log('broker fallback', brokerIdx); return attempt(); }
-          reject(fail('No se pudo contactar con el servidor de salas (' + (e.type || 'error') + '). Puedes jugar en solitario.'));
+          reject(soft('No se pudo contactar con el servidor de salas (' + (e.type || 'error') + ').'));
         }
         p.on('open', function (id) { if (done) return; done = true; clearTimeout(t); resolve(p); });
         p.on('error', bad);
@@ -93,7 +127,7 @@
     if (!Net.available) return Promise.reject(fail('El multijugador no está disponible (PeerJS/WebRTC no se cargó). Juegas en solitario.'));
     Net.leave(); leaving = false; brokerIdx = 0;
     var code = newCode();
-    return openPeer(PREFIX + code, function () { code = newCode(); return PREFIX + code; }).then(function (p) {
+    return retrying(function () { return openPeer(PREFIX + code, function () { code = newCode(); return PREFIX + code; }); }).then(function (p) {
       peer = p; Net.role = 'host'; Net.localId = 'p0'; Net.roomCode = code; conns = {}; Net.locked = false;
       Net.link = location.origin + location.pathname + '#sala=' + code;
       Net.players = [{ id: 'p0', name: opts.name || name, role: ROLES[0], bot: false, ready: false, host: true, connected: true }]; hideTok(Net.players[0], token);
@@ -113,6 +147,7 @@
       var e = conns[pid]; if (e && e.token === tok) { e.u = c; c.on('close', function () { if (e.u === c) e.u = null; }); } else c.close(); return;
     }
     c.on('open', function () {
+      checkPath(c);
       var pl = Net.players.filter(function (p) { return p.token === tok; })[0];
       if (!pl) {
         if (Net.locked) { send1(c, { t: 'reject', d: 'La partida ya ha empezado.' }); return setTimeout(function () { c.close(); }, 300); }
@@ -192,7 +227,7 @@
     if (code.length !== 5) return Promise.reject(fail('Código de sala no válido (5 caracteres).'));
     Net.leave(); leaving = false; brokerIdx = 0; hostCode = code; retries = 0;
     if (opts.name) name = String(opts.name).slice(0, 16);
-    return connectToHost(code, false);
+    return retrying(function () { return connectToHost(code, false); });
   };
 
   function connectToHost(code, isRetry) {
@@ -201,7 +236,7 @@
       return new Promise(function (resolve, reject) {
         var settled = false, tried = 0;
         function end(err, val) { if (settled) return; settled = true; clearTimeout(to); err ? reject(err) : resolve(val); }
-        var to = setTimeout(function () { cleanup(); end(fail('No se encontró la sala ' + code + ' (el anfitrión no responde).')); }, Net.config.connectTimeoutMs);
+        var to = setTimeout(function () { cleanup(); end(soft('No se encontró la sala ' + code + ' (el anfitrión no responde).')); }, Net.config.connectTimeoutMs);
         function cleanup() { try { p.destroy(); } catch (e) {} if (peer === p) peer = null; }
         function dial() {
           var c = p.connect(PREFIX + code, { reliable: true, serialization: 'json', metadata: { k: 'r', name: name, tok: token } });
@@ -213,7 +248,7 @@
               hostConn = { r: c, u: null, last: Date.now() }; Net.role = 'client'; Net.localId = m.d.id; Net.roomCode = code; Net.link = location.origin + location.pathname + '#sala=' + code; retries = 0;
               var u = p.connect(PREFIX + code, { reliable: false, serialization: 'json', metadata: { k: 'u', id: m.d.id, tok: token } });
               u.on('open', function () { hostConn.u = u; }); u.on('data', function (mm) { if (hostConn) hostConn.last = Date.now(); if (mm) clientRecv(mm); }); u.on('close', function () { if (hostConn && hostConn.u === u) hostConn.u = null; });
-              startHb(); end(null, { id: m.d.id, role: m.d.role, roomCode: code }); return;
+              checkPath(c); startHb(); end(null, { id: m.d.id, role: m.d.role, roomCode: code }); return;
             }
             if (m.t === 'reject') { leaving = true; cleanup(); end(fail(m.d)); return; }
             if (hostConn) hostConn.last = Date.now();
@@ -232,7 +267,7 @@
             }
             cleanup(); end(fail('La sala ' + code + ' no existe o el anfitrión ya se fue.'));
           } else if (e.type === 'webrtc' || e.type === 'network' || e.type === 'server-error' || e.type === 'socket-error') {
-            if (!settled) { cleanup(); end(fail('Error de red al conectar con la sala (' + e.type + '). Puedes jugar en solitario.')); }
+            if (!settled) { cleanup(); end(soft('Error de red al conectar con la sala (' + e.type + ').')); }
           }
         });
         dial();
@@ -250,8 +285,8 @@
 
   function onHostLost() {
     if (leaving) return; stopHb();
-    if (retries >= 3) { Net.role = null; emit('leave', { id: 'p0', host: true }, 'p0'); return emit('error', 'Se perdió la conexión con el anfitrión.'); }
-    var wait = 1000 * Math.pow(2, retries++); emit('reconnecting', { attempt: retries });
+    if (retries >= 3) { Net.role = null; setStatus('falló'); emit('leave', { id: 'p0', host: true }, 'p0'); return emit('error', 'Se perdió la conexión con el anfitrión.'); }
+    var wait = 1000 * Math.pow(2, retries++); emit('reconnecting', { attempt: retries }); setStatus('conectando');
     setTimeout(function () {
       if (leaving) return;
       try { peer && peer.destroy(); } catch (e) {} peer = null;

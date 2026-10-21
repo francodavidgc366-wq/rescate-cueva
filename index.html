@@ -426,7 +426,7 @@ const E = (id, title, text, art, radio, cat, e, ra) => ({ id, title, text, art, 
 // cards: [tipo, titulo, texto con {o}, fuga?]; tipo trap = "esa opción es peligrosa", gem = "esa opción es la sólida".
 const O = (n, t, x, k, e, r, f, req) => ({ n, t, x, k, e, r, f, req });
 const ROUND_D = [
-  { ev: [E('tormenta', 'Tormenta sobre la boca de la cueva', 'La lluvia cae a cántaros y el arroyo de la entrada ya rebosa. El agua se cuela hacia las galerías bajas. Cada minuto bajo el cielo negro es un minuto menos para Lía.', 'event_tormenta', 'Mateo... Elena... ¿me oís? Cae agua por la pared. Está helada.', 'agua', [4, -2, 0, 0], 0),
+  { ev: [E('tormenta', 'Tormenta sobre la boca de la cueva', 'La lluvia cae a cántaros y el arroyo de la entrada ya rebosa. El agua se cuela hacia las galerías bajas. Cada minuto bajo el cielo negro es un minuto menos para Lía.', 'event_tormenta', 'Mateo... Elena... ¿me escuchan? Cae agua por la pared. Está helada.', 'agua', [4, -2, 0, 0], 0),
       E('inundacion', 'El río subterráneo se desborda', 'Un rugido sordo sale de las galerías: el río interior creció durante la noche. En la entrada, el agua ya baña las botas y arrastra barro rojo.', 'event_inundacion', 'Oigo un rugido... el agua me llega a los tobillos. Dime que bajan.', 'agua', [6, -2, 0, 0], .02)],
     opts: [O('la galería alta', 'Bajar por la galería alta', 'Un camino largo y seco con cuerdas fijas. Lento, pero ordenado.', 'Mapa oficial: unas dos horas, tramos secos.', [4, -1, -5, 3], .12, [5, -6, -6, -3]),
       O('el pozo', 'Descender directo por el pozo', 'Ahorra una hora entera. Los anclajes del pozo son viejos y nadie los revisó.', 'Ahorra mucho tiempo; el equipo antiguo es una incógnita.', [-6, -2, -3, -1], .42, [6, -10, -8, -5]),
@@ -3493,6 +3493,7 @@ function create(canvas, opts) {
 
   /* ---------- overlay: POI, prompt E, burbujas, avisos ---------- */
   var KEY_COL = { info: '#ffd24a', recurso: '#5ad2c8', secreto: '#c07aff' };
+  function clampIn(x, w) { var lo = VIS.x0 + 2, hi = VIS.x1 - w - 2; return Math.round(hi < lo ? lo : clamp(x, lo, hi)); }   // v10: cartel dentro del recuadro visible
   function pill(x, y, w, h, fill, border) {
     out.fillStyle = '#10081c'; out.fillRect(x + 1, y - 1, w - 2, h + 2); out.fillRect(x - 1, y + 1, w + 2, h - 2);
     out.fillStyle = border; out.fillRect(x + 1, y, w - 2, h); out.fillRect(x, y + 1, w, h - 2);
@@ -3540,7 +3541,7 @@ function create(canvas, opts) {
       var C2 = ROLE_COL[lb.role]; out.fillStyle = '#10081c'; out.fillRect(x + 6, py - 11, 9, 7); out.fillStyle = C2.coat; out.fillRect(x + 7, py - 10, 7, 5); out.fillStyle = '#fff'; out.fillRect(x + 8, py - 9, 5, 3); out.fillStyle = '#10081c'; out.fillRect(x + 10, py - 9, 1, 3);
     }
     if (near && shown) {
-      var lab = String(p.label || 'Examinar').slice(0, 26) + (blocked ? ' - ' + blocked : sub ? ' - BAJO EL AGUA' : ''), w = 13 + textW(lab) + 6, bx = clamp(Math.round(x - w / 2), 2, W - w - 2), by = py - 26 - Math.round(Math.sin(t * 0.12) * 1);
+      var lab = String(p.label || 'Examinar').slice(0, 26) + (blocked ? ' - ' + blocked : sub ? ' - BAJO EL AGUA' : ''), w = 13 + textW(lab) + 6, bx = clampIn(Math.round(x - w / 2), w), by = Math.max(VIS.y0 + 2, py - 26 - Math.round(Math.sin(t * 0.12) * 1));
       pill(bx, by, w, 13, '#1a1228', blocked ? '#5a5870' : sub ? '#4aa8e8' : col);
       keycap(bx + 2, by + 1, !!(lb && lb.interT > 0), !!blocked);
       drawText(out, lab, bx + 13, by + 4, blocked ? '#8a86a0' : sub ? '#bfeaff' : '#fff2d0');
@@ -3548,19 +3549,21 @@ function create(canvas, opts) {
   }
   function hexRGB(h) { var c = hex(h); return c[0] + ',' + c[1] + ',' + c[2]; }
   function wrap(s, n) { var words = s.split(' '), lines = [], cur = ''; words.forEach(function (w) { if ((cur + ' ' + w).trim().length > n && cur) { lines.push(cur); cur = w; } else cur = (cur + ' ' + w).trim(); }); if (cur) lines.push(cur); return lines; }
+  var bubPlaced = [];   // v10: rects de burbujas ya dibujadas este frame (no se solapan)
+  function bubY(bx, w, by, h) { for (var g = 0; g < 6 && bubPlaced.some(function (q) { return bx < q.x1 && bx + w > q.x0 && by < q.y1 && by + h > q.y0; }); g++) by -= h + 3; by = Math.max(VIS.y0 + 2, by); bubPlaced.push({ x0: bx, x1: bx + w, y0: by, y1: by + h }); return by; }
   function drawBubble(role, b, cxr, cyr, t, hy) {
     var bb = bub[role]; if (!bb) return; var x = Math.round(b.x - cxr), fade = bb.max - bb.t < 14 ? (bb.max - bb.t) / 14 : 1, C = ROLE_COL[b.role] || ROLE_COL.guia;
     var pic = EMO[bb.text.trim()] || null, thk = bb.think || (!pic && /^[^\x00-\x7F]{1,4}$/.test(bb.text.trim()));
     out.globalAlpha = fade;
     if (thk || pic) {
-      var w = 15, h = 13, bx = x - 7, by = hy - h - 4 - Math.round(Math.sin(t * 0.1) * 1);
+      var w = 15, h = 13, bx = clampIn(x - 7, w), by = bubY(bx, w, hy - h - 4 - Math.round(Math.sin(t * 0.1) * 1), h);
       pill(bx, by, w, h, '#f4ecdc', C.coat); out.fillStyle = '#10081c'; out.fillRect(x - 1, by + h, 3, 2); out.fillRect(x, by + h + 2, 1, 1); out.fillStyle = '#f4ecdc'; out.fillRect(x, by + h, 1, 1);
       if (thk) { for (var i = 0; i < 3; i++) { var up = Math.round(Math.sin(t * 0.2 - i * 0.9) * 1.5); out.fillStyle = '#2a1e2c'; out.fillRect(bx + 3 + i * 4, by + 6 + up, 2, 2); } }
       else for (var yy = 0; yy < 7; yy++) for (var xx = 0; xx < 7; xx++) { var ch = pic[yy][xx]; if (ch !== '.') { out.fillStyle = ICOL[ch]; out.fillRect(bx + 4 + xx, by + 3 + yy, 1, 1); } }
     } else {
       var shownN = Math.min(bb.text.length, Math.floor(bb.t / 1.5) + 1), full = wrap(bb.text, 20).slice(0, 3), lines = wrap(bb.text.slice(0, shownN), 20).slice(0, 3), mw = 0;
       full.forEach(function (l) { mw = Math.max(mw, textW(l)); });
-      var w2 = mw + 8, h2 = full.length * 7 + 5, bx2 = clamp(x - Math.round(w2 / 2), 2, W - w2 - 2), by2 = hy - h2 - 5;
+      var w2 = mw + 8, h2 = full.length * 7 + 5, bx2 = clampIn(x - Math.round(w2 / 2), w2), by2 = bubY(bx2, w2, hy - h2 - 5, h2);
       pill(bx2, by2, w2, h2, '#f4ecdc', C.coat);
       out.fillStyle = '#10081c'; out.fillRect(x - 1, by2 + h2, 3, 2); out.fillRect(x, by2 + h2 + 2, 1, 1); out.fillStyle = '#f4ecdc'; out.fillRect(x, by2 + h2, 1, 1);
       lines.forEach(function (l, i) { drawText(out, l, bx2 + 4, by2 + 3 + i * 7, '#2a1e2c'); });
@@ -3579,7 +3582,7 @@ function create(canvas, opts) {
     var px3 = lb ? Math.round(lb.x - cxr) : -999, py3 = lb ? Math.round(lb.y - cyr) : -999;
     if (!shownSign && !prompt) return;
     out.globalAlpha = g0.open ? Math.min(1, (240 - age) / 40) : 1;
-    var w = textW(txt) + 6, bx = clamp(gx - Math.round(w / 2), 2, W - w - 2), by = clamp(gy - 12, VIS.y0 + 2, H - 14);
+    var w = textW(txt) + 6, bx = clampIn(gx - Math.round(w / 2), w), by = clamp(gy - 12, VIS.y0 + 2, VIS.y1 - 14);
     var onMe = bx < px3 + 14 && bx + w > px3 - 14 && by + 9 > py3 - 58 && by < py3 + 4;
     if (!onMe) {
     pill(bx, by, w, 9, g0.open ? '#12281c' : '#1a1228', g0.open ? '#5ad28a' : C.coat);
@@ -3587,7 +3590,7 @@ function create(canvas, opts) {
     } else if (!prompt) { out.globalAlpha = 1; return; }
     if (!g0.open && !onMe) { out.fillStyle = '#10081c'; out.fillRect(gx - 2, by + 9, 5, 2); out.fillRect(gx - 1, by + 11, 3, 1); out.fillStyle = C.coat; out.fillRect(gx - 1, by + 9, 3, 1); }
     if (prompt) {
-      var lab = (g0.pend ? 'ABRIENDO...' : GVERB[g0.kind]), pw = 13 + textW(lab) + 6, px = clamp(gx - Math.round(pw / 2), 2, W - pw - 2), py = by - 16 - Math.round(Math.sin(t * 0.12));
+      var lab = (g0.pend ? 'ABRIENDO...' : GVERB[g0.kind]), pw = 13 + textW(lab) + 6, px = clampIn(gx - Math.round(pw / 2), pw), py = Math.max(VIS.y0 + 2, by - 16 - Math.round(Math.sin(t * 0.12)));
       pill(px, py, pw, 13, '#1a1228', C.coat); keycap(px + 2, py + 1, g0.pend > 0, false, 'Q'); drawText(out, lab, px + 13, py + 4, '#fff2d0');
       if (g0.pend) { out.fillStyle = '#10081c'; out.fillRect(px, py + 14, pw, 4); out.fillStyle = C.coat; out.fillRect(px + 1, py + 15, Math.round((pw - 2) * (1 - g0.pend / 38)), 2); }
     }
@@ -3602,7 +3605,7 @@ function create(canvas, opts) {
     if (hintText) { var hw2 = textW(hintText) + 10, hx = Math.round((VIS.x0 + VIS.x1 - hw2) / 2); pill(hx, VIS.y0 + 4, hw2, 12, '#1a1228', '#ffd24a'); drawText(out, hintText, hx + 5, VIS.y0 + 8, '#fff2d0'); }
     GT.forEach(function (g0) { drawGateSign(g0, cxr, cyr, t, lb); });
     // nombres y marcador local
-    var placed = [];
+    var placed = []; bubPlaced = [];
     order.slice().sort(function (a, b2) { return bodies[a].x - bodies[b2].x; }).forEach(function (id) {   // nombres sin solaparse: se apilan hacia arriba
       var b = bodies[id], x = Math.round(b.x - cxr), y = Math.round(b.y - cyr);
       if (x < -20 || x > W + 20) return;
@@ -3610,7 +3613,7 @@ function create(canvas, opts) {
       var nm = String(b.name || id).slice(0, 8), C = ROLE_COL[b.role] || ROLE_COL.guia, w = textW(nm), ny = y - 25 - (b.swim ? 6 : 0), guard = 0;
       while (guard++ < 5 && placed.some(function (q) { return Math.abs(q.y - ny) < 8 && x - w / 2 < q.x1 + 2 && x + w / 2 > q.x0 - 2; })) ny -= 8;
       placed.push({ x0: x - w / 2, x1: x + w / 2, y: ny });
-      drawText(out, nm, x - Math.floor(w / 2), ny, C.name, '#10081c');
+      drawText(out, nm, clampIn(x - Math.floor(w / 2) - 1, w + 2) + 1, Math.max(VIS.y0 + 8, ny), C.name, '#10081c');
       var lift = y - 25 - ny;
       if (b.air < 99.5 && (id === active || b.air < 60)) {   // v6: barra de aire sobre la cabeza (grande y parpadeante para el local)
         var aw = id === active ? 22 : 14, ax2 = x - (aw >> 1), ay2 = ny - (id === active ? 10 : 8), fr2 = Math.max(0, b.air) / 100, low2 = b.air < 30;
@@ -3888,8 +3891,11 @@ function create(canvas, opts) {
   function setFollow(role, on) { setBot(role, on); }
   function fit(maxW, maxH) {
     maxW = maxW || global.innerWidth; maxH = maxH || global.innerHeight;
-    var s = Math.max(1, Math.floor(Math.min(maxW / W, maxH / H)));
-    canvas.style.width = W * s + 'px'; canvas.style.height = H * s + 'px'; return s;
+    // v10: factor entero en PIXELES FISICOS (devicePixelRatio 1.25/1.5 con factor CSS entero daba pixeles desiguales = texto borroso)
+    var dpr = global.devicePixelRatio || 1, f = Math.min(maxW * dpr / W, maxH * dpr / H), s = Math.max(1, Math.floor(f + 1e-6)), st = canvas.style;
+    if (f < 1) s = f;   // ventana menor que 320x180 fisicos: no queda otra que fraccionario
+    st.width = W * s / dpr + 'px'; st.height = H * s / dpr + 'px'; st.flex = 'none'; st.maxWidth = 'none'; st.imageRendering = 'pixelated';
+    return s / dpr;
   }
 
   Object.assign(self, {
@@ -3989,19 +3995,53 @@ global.Engine = { create: create, demoLoop: demoLoop, waterY: waterY, W: W, H: H
         { urls: 'stun:stun2.l.google.com:19302' },
         { urls: 'stun:stun.cloudflare.com:3478' },
         { urls: 'stun:global.stun.twilio.com:3478' },
-        { urls: 'stun:stun.nextcloud.com:3478' }
-        // TURN de reserva: NO hay ninguno público gratuito verificado (ver NOTES-net3.md). Añade el tuyo con
-        // Net.addTurn('turn:host:3478', 'user', 'pass') o Net.config.iceServers.push({urls,username,credential}).
+        { urls: 'stun:stun.nextcloud.com:3478' },
+        // TURN público gratuito de respaldo (Open Relay de Metered, credenciales públicas; sin garantías, ver NOTES-net10.md).
+        { urls: ['turn:openrelay.metered.ca:80', 'turn:openrelay.metered.ca:443', 'turns:openrelay.metered.ca:443'], username: 'openrelayproject', credential: 'openrelayproject' }
+        // TURN propio: Net.addTurn('turn:host:3478', 'user', 'pass').
       ],
-      iceTransportPolicy: 'all', // 'relay' fuerza TURN (solo para probarlo)
+      iceTransportPolicy: /[?&]relay=1\b/.test(location.search) ? 'relay' : 'all', // ?relay=1 fuerza TURN (para probarlo)
+      retries: 3, retryBaseMs: 1000,
       snapshotHz: 20, heartbeatMs: 2000, timeoutMs: 8000, connectTimeoutMs: 12000, graceMs: 30000, debug: false
     },
     role: null,       // 'host' | 'client' | null
     localId: null,    // 'p0' (host), 'p1', 'p2'
     roomCode: null, link: null,
     players: [],      // [{id,name,role,bot,ready,host,connected}] (copia del roster del host)
-    rtt: 0, locked: false
+    rtt: 0, locked: false,
+    status: 'conectando'  // 'conectando' | 'conectado directo' | 'conectado por relay' | 'falló'
   };
+  var FAIL_MSG = 'No se pudo conectar. Intenta de nuevo o cambia de red.';
+  function setStatus(s) { if (Net.status === s) return; Net.status = s; emit('status', s); }
+  // soft: error reintentable (no emite 'error'); retrying() lo reintenta con backoff y, agotado, emite el mensaje final.
+  function soft(msg) { var e = new Error(msg); e.retriable = true; return e; }
+  function retrying(fn) {
+    var n = 0;
+    return new Promise(function (resolve, reject) {
+      (function go() {
+        setStatus('conectando');
+        fn().then(resolve, function (e) {
+          if (e && e.retriable && !leaving && n < Net.config.retries) { var w = Net.config.retryBaseMs * Math.pow(2, n++); log('reintento', n, w); setTimeout(go, w); return; }
+          if (e && e.retriable) { setStatus('falló'); e = fail(FAIL_MSG); }
+          else if (e && !e.retriable && !leaving) setStatus('falló');
+          reject(e);
+        });
+      })();
+    });
+  }
+  // Tras abrir un canal: mira el par de candidatos elegido; 'relay' => por TURN.
+  function checkPath(c, tries) {
+    var pc = c && c.peerConnection; tries = tries || 0;
+    if (!pc || !pc.getStats) return setStatus('conectado directo');
+    pc.getStats().then(function (rep) {
+      var sel = null, cands = {};
+      rep.forEach(function (r) { if (r.type === 'local-candidate' || r.type === 'remote-candidate') cands[r.id] = r; });
+      rep.forEach(function (r) { if (r.type === 'transport' && r.selectedCandidatePairId) sel = rep.get(r.selectedCandidatePairId); if (!sel && r.type === 'candidate-pair' && r.selected) sel = r; });
+      if (!sel && tries < 5) return setTimeout(function () { checkPath(c, tries + 1); }, 400);
+      var l = sel && cands[sel.localCandidateId], r2 = sel && cands[sel.remoteCandidateId];
+      setStatus((l && l.candidateType === 'relay') || (r2 && r2.candidateType === 'relay') ? 'conectado por relay' : 'conectado directo');
+    }).catch(function () { setStatus('conectado directo'); });
+  }
 
   var handlers = {}, peer = null, brokerIdx = 0;
   var conns = {};           // host: id -> {r, u, last, token}; client: {host:{r,u}}
@@ -4039,7 +4079,7 @@ global.Engine = { create: create, demoLoop: demoLoop, waterY: waterY, W: W, H: H
           if (done) return; done = true; clearTimeout(t); try { p.destroy(); } catch (x) {}
           if (e.type === 'unavailable-id' && onCollision) { wantedId = onCollision(); return attempt(); }
           if (brokerIdx + 1 < Net.config.brokers.length) { brokerIdx++; log('broker fallback', brokerIdx); return attempt(); }
-          reject(fail('No se pudo contactar con el servidor de salas (' + (e.type || 'error') + '). Puedes jugar en solitario.'));
+          reject(soft('No se pudo contactar con el servidor de salas (' + (e.type || 'error') + ').'));
         }
         p.on('open', function (id) { if (done) return; done = true; clearTimeout(t); resolve(p); });
         p.on('error', bad);
@@ -4062,7 +4102,7 @@ global.Engine = { create: create, demoLoop: demoLoop, waterY: waterY, W: W, H: H
     if (!Net.available) return Promise.reject(fail('El multijugador no está disponible (PeerJS/WebRTC no se cargó). Juegas en solitario.'));
     Net.leave(); leaving = false; brokerIdx = 0;
     var code = newCode();
-    return openPeer(PREFIX + code, function () { code = newCode(); return PREFIX + code; }).then(function (p) {
+    return retrying(function () { return openPeer(PREFIX + code, function () { code = newCode(); return PREFIX + code; }); }).then(function (p) {
       peer = p; Net.role = 'host'; Net.localId = 'p0'; Net.roomCode = code; conns = {}; Net.locked = false;
       Net.link = location.origin + location.pathname + '#sala=' + code;
       Net.players = [{ id: 'p0', name: opts.name || name, role: ROLES[0], bot: false, ready: false, host: true, connected: true }]; hideTok(Net.players[0], token);
@@ -4082,6 +4122,7 @@ global.Engine = { create: create, demoLoop: demoLoop, waterY: waterY, W: W, H: H
       var e = conns[pid]; if (e && e.token === tok) { e.u = c; c.on('close', function () { if (e.u === c) e.u = null; }); } else c.close(); return;
     }
     c.on('open', function () {
+      checkPath(c);
       var pl = Net.players.filter(function (p) { return p.token === tok; })[0];
       if (!pl) {
         if (Net.locked) { send1(c, { t: 'reject', d: 'La partida ya ha empezado.' }); return setTimeout(function () { c.close(); }, 300); }
@@ -4161,7 +4202,7 @@ global.Engine = { create: create, demoLoop: demoLoop, waterY: waterY, W: W, H: H
     if (code.length !== 5) return Promise.reject(fail('Código de sala no válido (5 caracteres).'));
     Net.leave(); leaving = false; brokerIdx = 0; hostCode = code; retries = 0;
     if (opts.name) name = String(opts.name).slice(0, 16);
-    return connectToHost(code, false);
+    return retrying(function () { return connectToHost(code, false); });
   };
 
   function connectToHost(code, isRetry) {
@@ -4170,7 +4211,7 @@ global.Engine = { create: create, demoLoop: demoLoop, waterY: waterY, W: W, H: H
       return new Promise(function (resolve, reject) {
         var settled = false, tried = 0;
         function end(err, val) { if (settled) return; settled = true; clearTimeout(to); err ? reject(err) : resolve(val); }
-        var to = setTimeout(function () { cleanup(); end(fail('No se encontró la sala ' + code + ' (el anfitrión no responde).')); }, Net.config.connectTimeoutMs);
+        var to = setTimeout(function () { cleanup(); end(soft('No se encontró la sala ' + code + ' (el anfitrión no responde).')); }, Net.config.connectTimeoutMs);
         function cleanup() { try { p.destroy(); } catch (e) {} if (peer === p) peer = null; }
         function dial() {
           var c = p.connect(PREFIX + code, { reliable: true, serialization: 'json', metadata: { k: 'r', name: name, tok: token } });
@@ -4182,7 +4223,7 @@ global.Engine = { create: create, demoLoop: demoLoop, waterY: waterY, W: W, H: H
               hostConn = { r: c, u: null, last: Date.now() }; Net.role = 'client'; Net.localId = m.d.id; Net.roomCode = code; Net.link = location.origin + location.pathname + '#sala=' + code; retries = 0;
               var u = p.connect(PREFIX + code, { reliable: false, serialization: 'json', metadata: { k: 'u', id: m.d.id, tok: token } });
               u.on('open', function () { hostConn.u = u; }); u.on('data', function (mm) { if (hostConn) hostConn.last = Date.now(); if (mm) clientRecv(mm); }); u.on('close', function () { if (hostConn && hostConn.u === u) hostConn.u = null; });
-              startHb(); end(null, { id: m.d.id, role: m.d.role, roomCode: code }); return;
+              checkPath(c); startHb(); end(null, { id: m.d.id, role: m.d.role, roomCode: code }); return;
             }
             if (m.t === 'reject') { leaving = true; cleanup(); end(fail(m.d)); return; }
             if (hostConn) hostConn.last = Date.now();
@@ -4201,7 +4242,7 @@ global.Engine = { create: create, demoLoop: demoLoop, waterY: waterY, W: W, H: H
             }
             cleanup(); end(fail('La sala ' + code + ' no existe o el anfitrión ya se fue.'));
           } else if (e.type === 'webrtc' || e.type === 'network' || e.type === 'server-error' || e.type === 'socket-error') {
-            if (!settled) { cleanup(); end(fail('Error de red al conectar con la sala (' + e.type + '). Puedes jugar en solitario.')); }
+            if (!settled) { cleanup(); end(soft('Error de red al conectar con la sala (' + e.type + ').')); }
           }
         });
         dial();
@@ -4219,8 +4260,8 @@ global.Engine = { create: create, demoLoop: demoLoop, waterY: waterY, W: W, H: H
 
   function onHostLost() {
     if (leaving) return; stopHb();
-    if (retries >= 3) { Net.role = null; emit('leave', { id: 'p0', host: true }, 'p0'); return emit('error', 'Se perdió la conexión con el anfitrión.'); }
-    var wait = 1000 * Math.pow(2, retries++); emit('reconnecting', { attempt: retries });
+    if (retries >= 3) { Net.role = null; setStatus('falló'); emit('leave', { id: 'p0', host: true }, 'p0'); return emit('error', 'Se perdió la conexión con el anfitrión.'); }
+    var wait = 1000 * Math.pow(2, retries++); emit('reconnecting', { attempt: retries }); setStatus('conectando');
     setTimeout(function () {
       if (leaving) return;
       try { peer && peer.destroy(); } catch (e) {} peer = null;
@@ -4308,9 +4349,9 @@ const snd = (m, a, b) => { try { if (window.Sound && Sound[m]) return Sound[m](a
 const sfx = (n, o) => snd('sfx', n, o);
 const RK = ['guia', 'medica', 'ing'];
 const RD = {
-  guia: { n: 'Mateo', t: 'El guia', col: '#f0a030', hat: '#e0a030', body: '#c0392b', skill: 'Conoce las galerias: lee rutas y abre atajos.', ai: 'Cauto y reservado', goal: 'Mantener unido al equipo.' },
-  medica: { n: 'Elena', t: 'La medica', col: '#2fd0b0', hat: '#e8e8f0', body: '#2e9e6b', skill: 'Cuida de Lia: lee su estado y detecta lo que otros no ven.', ai: 'Empatica, directa', goal: 'Que Lia llegue con salud.' },
-  ing: { n: 'Samuel', t: 'El ingeniero', col: '#5aa8ff', hat: '#4aa0e8', body: '#7a5a3a', skill: 'Mide el agua y gestiona el material y los anclajes.', ai: 'Tecnico, algo orgulloso', goal: 'Cuidar el material.' }
+  guia: { n: 'Mateo', t: 'El guía', col: '#f0a030', hat: '#e0a030', body: '#c0392b', skill: 'Conoce las galerías: lee rutas y abre atajos.', ai: 'Cauto y reservado', goal: 'Mantener unido al equipo.' },
+  medica: { n: 'Elena', t: 'La médica', col: '#2fd0b0', hat: '#e8e8f0', body: '#2e9e6b', skill: 'Cuida de Lía: lee su estado y detecta lo que otros no ven.', ai: 'Empática, directa', goal: 'Que Lía llegue con salud.' },
+  ing: { n: 'Samuel', t: 'El ingeniero', col: '#5aa8ff', hat: '#4aa0e8', body: '#7a5a3a', skill: 'Mide el agua y gestiona el material y los anclajes.', ai: 'Técnico, algo orgulloso', goal: 'Cuidar el material.' }
 };
 const rinfo = k => { const R = (window.Story && Story.ROLES && Story.ROLES[k]) || {}; const d = RD[k]; return { id: k, n: R.short || d.n, full: R.name || (d.n + ', ' + d.t), t: d.t, col: d.col, hat: R.hat || d.hat, body: R.body || d.body, skill: R.skill || d.skill, ai: R.personality || d.ai, goal: R.goal || d.goal }; };
 const GRADE = { S: '#ffd34d', A: '#6be08a', B: '#5ab8ff', C: '#ff9a4d', D: '#ff5a5a' };
@@ -4495,7 +4536,7 @@ const css = `
 #rcv3 .sbox{width:100%;text-align:left;padding:.8em 1em;border-radius:3px;background:#14102a;border:2px solid var(--c);position:relative}
 #rcv3 .sbox .t{line-height:1.5;transition:filter .5s}
 #rcv3 .sbox.hid .t{filter:blur(7px)}
-#rcv3 .sbox.hid::after{content:'Presiona para revelar (solo lo ves tu)';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.9em;color:#fff;text-shadow:0 0 6px #000;cursor:pointer}
+#rcv3 .sbox.hid::after{content:'Presiona para revelar (solo lo ves tú)';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.9em;color:#fff;text-shadow:0 0 6px #000;cursor:pointer}
 /* lobby */
 #rcv3 .lobby{padding:16px;align-items:center;gap:1em}
 #rcv3 .lobby>*{width:min(900px,100%);flex:none}
@@ -4553,6 +4594,9 @@ const css = `
 @media(max-width:720px){#rcv3 .tcard{grid-template-columns:1fr}#rcv3 .grid2{grid-template-columns:1fr}#rcv3 .cards{gap:.4em}#rcv3 .rc{padding:.5em .3em;font-size:.82em}#rcv3 .tut{justify-content:flex-start;overflow-y:auto}#rcv3 .tart{min-height:0}}
 @media(prefers-reduced-motion:reduce){#rcv3 *{animation-duration:.01s!important}}
 #rcv3.rm *{animation-duration:.01s!important}
+/* v10: pantallas bajas (650px): nada se aplasta, el rol hace scroll, menu compacto */
+#rcv3 .final .rel>.lab{color:#ffe9b8;text-shadow:0 2px 0 #000,0 0 8px #000}#rcv3 .final .rel>.fsum{color:#fff;text-shadow:0 2px 0 #000,0 0 8px #000}#rcv3 .rcard>.mut{color:#d9d0f5;text-shadow:0 2px 4px #000,0 0 8px #000}#rcv3 .scr.scroll>*{flex:none}#rcv3 .rcard>*{flex:none}#rcv3 .role{overflow-y:auto;justify-content:flex-start}#rcv3 .rcard{margin:auto 0}
+@media (max-height:760px){#rcv3 .menu{gap:8px;padding:2vh 16px}#rcv3 .menu h1{font-size:clamp(18px,3.6vw,32px)}#rcv3 .mlist{gap:.35em}#rcv3 .mlist .btn{padding-top:.55em;padding-bottom:.55em}}
 `;
 
 /* ================= Raiz, pantallas, bucle ================= */
@@ -4645,13 +4689,13 @@ const bgc = (p, id, o) => { const c = $('canvas', 'bgc pix', p); c.style.imageRe
 /* ================= MENU ================= */
 function showMenu() {
   ensure(); const s = mkScr('menu', 'menu'); s.innerHTML = '';
-  const items = [['Jugar en solitario', 'solo', '1', 'go'], ['Crear sala', 'host', '2'], ['Unirse a sala', 'join', '3'], ['Como se juega', 'tut', '4'], ['Logros', 'ach', '5'], ['Ajustes', 'set', '6'], ['Creditos', 'cred', '7']];
+  const items = [['Jugar en solitario', 'solo', '1', 'go'], ['Crear sala', 'host', '2'], ['Unirse a sala', 'join', '3'], ['Cómo se juega', 'tut', '4'], ['Logros', 'ach', '5'], ['Ajustes', 'set', '6'], ['Créditos', 'cred', '7']];
   go('menu', { music: 'menu', keys: e => { const k = e.key; if (/^[1-7]$/.test(k)) { const b = s.querySelectorAll('.mlist .btn')[+k - 1]; b && b.click(); return; } if (k === 'd' || k === 'D' || k === 'ArrowLeft' || k === 'ArrowRight') { const o = ['facil', 'normal', 'everest'], i = o.indexOf(S.diff); setDiff(o[(i + (k === 'ArrowLeft' ? 2 : 1)) % 3]); return; } if (k === 'm' || k === 'M') { toggleMute(); return; } return listKeys(() => [...s.querySelectorAll('.mlist .btn')])(e); } });
   bgc(s, 'valle', { kind: 'snow' });
   const t = $('div', 'rel', s); t.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:14px'; const h = $('h1', '', t, 'RESCATE<br>EN LA CUEVA'); h.style.animation = 'rglow 3s infinite';
-  $('div', 'sub rel', t, 'Cuatro cabezas, tres rescatadores, una cueva que se inunda. Habla, comparte lo que sabes... y decide en quien confias.');
+  $('div', 'sub rel', t, 'Cuatro cabezas, tres rescatadores, una cueva que se inunda. Habla, comparte lo que sabes... y decide en quién confías.');
   const dv = $('div', 'diff rel', s); $('span', 'lab', dv, 'DIFICULTAD'); const chips = {};
-  [['facil', 'Facil'], ['normal', 'Normal'], ['everest', 'Everest']].forEach(([k, n]) => { const c = chips[k] = $('button', 'chip' + (S.diff === k ? ' on' : ''), dv, n); c.onclick = () => setDiff(k); });
+  [['facil', 'Fácil'], ['normal', 'Normal'], ['everest', 'Everest']].forEach(([k, n]) => { const c = chips[k] = $('button', 'chip' + (S.diff === k ? ' on' : ''), dv, n); c.onclick = () => setDiff(k); });
   function setDiff(k) { S.diff = k; saveS(); Object.keys(chips).forEach(x => chips[x].classList.toggle('on', x === k)); sfx('select'); }
   const L = $('div', 'mlist rel', s);
   const act = { solo: () => startFlow('solo'), host: () => startFlow('host'), join: () => joinDialog(), tut: () => showTutorial(), ach: () => showAchievements(), set: () => openSettings(), cred: () => showCredits() };
@@ -4667,8 +4711,8 @@ async function startFlow(mode) {
   showLobby({ mode: mode === 'solo' ? 'idle' : 'host' });
 }
 function joinDialog() {
-  modal((p, close) => { $('h2', '', p, 'Unirse a una sala'); $('p', 'mut', p, 'Pega el enlace o escribe el codigo de 5 letras que te pasa el anfitrion.'); const i = $('input', '', p); i.type = 'text'; i.placeholder = 'ABCDE'; i.maxLength = 200; i.style.cssText = 'width:100%;margin:.6em 0;text-transform:uppercase'; i.setAttribute('aria-label', 'Codigo de sala'); try { const h = window.Net && Net.codeFromHash && Net.codeFromHash(); if (h) i.value = h; } catch (e) { }
-    const r = $('div', 'row', p), a = $('button', 'btn sec', r, 'Cancelar'), b = $('button', 'btn go', r, 'Unirme'); a.onclick = () => { sfx('back'); close(); }; b.onclick = () => { const v = i.value.trim(); if (!v) { sfx('error'); return toast('Escribe un codigo o pega el enlace', { bad: 1 }); } close(); showLobby({ mode: 'join', code: v }); }; i.onkeydown = e => { if (e.key === 'Enter') b.click(); }; });
+  modal((p, close) => { $('h2', '', p, 'Unirse a una sala'); $('p', 'mut', p, 'Pega el enlace o escribe el código de 5 letras que te pasa el anfitrion.'); const i = $('input', '', p); i.type = 'text'; i.placeholder = 'ABCDE'; i.maxLength = 200; i.style.cssText = 'width:100%;margin:.6em 0;text-transform:uppercase'; i.setAttribute('aria-label', 'Código de sala'); try { const h = window.Net && Net.codeFromHash && Net.codeFromHash(); if (h) i.value = h; } catch (e) { }
+    const r = $('div', 'row', p), a = $('button', 'btn sec', r, 'Cancelar'), b = $('button', 'btn go', r, 'Unirme'); a.onclick = () => { sfx('back'); close(); }; b.onclick = () => { const v = i.value.trim(); if (!v) { sfx('error'); return toast('Escribe un código o pega el enlace', { bad: 1 }); } close(); showLobby({ mode: 'join', code: v }); }; i.onkeydown = e => { if (e.key === 'Enter') b.click(); }; });
 }
 
 /* ================= LOBBY ================= */
@@ -4678,7 +4722,7 @@ function showLobby(o) {
   ensure(); o = o || {}; const s = mkScr('lobby', 'lobby scroll'); U = Object.assign({ mode: 'idle', code: '', link: '', players: [], role: U.role || 'guia', ready: false }, { mode: o.mode || 'idle' });
   go('lobby', { music: 'menu', keys: e => { if (e.key === 'Escape') { back(); return; } const i = '123'.indexOf(e.key); if (i >= 0) pickRole(RK[i]); else if (e.key === 'Enter') { s.querySelector('.go') && s.querySelector('.go').click(); } else return false; } });
   if (window.Net && Net.on && !lobbyOff) { const f = () => { U.players = Net.players || []; if (cur === 'lobby') render(); }; Net.on('players', f); lobbyOff = () => { try { Net.off && Net.off('players', f); } catch (e) { } lobbyOff = null; }; own(lobbyOff); }
-  if (U.mode === 'host') { toast('Creando sala...'); Promise.resolve(window.Net && Net.host ? Net.host({ name: 'Anfitrion' }) : Promise.reject(new Error('Multijugador no disponible'))).then(r => { U.code = r.roomCode; U.link = r.link; try { Net.setRole && Net.setRole(U.role); } catch (e) { } emit('host', r); render(); }).catch(e => { sfx('error'); toast((e && e.message) || 'No se pudo crear la sala', { bad: 1 }); U.mode = 'idle'; render(); }); }
+  if (U.mode === 'host') { toast('Creando sala…'); Promise.resolve(window.Net && Net.host ? Net.host({ name: 'Anfitrión' }) : Promise.reject(new Error('Multijugador no disponible'))).then(r => { U.code = r.roomCode; U.link = r.link; try { Net.setRole && Net.setRole(U.role); } catch (e) { } emit('host', r); render(); }).catch(e => { sfx('error'); toast((e && e.message) || 'No se pudo crear la sala', { bad: 1 }); U.mode = 'idle'; render(); }); }
   if (U.mode === 'join') { toast('Conectando...'); Promise.resolve(Net.join(o.code, { name: 'Jugador' })).then(r => { U.code = r.roomCode || o.code; if (r.role) U.role = r.role; if (r.id) localId = r.id; emit('join', r); render(); }).catch(e => { sfx('error'); toast((e && e.message) || 'No se pudo unir', { bad: 1 }); showMenu(); }); }
   showLobby.rerender = render; render(); return s;
   function back() { sfx('back'); if (U.mode !== 'idle') { try { Net.leave && Net.leave(); } catch (e) { } } emit('menu', { lobby: 1 }); showMenu(); }
@@ -4686,12 +4730,12 @@ function showLobby(o) {
   function taken(k) { return U.players.find(p => p && p.role === k && p.id !== localId && p.id !== (window.Net && Net.localId) && !p.bot && p.connected !== false); }
   function render() {
     s.innerHTML = ''; const top = $('div', 'row', s); top.style.justifyContent = 'space-between'; $('h2', '', top, U.mode === 'idle' ? 'PARTIDA EN SOLITARIO' : U.mode === 'host' ? 'TU SALA' : 'SALA DE ' + esc(U.code)); const bk = $('button', 'btn sec', top, 'Volver'); bk.onclick = back;
-    if (U.mode === 'host' || U.mode === 'join') { const b = $('div', 'panel', s); $('div', 'lab', b, U.mode === 'host' ? 'COMPARTE ESTE CODIGO CON TUS AMIGOS' : 'CONECTADO A LA SALA'); $('div', 'code', b, esc(U.code || '. . . . .')); if (U.link) { const r = $('div', 'row', b); r.style.flexWrap = 'nowrap'; r.style.marginTop = '.6em'; const i = $('input', '', r); i.type = 'text'; i.readOnly = true; i.value = U.link; i.setAttribute('aria-label', 'Enlace'); const c = $('button', 'btn', r, 'Copiar'); c.onclick = () => { try { navigator.clipboard.writeText(U.link).then(() => { toast('Enlace copiado'); }, () => { i.select(); document.execCommand('copy'); toast('Enlace copiado'); }); } catch (x) { i.select(); toast('Copia el enlace a mano', { bad: 1 }); } }; } }
-    const p = $('div', 'panel', s); $('div', 'lab', p, 'ELIGE TU ROL (1 / 2 / 3) &middot; LOS HUECOS LOS LLEVAN COMPANEROS IA'); const cards = $('div', 'cards', p); cards.style.marginTop = '.7em';
+    if (U.mode === 'host' || U.mode === 'join') { const b = $('div', 'panel', s); $('div', 'lab', b, U.mode === 'host' ? 'COMPARTE ESTE CÓDIGO CON TUS AMIGOS' : 'CONECTADO A LA SALA'); $('div', 'code', b, esc(U.code || '. . . . .')); if (U.link) { const r = $('div', 'row', b); r.style.flexWrap = 'nowrap'; r.style.marginTop = '.6em'; const i = $('input', '', r); i.type = 'text'; i.readOnly = true; i.value = U.link; i.setAttribute('aria-label', 'Enlace'); const c = $('button', 'btn', r, 'Copiar'); c.onclick = () => { try { navigator.clipboard.writeText(U.link).then(() => { toast('Enlace copiado'); }, () => { i.select(); document.execCommand('copy'); toast('Enlace copiado'); }); } catch (x) { i.select(); toast('Copia el enlace a mano', { bad: 1 }); } }; } }
+    const p = $('div', 'panel', s); $('div', 'lab', p, 'ELIGE TU ROL (1 / 2 / 3) &middot; LOS HUECOS LOS LLEVAN COMPAÑEROS IA'); const cards = $('div', 'cards', p); cards.style.marginTop = '.7em';
     RK.forEach((k, i) => { const d = rinfo(k), t = taken(k), b = $('button', 'rc' + (U.role === k ? ' sel' : '') + (t ? ' taken' : ''), cards); b.style.setProperty('--c', d.col); b.appendChild(portrait(k, U.role === k ? 'feliz' : 'neutral', 72)); $('b', '', b, esc(d.n)).style.color = d.col; $('span', 'mut', b, esc(d.t)); const sk = $('span', '', b, esc(d.skill)); sk.style.cssText = 'font-size:.85em;line-height:1.35'; $('span', 'tag' + (U.role === k ? ' me' : ''), b, U.role === k ? 'TU' : t ? esc(t.name || 'Jugador') : 'IA: ' + esc(d.ai)); b.onclick = () => pickRole(k); });
-    const hum = U.players.filter(x => x && !x.bot); if (U.mode !== 'idle') $('div', 'mut', p, (hum.length ? hum.map(x => '<span class="ok">●</span> ' + esc(x.name || x.id) + (x.host ? ' (anfitrion)' : '')).join(' &nbsp; ') : 'Esperando jugadores...') + '<br>Maximo 3 humanos. Si alguien se va, lo sustituye la IA.').style.marginTop = '.7em';
+    const hum = U.players.filter(x => x && !x.bot); if (U.mode !== 'idle') $('div', 'mut', p, (hum.length ? hum.map(x => '<span class="ok">●</span> ' + esc(x.name || x.id) + (x.host ? ' (anfitrión)' : '')).join(' &nbsp; ') : 'Esperando jugadores...') + '<br>Máximo 3 humanos. Si alguien se va, lo sustituye la IA.').style.marginTop = '.7em';
     else $('div', 'mut', p, 'Juegas con ' + esc(rinfo(U.role).n) + '. Los otros dos son IA con personalidad propia: pueden callar, compartir o mentir. Rejuega con otro rol para ver la otra cara.').style.marginTop = '.7em';
-    if (U.mode !== 'join') { const dv = $('div', 'diff', s); $('span', 'lab', dv, 'DIFICULTAD'); [['facil', 'Facil'], ['normal', 'Normal'], ['everest', 'Everest']].forEach(([k, n]) => { const c = $('button', 'chip' + (S.diff === k ? ' on' : ''), dv, n); c.onclick = () => { S.diff = k; saveS(); sfx('select'); render(); }; }); }
+    if (U.mode !== 'join') { const dv = $('div', 'diff', s); $('span', 'lab', dv, 'DIFICULTAD'); [['facil', 'Fácil'], ['normal', 'Normal'], ['everest', 'Everest']].forEach(([k, n]) => { const c = $('button', 'chip' + (S.diff === k ? ' on' : ''), dv, n); c.onclick = () => { S.diff = k; saveS(); sfx('select'); render(); }; }); }
     const act = $('div', 'row', s); act.style.justifyContent = 'flex-end'; const go2 = $('button', 'btn go', act, U.mode === 'join' ? (U.ready ? 'No estoy listo' : 'Estoy listo') : 'Empezar'); go2.focus();
     go2.onclick = () => { snd('unlock'); sfx('confirm'); if (U.mode === 'join') { U.ready = !U.ready; emit('ready', U.ready); try { Net.send('ready', { ready: U.ready }); } catch (e) { } render(); } else emit('start', { role: U.role, host: U.mode === 'host', solo: U.mode === 'idle', difficulty: S.diff }); };
     if (U.mode === 'join') $('span', 'mut', act, 'Esperando al anfitrion...');
@@ -4801,7 +4845,7 @@ function showTutorial() {
     function draw() {
       offTick.splice(1).forEach(f => f()); card.innerHTML = ''; card.style.animation = 'none'; void card.offsetWidth; card.style.animation = ''; const t = TSTEPS[i]; seen.add(i);
       const art = $('div', 'tart', card); t.art(art); const tx = $('div', 'ttext', card); $('div', 'lab', tx, 'PASO ' + (i + 1) + ' DE ' + TSTEPS.length); $('h2', '', tx, esc(t.t)); $('p', '', tx, t.p); $('div', 'tip', tx, '<b>Consejo:</b> ' + t.tip);
-      dots.querySelectorAll('i').forEach((d, k) => { d.className = k === i ? 'on' : seen.has(k) ? 'done' : ''; }); mid.textContent = ''; nx.textContent = i === TSTEPS.length - 1 ? 'A jugar!' : 'Siguiente ›'; bp.style.visibility = i ? 'visible' : 'hidden';
+      dots.querySelectorAll('i').forEach((d, k) => { d.className = k === i ? 'on' : seen.has(k) ? 'done' : ''; }); mid.textContent = ''; nx.textContent = i === TSTEPS.length - 1 ? '¡A jugar!' : 'Siguiente ›'; bp.style.visibility = i ? 'visible' : 'hidden';
     }
     function next() { sfx('click'); if (i >= TSTEPS.length - 1) return finish(); i++; draw(); }
     function prev() { if (!i) return; sfx('back'); i--; draw(); }
@@ -4814,19 +4858,19 @@ function showTutorial() {
 const FXD = { valle: ['snow', 'fog'], cabina: ['sway', 'rain'], tormenta: ['rain', 'lightning'], entrada: ['dust', 'torch'], radio: ['radio'], mapa: ['dust', 'torch'], inundada: ['drip', 'fog'], rescate: ['dust', 'light'], derrota: ['rain', 'fog'] };
 const GRADEC = { valle: 'rgba(255,140,60,.16)', cabina: 'rgba(60,70,140,.18)', tormenta: 'rgba(40,70,140,.22)', entrada: 'rgba(255,150,60,.10)', radio: 'rgba(40,200,120,.10)', mapa: 'rgba(255,170,80,.14)', inundada: 'rgba(30,110,160,.2)', rescate: 'rgba(255,230,160,.18)', derrota: 'rgba(20,40,70,.3)' };
 const INTRO_DEF = [
-  { still: 'valle', text: 'Valle de Sorrosal. Atardece. Hace dos horas que nadie sabe nada de Lia.' },
-  { still: 'cabina', text: 'Mateo, Elena y Samuel suben en el viejo teleferico. Nadie habla. Cada uno guarda algo que los demas no saben.' },
-  { still: 'tormenta', text: 'La tormenta cae de golpe. El cable se sacude... y la cabina se queda colgada sobre el vacio.' },
-  { still: 'entrada', text: 'La boca de la cueva. El suelo ya esta mojado, y el agua no deberia estar aqui.' },
-  { still: 'radio', who: 'Lia (radio)', text: '"...aqui Lia... estoy atrapada... la pierna... el agua sube. Por favor... daos prisa."' },
+  { still: 'valle', text: 'Valle de Sorrosal. Atardece. Hace dos horas que nadie sabe nada de Lía.' },
+  { still: 'cabina', text: 'Mateo, Elena y Samuel suben en el viejo teleférico. Nadie habla. Cada uno guarda algo que los demás no saben.' },
+  { still: 'tormenta', text: 'La tormenta cae de golpe. El cable se sacude... y la cabina se queda colgada sobre el vacío.' },
+  { still: 'entrada', text: 'La boca de la cueva. El suelo ya está mojado, y el agua no debería estar aquí.' },
+  { still: 'radio', who: 'Lía (radio)', text: '"...aquí Lía... estoy atrapada... la pierna... el agua sube. Por favor... apúrense."' },
   { still: 'mapa', text: 'Cinco tramos. Un mapa incompleto. Y tres personas que no cuentan todo lo que saben.' },
-  { still: 'inundada', text: 'Sacadla con vida... y que cada uno pueda mirarse al espejo despues.' },
+  { still: 'inundada', text: 'Sáquenla con vida... y que cada uno pueda mirarse al espejo después.' },
   { still: 'entrada', title: 'RESCATE EN LA CUEVA', text: 'Cinco decisiones. Una sola salida.', dur: 5 }
 ];
 const KEYS = [[/radio|lia\b.*:|transmisi/i, 'radio'], [/tormenta|relampago|rayo|lluvia|cae/i, 'tormenta'], [/telef|cabina|suben/i, 'cabina'], [/mapa|ruta|tramos/i, 'mapa'], [/inunda|agua sube|llena|espejo/i, 'inundada'], [/cueva|entrada|boca|galeria/i, 'entrada']];
 function buildShots(id, o) {
   if (o && o.shots) return o.shots;
-  if (id === 'rescate') return [{ still: 'rescate', text: o && o.text || 'La luz del dia. Lia respira. Lo lograron.', who: '' }];
+  if (id === 'rescate') return [{ still: 'rescate', text: o && o.text || 'La luz del día. Lía respira. Lo lograron.', who: '' }];
   if (id === 'derrota') return [{ still: 'derrota', text: o && o.text || 'El agua lo cubre todo. El silencio es lo peor.', who: '' }];
   let I = window.Story && Array.isArray(Story.intro) && Story.intro.length >= 3 ? Story.intro : null; if (!I) return INTRO_DEF;
   // la cinematica la ven TODOS: fuera las lineas que cuentan lo privado de un rol (empiezan por su nombre) o el secreto
@@ -4909,9 +4953,10 @@ function showRole(priv, role) {
     const c = $('div', 'rcard rel', s); c.style.setProperty('--c', d.col); $('div', 'lab', c, 'TU PAPEL EN EL RESCATE'); const pc = portrait(role, 'preocupado', 128); pc.className += ' big'; c.appendChild(pc); sfx('select');
     const h = $('h1', '', c, 'ERES ' + esc(d.n.toUpperCase())); h.style.color = d.col; $('div', 'mut', c, esc(d.t) + ' &middot; ' + esc(d.skill));
     const goal = priv.goal && (priv.goal.text || priv.goal), sec = priv.secret && (priv.secret.text || priv.secret), rb = Story_role(role);
-    const gb = $('div', 'sbox', c, '<div class="lab">' + icon('estrella', 14).outerHTML + ' TU OBJETIVO SECRETO' + (priv.goal && priv.goal.points ? ' (+' + priv.goal.points + ' pts)' : '') + '</div><div class="t">' + esc(goal || rb.goal || 'Ayuda al equipo.') + '</div>');
-    const sb = $('div', 'sbox hid', c, '<div class="lab">' + icon('candado', 14).outerHTML + ' TU SECRETO (solo lo sabes tu)</div><div class="t">' + esc(sec || rb.secret || 'Guardas algo que el equipo no sabe.') + '</div>'); let shown = false;
-    $('div', 'mut', c, 'Nadie mas ve esto. Decide si lo cuentas, lo callas o lo escondes bajo una mentira.');
+    const gb = $('div', 'sbox', c, '<div class="lab">' + ' TU OBJETIVO SECRETO' + (priv.goal && priv.goal.points ? ' (+' + priv.goal.points + ' pts)' : '') + '</div><div class="t">' + esc(goal || rb.goal || 'Ayuda al equipo.') + '</div>');
+    const sb = $('div', 'sbox hid', c, '<div class="lab">' + ' TU SECRETO (solo lo sabes tú)</div><div class="t">' + esc(sec || rb.secret || 'Guardas algo que el equipo no sabe.') + '</div>'); let shown = false;
+    gb.firstChild.prepend(icon('estrella', 14), ' '); sb.firstChild.prepend(icon('candado', 14), ' '); // el icono se pinta async: debe estar en el DOM
+    $('div', 'mut', c, 'Nadie más ve esto. Decide si lo cuentas, lo callas o lo escondes bajo una mentira.');
     const b = $('button', 'btn go', c, 'Revelar mi secreto'); b.onclick = adv; sb.onclick = () => adv(true);
     function adv(only) { if (!shown) { shown = true; sb.classList.remove('hid'); sfx('secret_reveal'); b.textContent = 'Entendido, a la cueva'; burst(innerWidth / 2, innerHeight * .6, d.col, 18); if (only) return; return; } sfx('confirm'); snd('music', 'explore'); s.classList.remove('on'); cur = null; res(); }
   });
@@ -4933,7 +4978,7 @@ function showFinal(result, state) {
     hero.style.cssText = 'text-align:center'; const hd = $('div', 'fhead', hero, esc(en && en.title ? en.title : sv ? 'Lía está a salvo' : 'No llegamos a tiempo')); hd.style.color = sv ? '#9affc0' : '#ffb0a8'; hd.style.fontSize = 'clamp(32px,7vw,64px)';
     if (en && en.sub) $('div', 'mut', hero, esc(en.sub)).style.cssText = 'font-size:1.2em;margin:.2em 0 .6em'; }
   if (fates.length) {
-    const ok = fates.filter(f => f.status !== 'muerto').length; $('div', 'lab', c, 'DESTINO DE LAS PERSONAS').style.textAlign = 'center'; $('div', '', c, 'Salvaron a <b>' + ok + '</b> de ' + fates.length).style.cssText = 'text-align:center;font-size:1.25em;margin:.2em 0';
+    const ok = fates.filter(f => f.status !== 'muerto').length; $('div', 'lab', c, 'DESTINO DE LAS PERSONAS').style.textAlign = 'center'; $('div', '', c, 'Salvaron a <b>' + ok + '</b> de ' + fates.length).style.cssText = 'color:#fff;text-shadow:0 2px 0 #000,0 0 8px #000;text-align:center;font-size:1.25em;margin:.2em 0';
     const fg = $('div', 'fates', c); fates.forEach(f => { const dead = f.status === 'muerto', e = $('div', 'fate ' + (f.status || 'vivo'), fg); e.style.opacity = 0; const pt = $('div', 'pt', e); pt.appendChild(fateFace(f));
       $('div', '', e, '<b>' + esc(f.name || f.id) + '</b>' + (dead ? '<i class="cdl"></i>' : '') + '<br><span class="st">' + (dead ? 'NO SOBREVIVIÓ' : f.status === 'herido' ? 'HERIDO' : 'A SALVO') + '</span><br><span class="mut">' + esc(f.why || '') + '</span>');
       step(() => { e.style.opacity = 1; e.style.animation = 'rrise .5s both'; sfx('tick'); }, 450); });
@@ -4941,7 +4986,7 @@ function showFinal(result, state) {
   const gh = $('div', 'grade', c, grade); gh.style.visibility = 'hidden'; $('div', 'lab', c, 'NOTA DEL EQUIPO').style.textAlign = 'center';
   step(() => { gh.style.visibility = 'visible'; sfx(good ? 'grade_s' : 'grade_low'); flashEl(gc); if (good) { confetti(grade === 'S' ? 140 : 70); burst(innerWidth / 2, innerHeight * .25, ['#ffd34d', gc], 30, { v: 300 }); } }, 700);
   const g2 = $('div', 'grid2', c); g2.style.marginTop = '1em'; const sc = result.score || state.score || {}, L = $('div', 'panel', g2), R = $('div', 'panel', g2);
-  $('div', 'lab', L, 'PUNTUACION'); const names = { equipo: 'Equipo', info: 'Informacion', honestidad: 'Honestidad', riesgo: 'Riesgo calculado' };
+  $('div', 'lab', L, 'PUNTUACIÓN'); const names = { equipo: 'Equipo', info: 'Información', honestidad: 'Honestidad', riesgo: 'Riesgo calculado' };
   Object.keys(names).forEach(k => { if (sc[k] == null) return; const ln = $('div', 'ln', L, '<span>' + names[k] + '</span><b class="px" data-v="' + sc[k] + '">0</b>'); ln.style.opacity = 0; step(() => { ln.style.opacity = 1; count(ln.querySelector('b'), sc[k]); sfx('tick'); }, 280); });
   if (sc.total != null) { const ln = $('div', 'ln', L, '<b>TOTAL</b><b class="px" style="color:' + gc + '">0</b>'); ln.style.opacity = 0; step(() => { ln.style.opacity = 1; count(ln.lastChild, sc.total, 900); sfx('confirm'); }, 400); }
   $('div', 'lab', R, 'OBJETIVOS INDIVIDUALES'); const obj = result.objectives || []; obj.forEach(o => { const d = rinfo(o.role), ln = $('div', 'ln', R, '<span style="color:' + d.col + '">' + esc(d.n) + '</span><span class="' + (o.ok ? 'ok' : 'no') + '">' + (o.ok ? '✔ ' : '✘ ') + esc(o.text || '') + '</span>'); ln.style.opacity = 0; step(() => { ln.style.opacity = 1; sfx(o.ok ? 'resolve_good' : 'resolve_bad'); }, 420); });
@@ -4952,7 +4997,7 @@ function showFinal(result, state) {
   // estadisticas
   const stt = result.stats || state.stats || null; if (stt) { const P = $('div', 'panel', c); P.style.marginTop = '1em'; $('div', 'lab', P, 'ESTADISTICAS'); Object.keys(stt).forEach(k => $('div', 'ln', P, '<span>' + esc(NICE[k] || k) + '</span><b>' + esc(stt[k]) + '</b>').style.animation = 'none'); }
   const vp = $('div', 'panel', c); vp.style.marginTop = '1em'; $('div', 'lab', vp, 'VEREDICTO'); const vt = $('div', '', vp, ''); vt.style.cssText = 'line-height:1.55;font-size:1.05em;margin-top:.4em;min-height:3em';
-  step(() => typeInto(vt, String(result.verdict || state.verdict || (result.saved === false ? 'No lo lograron esta vez. Cada decision cuenta: vuelvan a jugar con otro rol.' : 'Lia esta fuera. Lo que cada uno hizo en la oscuridad, quedara entre ustedes.')), 36), 500);
+  step(() => typeInto(vt, String(result.verdict || state.verdict || (result.saved === false ? 'No lo lograron esta vez. Cada decisión cuenta: vuelvan a jugar con otro rol.' : 'Lía está fuera. Lo que cada uno hizo en la oscuridad, quedará entre ustedes.')), 36), 500);
   const bt = $('div', 'row', c); bt.style.cssText = 'justify-content:center;margin-top:1.2em'; const b1 = $('button', 'btn go', bt, 'Otra partida<span class="k">R</span>'), b2 = $('button', 'btn', bt, 'Cambiar de rol'), b3 = $('button', 'btn sec', bt, 'Menu<span class="k">M</span>');
   b1.onclick = () => { sfx('confirm'); emit('restart', { changeRole: false }); }; b2.onclick = () => { sfx('click'); emit('restart', { changeRole: true }); showLobby({ mode: 'idle' }); }; b3.onclick = () => { sfx('back'); emit('menu', {}); showMenu(); };
   return s;
@@ -4971,7 +5016,7 @@ function count(el, to, ms) { ms = ms || 700; let t0 = performance.now(); const f
 function typeInto(el, txt, cps) { let i = 0; const iv = setInterval(() => { i += 2; el.textContent = txt.slice(0, i); if (i >= txt.length || !el.isConnected) clearInterval(iv); }, 1000 / (cps || 30) * 2); }
 
 /* ================= LOGROS ================= */
-const ACH_DEF = [['confesion', 'Confesion', 'Revela tu secreto al equipo.'], ['cero_bajas', 'Cero bajas', 'Termina con Lia a salvo y la salud sobre 70.'], ['cartografo', 'Cartografo', 'Examina todos los puntos de interes de un tramo.'], ['lengua_plata', 'Lengua de plata', 'Miente y que nadie lo descubra.'], ['detective', 'Detective de mentiras', 'Descubre una mentira del equipo.'], ['al_borde', 'Al borde', 'Gana con el agua por encima de 90.'], ['todos_cumplen', 'Todo el equipo cumple', 'Que los tres objetivos individuales se cumplan.'], ['sin_pausas', 'Sin pausas', 'Usa las 3 acciones en cada tramo.'], ['everest', 'Everest', 'Gana en dificultad Everest.'], ['primer_rescate', 'Primer rescate', 'Saca a Lia de la cueva.'], ['manos_limpias', 'Manos limpias', 'Termina sin mentir ni una vez.'], ['coleccionista', 'Coleccionista', 'Encuentra los 5 hallazgos secretos.'], ['voz_equipo', 'Voz del equipo', 'Consigue que tu plan gane 3 votaciones.'], ['rejugable', 'Otra cara', 'Termina una partida con cada rol.']];
+const ACH_DEF = [['confesion', 'Confesión', 'Revela tu secreto al equipo.'], ['cero_bajas', 'Cero bajas', 'Termina con Lía a salvo y la salud sobre 70.'], ['cartografo', 'Cartógrafo', 'Examina todos los puntos de interés de un tramo.'], ['lengua_plata', 'Lengua de plata', 'Miente y que nadie lo descubra.'], ['detective', 'Detective de mentiras', 'Descubre una mentira del equipo.'], ['al_borde', 'Al borde', 'Gana con el agua por encima de 90.'], ['todos_cumplen', 'Todo el equipo cumple', 'Que los tres objetivos individuales se cumplan.'], ['sin_pausas', 'Sin pausas', 'Usa las 3 acciones en cada tramo.'], ['everest', 'Everest', 'Gana en dificultad Everest.'], ['primer_rescate', 'Primer rescate', 'Saca a Lía de la cueva.'], ['manos_limpias', 'Manos limpias', 'Termina sin mentir ni una vez.'], ['coleccionista', 'Coleccionista', 'Encuentra los 5 hallazgos secretos.'], ['voz_equipo', 'Voz del equipo', 'Consigue que tu plan gane 3 votaciones.'], ['rejugable', 'Otra cara', 'Termina una partida con cada rol.']];
 function achList() { try { const l = window.Story && Story.achievementsList && Story.achievementsList(); if (l && l.length) return l.map(a => Array.isArray(a) ? { id: a[0], name: a[1], desc: a[2] } : a); } catch (e) { } return ACH_DEF.map(a => ({ id: a[0], name: a[1], desc: a[2] })); }
 function showAchievements() {
   ensure(); const s = mkScr('ach', 'scroll'); s.innerHTML = ''; go('ach', { music: 'menu', keys: e => { if (e.key === 'Escape' || e.key === 'Enter') { back.click(); return; } return false; } }); bgc(s, 'mapa', { dark: .88, light: false, n: 30 });
@@ -4986,14 +5031,14 @@ function openSettings() {
   ensure(); snd('unlock'); modal((p, close) => {
     $('h2', '', p, 'AJUSTES'); const row = (name, el) => { const l = $('label', '', p); $('span', '', l, name); l.appendChild(el); return l; }, tog = (k, f) => { const t = $('button', 'tog' + (S[k] ? ' on' : '')); t.setAttribute('role', 'switch'); t.setAttribute('aria-checked', !!S[k]); t.onclick = () => { S[k] = !S[k]; t.classList.toggle('on', S[k]); t.setAttribute('aria-checked', S[k]); saveS(); f && f(); sfx('click'); changed(); }; return t; };
     const changed = () => { saveS(); applyLook(); applySound(); emit('settings', Object.assign({}, S)); };
-    const dv = $('div', 'diff'); [['facil', 'Facil'], ['normal', 'Normal'], ['everest', 'Everest']].forEach(([k, n]) => { const c = $('button', 'chip' + (S.diff === k ? ' on' : ''), dv, n); c.onclick = () => { S.diff = k; dv.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === c)); sfx('select'); changed(); }; }); row('Dificultad', dv);
+    const dv = $('div', 'diff'); [['facil', 'Fácil'], ['normal', 'Normal'], ['everest', 'Everest']].forEach(([k, n]) => { const c = $('button', 'chip' + (S.diff === k ? ' on' : ''), dv, n); c.onclick = () => { S.diff = k; dv.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === c)); sfx('select'); changed(); }; }); row('Dificultad', dv);
     { const r = $('input'); r.type = 'range'; r.min = 0; r.max = 100; let v0 = S.vol.master; try { if (v0 == null && window.Sound && Sound.getVolume) v0 = Sound.getVolume(); } catch (e) { } r.value = Math.round((v0 == null ? .4 : v0) * 100); r.setAttribute('aria-label', 'Volumen general'); r.oninput = () => { S.vol.master = r.value / 100; applySound(); }; r.onchange = () => { sfx('click'); changed(); }; row('Volumen general', r); }
-    [['music', 'Musica'], ['sfx', 'Efectos'], ['voice', 'Voz']].forEach(([k, n]) => { const r = $('input'); r.type = 'range'; r.min = 0; r.max = 100; r.value = Math.round(S.vol[k] * 100); r.setAttribute('aria-label', n); r.oninput = () => { S.vol[k] = r.value / 100; applySound(); }; r.onchange = () => { sfx('click'); changed(); }; row(n, r); });
-    row('Silenciar todo', tog('mute')); row('Narracion (voz)', tog('narr', () => { if (S.narr) snd('speak', 'Narracion activada.', { who: 'narrador' }); }));
-    const ts = $('div', 'diff'); [['Normal', 1], ['Grande', 1.2], ['Muy grande', 1.4]].forEach(([n, v]) => { const c = $('button', 'chip' + (S.ts === v ? ' on' : ''), ts, n); c.onclick = () => { S.ts = v; ts.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === c)); sfx('select'); changed(); }; }); row('Tamano de texto', ts);
+    [['music', 'Música'], ['sfx', 'Efectos'], ['voice', 'Voz']].forEach(([k, n]) => { const r = $('input'); r.type = 'range'; r.min = 0; r.max = 100; r.value = Math.round(S.vol[k] * 100); r.setAttribute('aria-label', n); r.oninput = () => { S.vol[k] = r.value / 100; applySound(); }; r.onchange = () => { sfx('click'); changed(); }; row(n, r); });
+    row('Silenciar todo', tog('mute')); row('Narración (voz)', tog('narr', () => { if (S.narr) snd('speak', 'Narración activada.', { who: 'narrador' }); }));
+    const ts = $('div', 'diff'); [['Normal', 1], ['Grande', 1.2], ['Muy grande', 1.4]].forEach(([n, v]) => { const c = $('button', 'chip' + (S.ts === v ? ' on' : ''), ts, n); c.onclick = () => { S.ts = v; ts.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === c)); sfx('select'); changed(); }; }); row('Tamaño de texto', ts);
     row('Reducir flashes y movimiento', tog('flash', changed));
-    const ky = $('input'); ky.type = 'password'; ky.placeholder = 'sk-ant-... (opcional)'; ky.autocomplete = 'off'; ky.value = store.get('rcv3_key') || ''; ky.setAttribute('aria-label', 'Clave API'); ky.onchange = () => { store.set('rcv3_key', ky.value.trim()); try { window.Story && Story.setKey && Story.setKey(ky.value.trim()); } catch (e) { } toast(ky.value.trim() ? 'Clave guardada: la IA real hara de director y companeros' : 'Sin clave: modo demo (funciona igual, sin internet)'); emit('settings', Object.assign({}, S, { key: !!ky.value.trim() })); };
-    row('Clave API Claude', ky); $('p', 'mut', p, 'Opcional. Con una clave de Anthropic, el director y los companeros IA usan Claude de verdad. Se guarda solo en este navegador. Sin ella el juego usa contenido pregrabado y funciona sin conexion.').style.cssText = 'font-size:.85em;line-height:1.45;margin:.3em 0 .8em';
+    const ky = $('input'); ky.type = 'password'; ky.placeholder = 'sk-ant-... (opcional)'; ky.autocomplete = 'off'; ky.value = store.get('rcv3_key') || ''; ky.setAttribute('aria-label', 'Clave API'); ky.onchange = () => { store.set('rcv3_key', ky.value.trim()); try { window.Story && Story.setKey && Story.setKey(ky.value.trim()); } catch (e) { } toast(ky.value.trim() ? 'Clave guardada: la IA real hará de director y compañeros' : 'Sin clave: modo demo (funciona igual, sin internet)'); emit('settings', Object.assign({}, S, { key: !!ky.value.trim() })); };
+    row('Clave API Claude', ky); $('p', 'mut', p, 'Opcional. Con una clave de Anthropic, el director y los compañeros IA usan Claude de verdad. Se guarda solo en este navegador. Sin ella el juego usa contenido pregrabado y funciona sin conexión.').style.cssText = 'font-size:.85em;line-height:1.45;margin:.3em 0 .8em';
     const b = $('button', 'btn go', p, 'Listo'); b.onclick = () => { sfx('back'); close(); };
   });
 }
@@ -5002,7 +5047,7 @@ function openSettings() {
 function showCredits() {
   ensure(); const s = mkScr('cred', 'cred'); s.innerHTML = ''; go('cred', { music: 'menu', keys: e => { if (e.key === 'Escape' || e.key === 'Enter') { sfx('back'); showMenu(); return; } return false; } }); bgc(s, 'valle', { dark: .85, n: 50 });
   const r = $('div', 'roll', s); $('h1', '', r, 'RESCATE<br>EN LA CUEVA'); const ln = (a, b) => { $('div', '', r, (a ? '<div class="lab">' + a + '</div>' : '') + '<div>' + b + '</div>'); };
-  ln('DISENO Y PROGRAMACION', 'Un equipo de agentes de IA coordinados, dirigidos por una persona'); ln('ARTE', 'Todos los sprites, fondos e ilustraciones estan generados por codigo (CC0)'); ln('MUSICA Y SONIDO', 'Sintetizados en tiempo real con WebAudio, sin muestras'); ln('HISTORIA', 'Cueva inundada: informacion asimetrica, confianza y decisiones bajo presion');
+  ln('DISEÑO Y PROGRAMACIÓN', 'Un equipo de agentes de IA coordinados, dirigidos por una persona'); ln('ARTE', 'Todos los sprites, fondos e ilustraciones están generados por código (CC0)'); ln('MÚSICA Y SONIDO', 'Sintetizados en tiempo real con WebAudio, sin muestras'); ln('HISTORIA', 'Cueva inundada: información asimétrica, confianza y decisiones bajo presion');
   const cr = window.ASSETS && ASSETS.credits; (cr || []).forEach(c => ln('', esc(c))); ln('FUENTE', 'Press Start 2P (CodeMan38, SIL OFL 1.1)'); ln('RED', 'PeerJS (MIT)'); ln('', 'Gracias por jugar.');
   const b = $('button', 'btn sec rel', s, 'Volver (Esc)'); b.style.cssText = 'position:absolute;top:10px;right:10px;z-index:5'; b.onclick = () => { sfx('back'); showMenu(); };
 }
@@ -5152,21 +5197,22 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
   /* retrato grande SIN marco (diálogo / «hablando ahora»); scale = factor sobre el tamaño nativo (entero en el diálogo) */
   function bigFace(role, mood, scale) {
     var f = faceInfo(role, mood), b = ROLES[role] || ROLES.sys;
-    if (!f) return '<i class="h-big fb" style="width:' + Math.round(64 * scale) + 'px;height:' + Math.round(64 * scale) + 'px;font-size:' + Math.round(40 * scale) + 'px;line-height:' + Math.round(64 * scale) + 'px">' + b.emoji + '</i>';
-    return '<i class="h-big" style="' + faceCss(f, scale) + '"></i>';
+    if (!f) return '<i class="h-fc fb" style="width:' + Math.round(64 * scale) + 'px;height:' + Math.round(64 * scale) + 'px;font-size:' + Math.round(40 * scale) + 'px;line-height:' + Math.round(64 * scale) + 'px">' + b.emoji + '</i>';
+    return '<i class="h-fc" style="' + faceCss(f, scale) + '"></i>';
   }
   /* retrato animado: boca 1<->2 al hablar (8 fps, cerrada en pausas), parpadeo cada 2-4 s en reposo. Sin face_<id> cae al portrait estático. */
-  function faceCtl(host, role, mood, scale) {
-    var e = D.createElement('i'), st = { role: role, mood: mood, scale: scale, talk: false, closed: false, mouth: 0, blink: 0, nb: Date.now() + 1500 + Math.random() * 2000, last: '' }, tmr;
+  function faceCtl(host, role, mood, scale, box) {
+    var e = D.createElement('i'), st = { role: role, mood: mood, scale: scale, box: box, talk: false, closed: false, mouth: 0, blink: 0, nb: Date.now() + 1500 + Math.random() * 2000, last: '' }, tmr;
     host.appendChild(e);
     function paint() {
       var m = st.mood, col = 0, f = faceInfo(st.role, m, 0), an = f && f.anim;
       if (st.talk && !st.closed) { if (an) col = st.mouth ? 2 : 1; else if (st.mouth && (m === 'neutral' || m === 'talk')) m = 'talk'; }
       else if (!st.talk && an && Date.now() < st.blink) col = 3;
       f = faceInfo(st.role, m, col);
-      var k = f ? faceCss(f, st.scale) : 'fb' + st.role + st.scale; if (k === st.last) return; st.last = k;
-      if (f) { e.className = 'h-big'; e.style.cssText = k; e.textContent = ''; }
-      else { var b = ROLES[st.role] || ROLES.sys; e.className = 'h-big fb'; e.style.cssText = 'width:' + 64 * st.scale + 'px;height:' + 64 * st.scale + 'px;font-size:' + 40 * st.scale + 'px;line-height:' + 64 * st.scale + 'px'; e.textContent = b.emoji; }
+      var sc = st.scale; if (f && st.box) { sc = st.box / Math.max(f.fw, f.fh); if (sc >= 1) sc = Math.floor(sc); } // cabe SIEMPRE en el recuadro (escala entera si >=1)
+      var k = f ? faceCss(f, sc) : 'fb' + st.role + st.box + st.scale; if (k === st.last) return; st.last = k;
+      if (f) { e.className = 'h-fc'; e.style.cssText = k; e.textContent = ''; }
+      else { var b = ROLES[st.role] || ROLES.sys; e.className = 'h-fc fb'; var z = st.box || 64 * st.scale; e.style.cssText = 'width:' + z + 'px;height:' + z + 'px;font-size:' + Math.round(z * .62) + 'px;line-height:' + z + 'px'; e.textContent = b.emoji; }
     }
     function tick() {
       if (!e.isConnected) return clearInterval(tmr);
@@ -5175,7 +5221,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
       paint();
     }
     tmr = setInterval(tick, 125); paint();
-    return { set: function (m) { st.mood = m || 'neutral'; paint(); }, who: function (r, sc) { st.role = r; if (sc) st.scale = sc; paint(); },
+    return { set: function (m) { st.mood = m || 'neutral'; paint(); }, who: function (r, sc, bx) { st.role = r; if (sc) st.scale = sc; if (bx) st.box = bx; paint(); },
       talk: function (on) { st.talk = on; if (!on) st.closed = false; paint(); }, closed: function (c) { st.closed = c; }, stop: function () { clearInterval(tmr); } };
   }
   /* texto con nombres de personajes y *palabras clave* resaltados -> [{t, c}] (c = color o 'S' = color del hablante) */
@@ -5517,7 +5563,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
 .h-ask .h-btn{text-transform:none;font-family:var(--h-ui);font-weight:700;font-size:calc(13px*var(--h-fs));letter-spacing:0;padding:7px 11px;border-left:5px solid var(--rc,var(--h-line));white-space:normal;text-align:left}
 .h-say{display:none;flex:none;gap:10px;align-items:center;padding:8px 10px;border-bottom:2px solid var(--h-line);background:linear-gradient(90deg,#241c46,#150f2a)}
 .h-say .fc{flex:none;border:3px solid var(--c,var(--h-line));border-radius:8px;overflow:hidden;line-height:0;background:radial-gradient(circle at 50% 100%,#ffffff22,#120e26 75%);box-shadow:0 0 0 2px #000}
-.h-say.pop .fc{animation:h-pop .3s}.h-big{display:block;image-rendering:pixelated;background-repeat:no-repeat;text-align:center;font-style:normal}
+.h-say.pop .fc{animation:h-pop .3s}.h-fc{display:block;flex:none;image-rendering:pixelated;background-repeat:no-repeat;text-align:center;font-style:normal}
 .h-say .sb{min-width:0;flex:1;align-self:stretch;display:flex;flex-direction:column;gap:4px}.h-say .nm{font-weight:700;font-size:calc(14px*var(--h-fs));display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 7px}.h-say .nm i{font-style:normal;font-weight:400;color:var(--h-dim);font-size:.85em}
 .h-say .nm span{font-family:var(--h-px);font-weight:400;font-size:6px;color:var(--h-teal);margin-left:auto}.h-say .sx{font-size:calc(14px*var(--h-fs));line-height:1.4;max-height:6.4em;overflow:auto;overflow-wrap:anywhere;scrollbar-width:thin;user-select:text}
 .h-say.on{display:flex}.h-chat.min .h-say{visibility:hidden}@media (max-width:820px),(max-height:520px){.h-chat:not(.open) .h-say{display:none}}
@@ -5548,10 +5594,10 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
 .dl-wrap{position:relative;max-width:1040px;margin:0 auto;--c:#f2a93b}
 .dl-box{position:relative;display:flex;align-items:center;gap:22px;padding:14px 30px 14px 14px;background:rgba(10,7,26,.9);border:2px solid #d9d0f5;border-radius:0;box-shadow:0 0 0 2px #000,0 10px 28px #000a;color:#fff;font-family:var(--h-ui)}
 .dl-fr{flex:none;position:relative;line-height:0;border:3px solid var(--c);background:color-mix(in srgb,var(--c) 55%,#140c2c);box-shadow:0 0 0 2px #000;--bob:3px}
-.dl-por{line-height:0;overflow:hidden;image-rendering:pixelated}.dl-por .h-big{image-rendering:pixelated}
-.dl-fr.pop{animation:dl-pop .3s cubic-bezier(.2,1.6,.4,1)}.dl-fr.talk .h-big,.h-sp .fc.talk .h-big{animation:dl-bob .166s steps(1) infinite}
+.dl-por{width:var(--S,144px);height:var(--S,144px);display:flex;align-items:center;justify-content:center;line-height:0;overflow:hidden;image-rendering:pixelated}.dl-por .h-fc{image-rendering:pixelated}
+.dl-fr.pop{animation:dl-pop .3s cubic-bezier(.2,1.6,.4,1)}.dl-fr.talk .h-fc,.h-sp .fc.talk .h-fc{animation:dl-bob .166s steps(1) infinite}
 @keyframes dl-pop{0%{transform:scale(.6) translateY(16px);opacity:.2}100%{opacity:1}}@keyframes dl-bob{50%{transform:translateY(var(--bob,3px))}}
-@media (prefers-reduced-motion:reduce){.dl-fr.talk .h-big,.h-sp .fc.talk .h-big,.dl-fr.pop{animation:none}}
+@media (prefers-reduced-motion:reduce){.dl-fr.talk .h-fc,.h-sp .fc.talk .h-fc,.dl-fr.pop{animation:none}}
 .dl-tx{flex:1;min-width:0;align-self:stretch;display:flex;flex-direction:column;gap:8px;justify-content:center}
 .dl-name{display:flex;align-items:baseline;gap:10px}.dl-name b{font-family:var(--h-px);font-weight:400;font-size:clamp(11px,1.7vh,15px);color:var(--c);text-shadow:0 2px 0 #000}.dl-name i{font-style:normal;font-size:clamp(12px,1.6vh,15px);color:#a89fc4}
 .dl-text{position:relative;font-size:calc(clamp(20px,3.1vh,31px)*var(--h-fs));line-height:1.45;min-height:2.9em;max-height:44vh;overflow:auto;color:#fff;text-shadow:0 2px 0 #000;overflow-wrap:anywhere}.dl-text .b{visibility:hidden}.dl-text .k{font-weight:700}
@@ -5564,7 +5610,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
 .hud.modal .h-sy{bottom:auto;top:var(--sy-top,110px)}
 .h-sp{display:flex;gap:12px;align-items:center;padding:6px 16px 6px 6px;background:rgba(10,7,26,.9);border:2px solid #d9d0f5;border-radius:0;box-shadow:0 0 0 2px #000,0 6px 18px #000a;animation:sy-in .3s cubic-bezier(.2,1.5,.4,1)}.h-sp.out{animation:sy-out .3s forwards}
 @keyframes sy-in{from{opacity:0;transform:translateY(24px) scale(.9)}}@keyframes sy-out{to{opacity:0;transform:translateY(10px)}}
-.h-sp .fc{flex:none;line-height:0;overflow:hidden;border:3px solid var(--c);background:color-mix(in srgb,var(--c) 55%,#140c2c);box-shadow:0 0 0 2px #000;--bob:2px}.h-sp .fc .h-big{image-rendering:pixelated}
+.h-sp .fc{flex:none;display:flex;align-items:center;justify-content:center;box-sizing:content-box;line-height:0;overflow:hidden;border:3px solid var(--c);background:color-mix(in srgb,var(--c) 55%,#140c2c);box-shadow:0 0 0 2px #000;--bob:2px}.h-sp .fc .h-fc{image-rendering:pixelated}
 .h-sp .sb{min-width:0;display:flex;flex-direction:column;gap:2px}.h-sp .nm{font-family:var(--h-px);font-size:calc(10px*var(--h-fs));color:var(--c);margin-bottom:3px}.h-sp .sx{font-size:calc(17px*var(--h-fs));line-height:1.35;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere;color:#fff}.h-sp .sx .k{font-weight:700}
 /* chat discreto: compacto (historial) por defecto, T para ampliar */
 .hud.chatmin{--h-chatw:clamp(188px,15vw,232px)}
@@ -5631,6 +5677,9 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
 .h-fcard .k{font-family:var(--h-px);font-size:calc(9px*var(--h-fs));color:var(--h-amber)}.h-fcard .t{font-weight:800;font-size:calc(17px*var(--h-fs));color:var(--h-amber2);margin:4px 0 2px}.h-fcard .x{font-size:calc(14px*var(--h-fs));color:var(--h-ink)}.h-fcard .u{margin-top:6px;font-size:calc(14px*var(--h-fs));color:var(--h-ink);border-top:2px solid var(--h-line);padding-top:6px}.h-fcard .u b{color:var(--h-amber2)}
 .h-brief{margin:10px 14px 0;padding:8px 12px;border-left:4px solid var(--h-amber);background:#0e0a1d;font-size:calc(15px*var(--h-fs));line-height:1.4}.h-brief b{display:block;font-family:var(--h-px);font-weight:400;font-size:calc(9px*var(--h-fs));color:var(--h-amber2);margin-bottom:4px}
 .h-ic1 .us{margin-top:6px;font-size:calc(14px*var(--h-fs));font-weight:700;color:#5a3a08}.h-ic1 .us b{color:#9b3a12}
+/* v10 */
+.h-ch .ttl{min-width:0;overflow:hidden;text-overflow:ellipsis}.h-ch .tg{flex:none}.h-big .bt{color:var(--h-amber2)}
+.hud.modal .h-mini,.hud.dlg .h-mini{visibility:hidden}.h-fcard{bottom:176px}.hud:has(.h-dos.open) .h-now,.hud:has(.h-dos.open) .h-mini{visibility:hidden}
 `
   ].join('\n');
 
@@ -5804,14 +5853,14 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
     var ph = P.phase, info = PHASES[ph] || { n: String(ph || '').toUpperCase(), i: '', c: '#fff', e: '' }, r = P.round || 1;
     el.rn.textContent = r + '/5';
     el.pips.forEach(function (p, i) { p.className = 'h-pip' + (i + 1 < r ? ' done' : i + 1 === r ? ' now' : ''); p.textContent = i + 1 < r ? '✓' : (i + 1); });
-    el.phn.innerHTML = '<span class="t" style="color:' + info.c + '"><span>' + info.e + ' ' + esc(info.n) + '</span></span>';
+    el.phn.innerHTML = '<span class="t" style="color:' + info.c + '"><span>' + esc(info.n) + '</span></span>';
     var me = P.players && P.players[R], ap = V && V.ap != null ? V.ap : me && me.ap;
     var instr = info.i;
     if (ph === 'explore') instr = 'Explora y habla con el equipo; decidan cuando estés listo';
     if (ph === 'plan' && localVote) instr = 'Votaste ' + optLetter(localVote) + '. Puedes cambiar hasta que acabe el tiempo';
     if (ph === 'secret' && secretSealed) instr = 'Decisión sellada. Espera a la resolución';
     el.phi.textContent = instr; el.phi.title = instr;
-    el.evt.textContent = P.event && P.event.title && ph !== 'briefing' ? '📍 ' + P.event.title : '';
+    el.evt.textContent = P.event && P.event.title && ph !== 'briefing' ? P.event.title : '';
     el.top.style.borderColor = ph === 'explore' && P.s && P.s.agua >= 80 ? 'var(--h-red)' : '';
   }
   function optLetter(id) {
@@ -5854,7 +5903,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
     var c = readyCfg(), key = JSON.stringify(c) + ready + done.join(',');
     if (el.bot.dataset.k === key) return; el.bot.dataset.k = key;
     el.bot.innerHTML = ready ? '<div class="h-hint"><b>✔ Listo.</b> ' + (done.length ? 'También quieren decidir: ' + esc(done.join(', ')) + '. ' : '') + 'Sigue explorando hasta que arranque.</div>'
-      : '<div class="h-rdy"><button class="h-btn ' + (c.pulse ? 'teal pulse glow' : 'alt') + '" data-act="ready" title="' + esc(c.tip) + '"' + (c.disabled ? ' disabled' : '') + '>📣 ' + esc(c.label) + ' <kbd>R</kbd></button>' + (c.after ? '<small>' + esc(c.after) + '</small>' : '') + '</div>';
+      : '<div class="h-rdy"><button class="h-btn ' + (c.pulse ? 'teal pulse glow' : 'alt') + '" data-act="ready" title="' + esc(c.tip) + '"' + (c.disabled ? ' disabled' : '') + '>' + icon('chat', 14) + ' ' + esc(c.label) + ' <kbd>R</kbd></button>' + (c.after ? '<small>' + esc(c.after) + '</small>' : '') + '</div>';
   }
 
   /* ---------- guiado: UN solo objetivo (con su porqué) ---------- */
@@ -5999,7 +6048,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
     var src = ev.art && img(ev.art);
     var key = String(ev.id || ev.art || '').replace(/^event_/, ''), em = EVENT_EMOJI[key] || '⚠️';
     var art = '<div class="h-art"><span class="tag">⚠ EVENTO · TRAMO ' + (P.round || 1) + '</span>' + (src ? '<img alt="" src="' + src + '">' : '<span class="em">' + em + '</span>') + '</div>';
-    var rad = ev.radio ? '<div class="h-radio">' + portrait('lia', 'preocupado', 44) + '<div><div class="w">📻 LÍA · RADIO</div><div class="q" data-type="' + esc('«' + ev.radio + '»') + '"></div></div></div>' : '';
+    var rad = ev.radio ? '<div class="h-radio">' + portrait('lia', 'preocupado', 44) + '<div><div class="w">' + icon('radio', 14) + ' LÍA · RADIO</div><div class="q" data-type="' + esc('«' + ev.radio + '»') + '"></div></div></div>' : '';
     var exp = (data && data.expect) || ev.expect || 'Explora, reúne información y compártela. Después votarán el plan.';
     var p = openPanel('event', art + '<div class="h-pb"><h3 class="h-evt1">' + esc(ev.title || 'Nuevo tramo') + '</h3><div class="h-evtx">' + esc(ev.text || '') + '</div>' + rad +
       '<div class="h-expect"><b>QUÉ SE ESPERA:</b> ' + esc(exp) + '</div><div class="h-cdown"><i style="width:100%"></i></div></div>' +
@@ -6044,7 +6093,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
     }).join('');
     openPanel('plan', '<div class="h-ph1"><div class="q">' + esc(plan.ask || '¿Qué hacemos ahora?') + '</div><div class="hv">Vota con <b>1</b>, <b>2</b> o <b>3</b>. Gana la mayoría.</div></div>' +
       (plan.brief ? '<div class="h-brief"><b>Lo que saben / lo que no</b>' + esc(Array.isArray(plan.brief) ? plan.brief.join(' ') : plan.brief) + '</div>' : '') +
-      '<div class="h-pb"><div class="h-opts">' + cards + '</div></div><div class="h-foot"><span class="l h-pstat"></span><button class="h-btn alt" data-act="chatfocus">💬 HABLAR EN EL CHAT <kbd>T</kbd></button></div>');
+      '<div class="h-pb"><div class="h-opts">' + cards + '</div></div><div class="h-foot"><span class="l h-pstat"></span><button class="h-btn alt" data-act="chatfocus">' + icon('chat', 14) + ' HABLAR EN EL CHAT <kbd>T</kbd></button></div>');
     updatePlan(); clockTick(); if (P.plan && P.plan.chosen) showChosen();
   }
   function updatePlan() {
@@ -6091,7 +6140,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
         '<div class="h-risk">RIESGO <span class="p r' + risk + '">' + pips + '</span>' + (o.reward ? '<span style="margin-left:auto;color:var(--h-green)">' + esc(o.reward) + '</span>' : '') + '</div></button>';
     }).join('') || '<div class="h-empty">Esperando tus opciones…</div>';
     openPanel('secret', '<div class="h-ph1"><div class="q">Ahora decide en secreto qué haces tú.</div><div class="hv">Nadie lo verá hasta el final.</div></div>' +
-      '<div class="h-pb"><div class="h-sopts">' + cards + '</div></div><div class="h-foot"><span class="l h-sstat">Elige con 1, 2 o 3 y presiona SELLAR.</span><button class="h-btn red" data-act="seal" disabled>🔒 SELLAR DECISIÓN</button></div>');
+      '<div class="h-pb"><div class="h-sopts">' + cards + '</div></div><div class="h-foot"><span class="l h-sstat">Elige con 1, 2 o 3 y presiona SELLAR.</span><button class="h-btn red" data-act="seal" disabled>' + icon('candado', 14) + ' SELLAR DECISIÓN</button></div>');
     updateSecret(); clockTick();
   }
   function updateSecret() {
@@ -6101,7 +6150,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
     var b = panel.querySelector('[data-act=seal]'); if (b) b.disabled = secretSel == null || secretSealed;
     if (secretSealed && !panel.querySelector('.h-seal')) {
       var o = ((V && V.secretOptions) || [])[secretSel]; var d = D.createElement('div'); d.className = 'h-seal';
-      d.innerHTML = '<div><div class="s">🔏</div><div class="a">DECISIÓN SELLADA</div><div class="b">' + (o ? esc(o.title || o.text) : '') + '<br>Nadie la verá hasta la resolución.</div></div>';
+      d.innerHTML = '<div><div class="s">' + icon('candado', 36) + '</div><div class="a">DECISIÓN SELLADA</div><div class="b">' + (o ? esc(o.title || o.text) : '') + '<br>Nadie la verá hasta la resolución.</div></div>';
       panel.appendChild(d);
     }
   }
@@ -6123,7 +6172,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
     if (res.explain) return showExplain(res);
     return new Promise(function (done) {
       var skip = false, finished = false;
-      var p = openPanel('resolve', '<div class="h-ph1"><span style="font-size:26px">🎲</span><div><h2>RESULTADO</h2></div></div><div class="h-pb"><div class="h-narr"></div><div class="h-rolls"></div><div class="h-reveals"></div><div class="h-deltas"></div><div class="h-ptsbig"></div></div><div class="h-foot"><span class="l"></span><button class="h-btn teal pulse" data-act="cont">CONTINUAR ▶ <kbd>Espacio</kbd></button></div>');
+      var p = openPanel('resolve', '<div class="h-ph1">' + icon('estrella', 26) + '<div><h2>RESULTADO</h2></div></div><div class="h-pb"><div class="h-narr"></div><div class="h-rolls"></div><div class="h-reveals"></div><div class="h-deltas"></div><div class="h-ptsbig"></div></div><div class="h-foot"><span class="l"></span><button class="h-btn teal pulse" data-act="cont">CONTINUAR ▶ <kbd>Espacio</kbd></button></div>');
       p.addEventListener('click', function (e) { if (!e.target.closest('[data-act=cont],.h-mn')) skip = true; });
       p._end = function () { if (p._done) return; p._done = true; skip = true; resolving = false; closePanel(); done(); };
       var S = function (ms) { return skip ? Promise.resolve() : sleep(ms); };
@@ -6155,8 +6204,8 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
             var v = rv[j], isLie = v.kind === 'lie' || v.type === 'lie', good = v.kind === 'good' || v.type === 'good';
             var who = v.role ? roleInfo(v.role).name : '';
             var d = D.createElement('div'); d.className = 'h-rev ' + (isLie ? 'lie' : good ? 'good' : '');
-            d.innerHTML = (v.role ? portrait(v.role, isLie ? 'enfadado' : 'neutral', 52) : '<span style="font-size:36px">🕵️</span>') +
-              '<div><div class="tt">' + (isLie ? '🤥 MENTIRA DESCUBIERTA' : good ? '✨ ACTO REVELADO' : '🔓 SECRETO REVELADO') + (who ? ' · ' + esc(who.toUpperCase()) : '') + '</div><div class="tx">' + esc(v.text || v.title || '') + '</div></div>';
+            d.innerHTML = (v.role ? portrait(v.role, isLie ? 'enfadado' : 'neutral', 52) : icon('secreto', 36)) +
+              '<div><div class="tt">' + (isLie ? icon('alerta', 14) + ' MENTIRA DESCUBIERTA' : good ? icon('estrella', 14) + ' ACTO REVELADO' : icon('secreto', 14) + ' SECRETO REVELADO') + (who ? ' · ' + esc(who.toUpperCase()) : '') + '</div><div class="tx">' + esc(v.text || v.title || '') + '</div></div>';
             revs.appendChild(d); snd(isLie ? 'lie' : 'secret_reveal'); flash(isLie ? '#ff5d5d' : '#b58cff'); shake(isLie ? .8 : .4);
             sc();
             await S(1200);
@@ -6223,7 +6272,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
         cats = Object.keys(nm).map(function (k) { return { key: k, label: nm[k][0], icon: nm[k][1], pts: sc[k] || 0, note: (data.notes2 || {})[k] || '' }; });
       }
       var last = data.last || (P && P.round >= 5);
-      var p = openPanel('summary', '<div class="h-ph1"><span style="font-size:26px">📊</span><div><h2>' + esc(data.title || ('RESUMEN DEL TRAMO ' + (data.round || (P && P.round) || ''))) + '</h2><div class="sub">' + esc(data.subtitle || 'Así ha ido el tramo') + '</div></div></div>' +
+      var p = openPanel('summary', '<div class="h-ph1">' + icon('trofeo', 26) + '<div><h2>' + esc(data.title || ('RESUMEN DEL TRAMO ' + (data.round || (P && P.round) || ''))) + '</h2><div class="sub">' + esc(data.subtitle || 'Así ha ido el tramo') + '</div></div></div>' +
         '<div class="h-pb"><div class="h-rows"></div><div class="h-total" style="visibility:hidden"><span class="nm">PUNTOS DEL TRAMO</span><span class="v">0</span></div><ul class="h-notes"></ul></div>' +
         '<div class="h-foot"><span class="l"></span><button class="h-btn" data-act="cont" disabled>' + (last ? 'VER FINAL ▶' : 'SIGUIENTE TRAMO ▶') + '</button></div>');
       var rows = p.querySelector('.h-rows'), tot = 0, skip = false;
@@ -6265,9 +6314,9 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
     var mood = m.mood || (kind === 'radio' ? 'alert' : 'talk');
     if (grouped) {
       var card = m.card || (kind === 'share' && tx ? { title: 'Información compartida', text: tx } : null), same = card && (tx === card.text || tx.indexOf(card.text) >= 0 || card.text.indexOf(tx) >= 0);
-      var pre = card ? (tx && !same ? '<div class="pre">' + esc(tx) + '</div>' : '') : esc(tx || '📎 compartió una tarjeta');
+      var pre = card ? (tx && !same ? '<div class="pre">' + esc(tx) + '</div>' : '') : esc(tx || 'compartió una tarjeta');
       var inner = card ? pre + '<div class="h-card"><div class="t">' + icon('ojo', 12) + ' ' + (me ? 'COMPARTISTE' : 'COMPARTE') + ' · ' + esc(card.title || 'Intel') + (card.reliability != null ? relTag(card.reliability) : '') + '</div><div class="x">' + esc(card.text || '') + '</div></div>' : pre;
-      inner += m.altered && me ? '<div style="font-size:11px;color:#ffb0a8;margin-top:5px">✏️ Alterada: solo tú lo sabes</div>' : '';
+      inner += m.altered && me ? '<div style="font-size:11px;color:#ffb0a8;margin-top:5px">Alterada: solo tú lo sabes</div>' : '';
       var last = el.log.lastElementChild, g;
       if (last && last.classList.contains('h-g') && last.dataset.from === from && last.dataset.mood === mood && (!m.t || !lastChatT || m.t - lastChatT < 90000)) g = last;
       else {
@@ -6279,7 +6328,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
       if (kind === 'share' && me) { bb.classList.add('hl'); setTimeout(function () { try { bb.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) { } }, 60); }
     } else {
       var d = D.createElement('div'); d.className = 'h-m ' + kind;
-      d.innerHTML = kind === 'radio' ? '<div class="av">' + portrait(from === "sys" ? "lia" : from, mood, 40) + '</div><div class="bd"><div class="hd">📻 ' + esc(b.name.toUpperCase()) + ' · RADIO</div><div class="tx">' + esc(tx) + '</div></div>' : '<div class="tx">' + (kind === 'event' ? '⚠ ' : '') + esc(tx) + '</div>';
+      d.innerHTML = kind === 'radio' ? '<div class="av">' + portrait(from === "sys" ? "lia" : from, mood, 40) + '</div><div class="bd"><div class="hd">' + icon('radio', 14) + ' ' + esc(b.name.toUpperCase()) + ' · RADIO</div><div class="tx">' + esc(tx) + '</div></div>' : '<div class="tx">' + (kind === 'event' ? '⚠ ' : '') + esc(tx) + '</div>';
       el.log.appendChild(d);
     }
     chatCount++; lastChatT = m.t || 0;
@@ -6348,20 +6397,20 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
           rounds[r].forEach(function (c) {
             var ri = relInfo(c.reliability), isEd = editing === c.id;
             body += '<div class="h-ic1 ' + ri.cls + '">' + (c.shared ? '<span class="sh">COMPARTIDA</span>' : '') + '<div class="t">' + poiIcon(c.icon || 'info', 18) + esc(c.title) + '</div><div class="x">' + esc(c.text) + '</div>' + ((c.uses || c.use) ? '<div class="us"><b>Sirve para:</b> ' + esc(c.uses || c.use) + '</div>' : '') + relHtml(c.reliability) +
-              '<div class="h-acts" style="margin-top:8px"><button class="h-btn" data-act="share" data-id="' + esc(c.id) + '">📢 Contárselo al equipo</button><button class="h-btn alt sm" data-act="edit" data-id="' + esc(c.id) + '">✏️ Cambiar y contar</button></div>' +
-              (isEd ? '<div class="h-edit"><textarea data-ta="' + esc(c.id) + '" maxlength="300">' + esc(c.text) + '</textarea><div class="w">⚠ Cambiar el texto es MENTIR. Si el equipo lo descubre, perderás confianza (pero puedes ganar si cuela).</div><div class="h-acts"><button class="h-btn red" data-act="sendlie" data-id="' + esc(c.id) + '">🤥 Enviar versión alterada</button><button class="h-btn alt" data-act="canceledit">Cancelar</button></div></div>' : '') + '</div>';
+              '<div class="h-acts" style="margin-top:8px"><button class="h-btn" data-act="share" data-id="' + esc(c.id) + '">' + icon('radio', 14) + ' Contárselo al equipo</button><button class="h-btn alt sm" data-act="edit" data-id="' + esc(c.id) + '">✏️ Cambiar y contar</button></div>' +
+              (isEd ? '<div class="h-edit"><textarea data-ta="' + esc(c.id) + '" maxlength="300">' + esc(c.text) + '</textarea><div class="w">⚠ Cambiar el texto es MENTIR. Si el equipo lo descubre, perderás confianza (pero puedes ganar si cuela).</div><div class="h-acts"><button class="h-btn red" data-act="sendlie" data-id="' + esc(c.id) + '">' + icon('alerta', 14) + ' Enviar versión alterada</button><button class="h-btn alt" data-act="canceledit">Cancelar</button></div></div>' : '') + '</div>';
           });
         });
       }
     } else if (dossierTab === 'secreto') {
       var sc = V && V.secret;
-      body = sc ? '<div class="h-sc1"><div class="lock">🔒</div><div class="t">' + esc(sc.text) + '</div><div class="n">' + (sc.revealed ? '⚠ Este secreto ya se reveló.' : 'Nadie más lo sabe. Decide si lo confiesas o lo ocultas: puede salir a la luz en la resolución.') + '</div></div>' : '<div class="h-empty">Sin secreto.</div>';
+      body = sc ? '<div class="h-sc1"><div class="lock">' + icon('candado', 32) + '</div><div class="t">' + esc(sc.text) + '</div><div class="n">' + (sc.revealed ? '⚠ Este secreto ya se reveló.' : 'Nadie más lo sabe. Decide si lo confiesas o lo ocultas: puede salir a la luz en la resolución.') + '</div></div>' : '<div class="h-empty">Sin secreto.</div>';
     } else if (dossierTab === 'objetivo') {
       var mh = '';
       if (misOv && misOv.steps && misOv.steps.length) mh = '<div class="h-gh">' + esc(misOv.title || 'MISIÓN') + '</div><ul class="h-mlist">' + misOv.steps.map(function (x) { return '<li class="' + (x.done ? 'done' : '') + '"><i>' + (x.done ? '✔' : '') + '</i><span>' + esc(x.text) + '</span></li>'; }).join('') + '</ul>';
-      var g = V && V.goal; body = mh + (g ? '<div class="h-sc1" style="border-color:var(--h-amber)"><div class="lock">🎯</div><div class="t">' + esc(g.text) + '</div><div class="n">' + (g.points ? 'Recompensa: +' + g.points + ' puntos al final. ' : '') + 'Se evalúa al terminar la partida. Es privado: tu equipo no sabe cuál es.</div></div>' : '<div class="h-empty">Sin objetivo.</div>');
+      var g = V && V.goal; body = mh + (g ? '<div class="h-sc1" style="border-color:var(--h-amber)"><div class="lock">' + icon('estrella', 32) + '</div><div class="t">' + esc(g.text) + '</div><div class="n">' + (g.points ? 'Recompensa: +' + g.points + ' puntos al final. ' : '') + 'Se evalúa al terminar la partida. Es privado: tu equipo no sabe cuál es.</div></div>' : '<div class="h-empty">Sin objetivo.</div>');
     } else {
-      var n = (P && P.hallazgos) || 0, cells = ''; for (var i = 0; i < 5; i++) cells += '<div class="' + (i < n ? 'on' : '') + '">' + (i < n ? '📜' : '?') + '</div>';
+      var n = (P && P.hallazgos) || 0, cells = ''; for (var i = 0; i < 5; i++) cells += '<div class="' + (i < n ? 'on' : '') + '">' + (i < n ? icon('mapa', 20) : '?') + '</div>';
       body = '<div class="h-gh">LORE DE LA CUEVA · ' + n + '/5</div><div class="h-hl">' + cells + '</div><div class="h-empty">Los POI secretos (brillo tenue) guardan hallazgos coleccionables.</div>';
     }
     el.dos.innerHTML = '<div class="h-dh">' + icon('ojo', 18) + ' CUADERNO <button class="x" data-act="closedos" aria-label="Cerrar">✕</button></div><div class="h-tabs">' + tabs.map(function (t) { return '<button data-act="tab" data-t="' + t[0] + '" class="' + (t[0] === dossierTab ? 'on' : '') + '">' + t[1] + '</button>'; }).join('') + '</div><div class="h-db">' + body + '</div>';
@@ -6378,10 +6427,10 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
   }
 
   /* ---------- diálogo estilo Castlevania: SotN ---------- */
-  function dlgScale(who, mood) { // escala ENTERA según el alto/ancho de pantalla
-    var f = faceInfo(who, mood), fw = f ? f.fw : 64, vh = W.innerHeight || 700, bw = (el.dlg && el.dlg.clientWidth) || (W.innerWidth || 1000);
+  function dlgScale() { // lado del recuadro (múltiplo de 48: x2..x4) según alto/ancho de pantalla; igual para todos los personajes
+    var fw = 48, vh = W.innerHeight || 700, bw = (el.dlg && el.dlg.clientWidth) || (W.innerWidth || 1000);
     var px = Math.min(.21 * vh, .22 * bw, 224);
-    return Math.max(2, Math.min(4, Math.floor(px / fw)));
+    return fw * Math.max(2, Math.min(4, Math.floor(px / fw)));
   }
   function dialogue(lines, o) {
     if (!mounted) mount();
@@ -6407,8 +6456,8 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
         line = lines[i]; parts = hlParts(line.text); text = parts.map(function (p) { return p.t; }).join(''); typed = 0; fin = false; swap = false;
         var b = b0 = roleInfo(line.who); wrap.style.setProperty('--c', b.color); wrap.style.setProperty('--cg', b.color + '55'); box.classList.toggle('radio', line.who === 'lia' || !!line.radio);
         nm.querySelector('b').textContent = line.name || b.name; nm.querySelector('i').textContent = line.title != null ? line.title : b.title; nm.style.display = (line.name || b.name) ? '' : 'none';
-        var sc = dlgScale(line.who, line.mood); fr.style.setProperty('--bob', sc + 'px');
-        if (!ctl) ctl = faceCtl(por, line.who, line.mood, sc); else { ctl.who(line.who, sc); ctl.set(line.mood); }
+        var sc = dlgScale(); fr.style.setProperty('--S', sc + 'px'); fr.style.setProperty('--bob', sc / 48 + 'px');
+        if (!ctl) ctl = faceCtl(por, line.who, line.mood, 1, sc); else { ctl.who(line.who, 1, sc); ctl.set(line.mood); }
         ctl.closed(false); ctl.talk(true); fr.classList.remove('pop'); void fr.offsetWidth; fr.classList.add('pop'); fr.classList.add('talk');
         ta.innerHTML = ''; tb.textContent = text; arr.style.visibility = 'hidden'; pg.textContent = lines.length > 1 ? (i + 1) + '/' + lines.length : '';
         if (o.onLine) { try { o.onLine(line, i); } catch (e) { } }
@@ -6454,7 +6503,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
     var h = HELP[ph]; if (!h) return;
     if (auto) { return; /* v6: sin ayudas automáticas (H la abre) */ if (!opts.help || helpSeen[ph] || ph === 'resolve' || ph === 'summary' || ph === 'briefing' || ph === 'plan' || ph === 'secret') return; helpSeen[ph] = 1; lsSet('rcv3_hudhelp', helpSeen); }
     var d = D.createElement('div'); d.className = 'h-hb';
-    d.innerHTML = '<h4>💡 ' + esc(h[0]) + '</h4><p>' + esc(h[1]) + '</p><div class="r"><span>H para volver a verla</span><button class="h-btn" data-act="closehelp">ENTENDIDO</button></div>';
+    d.innerHTML = '<h4>' + icon('ojo', 16) + ' ' + esc(h[0]) + '</h4><p>' + esc(h[1]) + '</p><div class="r"><span>H para volver a verla</span><button class="h-btn" data-act="closehelp">ENTENDIDO</button></div>';
     var run = function () {
       if (!(cur.phase === ph || !auto)) return; snd('toast');
       if (panel && (panelName === 'plan' || panelName === 'secret')) { d.classList.add('inl'); var pb = panel.querySelector('.h-pb'); pb.insertBefore(d, pb.firstChild); }
@@ -6465,7 +6514,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
   function toggleHelp() { var x = root.querySelector('.h-hb'); if (x) x.remove(); else helpFor(cur.phase, false); }
   function openPause() {
     paused = true; var snd_ = W.Sound && W.Sound.state ? W.Sound.state() : null, mute = snd_ && snd_.muted;
-    el.pause.innerHTML = '<div class="h-pm"><h2>PAUSA</h2><button class="h-btn teal" data-act="resume">▶ Reanudar</button><button class="h-btn alt" data-act="helpfull">? Cómo se juega</button><button class="h-btn alt" data-act="mute">' + (mute ? '🔇 Sonido: NO' : '🔊 Sonido: SÍ') + '</button><button class="h-btn alt" data-act="settings">⚙ Ajustes</button><button class="h-btn alt" data-act="textsize">Aa Texto grande: ' + (opts.big ? 'SÍ' : 'NO') + '</button><button class="h-btn red" data-act="exit">⏏ Salir al menú</button><small>En partidas con más humanos el juego NO se detiene.</small></div>';
+    el.pause.innerHTML = '<div class="h-pm"><h2>PAUSA</h2><button class="h-btn teal" data-act="resume">▶ Reanudar</button><button class="h-btn alt" data-act="helpfull">? Cómo se juega</button><button class="h-btn alt" data-act="mute">' + (mute ? 'Sonido: NO' : 'Sonido: SÍ') + '</button><button class="h-btn alt" data-act="settings">Ajustes</button><button class="h-btn alt" data-act="textsize">Aa Texto grande: ' + (opts.big ? 'SÍ' : 'NO') + '</button><button class="h-btn red" data-act="exit">Salir al menú</button><small>En partidas con más humanos el juego NO se detiene.</small></div>';
     el.pause.classList.add('open'); snd('open'); if (cb.pause) cb.pause(true);
   }
   function closePause() { paused = false; el.pause.classList.remove('open'); if (cb.pause) cb.pause(false); }
@@ -6563,12 +6612,12 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
     if (!mounted) mount(); if (!o || !o.text || o.who === 'sys' || dlgOpen || paused) return;
     var ms = (opt && opt.ms) || 4500, who = o.who || o.from || 'director', mood = o.mood || 'talk', b = roleInfo(who), txt = String(o.text);
     var n = D.createElement('div'); n.className = 'h-sp'; n.style.setProperty('--c', b.color);
-    var sc = Math.max(1, Math.round(72 / ((faceInfo(who, mood) || { fw: 64 }).fw))), shown = txt.length > 150 ? txt.slice(0, 147) + '…' : txt, parts = hlParts(shown);
-    n.innerHTML = '<div class="fc talk" style="--bob:' + sc + 'px"></div><div class="sb"><div class="nm">' + esc(b.name) + '</div><div class="sx">' + hlHtml(parts, 999, b.color) + '</div></div>';
+    var sc = 96, shown = txt.length > 150 ? txt.slice(0, 147) + '…' : txt, parts = hlParts(shown);
+    n.innerHTML = '<div class="fc talk" style="--bob:2px;width:' + sc + 'px;height:' + sc + 'px"></div><div class="sb"><div class="nm">' + esc(b.name) + '</div><div class="sx">' + hlHtml(parts, 999, b.color) + '</div></div>';
     while (el.sy.children.length >= 2) el.sy.firstChild.remove();
     el.sy.style.setProperty('--sy-top', (el.gd.getBoundingClientRect().bottom - el.mid.getBoundingClientRect().top + 40) + 'px');
     el.sy.appendChild(n);
-    var fc = n.querySelector('.fc'), ctl = faceCtl(fc, who, mood, sc); ctl.talk(true);
+    var fc = n.querySelector('.fc'), ctl = faceCtl(fc, who, mood, 1, sc); ctl.talk(true);
     setTimeout(function () { ctl.talk(false); fc.classList.remove('talk'); }, Math.min(ms - 400, 700 + shown.length * 35));
     setTimeout(function () { ctl.stop(); n.classList.add('out'); setTimeout(function () { n.remove(); }, 320); }, ms);
   }

@@ -1,0 +1,15 @@
+# NOTES-hud10 (agente UI v10) - src/hud.js / src/ui.js
+## Bug del retrato (Director gigante / desplazado)
+- Causa raíz: choque de nombre de clase. El retrato del diálogo/say usaba `.h-big`, la misma clase que el overlay del MAPA GRANDE (hud9: `position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding;border`). El retrato quedaba absoluto, centrado en el viewport relativo y la caja colapsaba (por eso «irector» y la caja descuadrada). Afectaba a TODOS los personajes.
+- Fix: el retrato pasa a `.h-fc` (CSS y JS: faceCtl/bigFace). `.h-big` queda solo para el mapa.
+- Recuadro cuadrado fijo: `.dl-por` mide `--S` (48 x n, n=2..4 según pantalla: 96 px a 650 de alto, 144 a 768, 192 a 1080), con flex centrado y overflow hidden. `faceCtl(host, role, mood, scale, box)`: con `box`, la escala = box/max(fw,fh) del META REAL (entera si >=1, nunca sobrepasa el recuadro), centrado; fallback emoji también al tamaño del recuadro. Hud.say usa recuadro fijo de 96 px. Chat/avatares (`portrait()`) ya usaban el meta real y no usaban `.h-big`.
+## QA visual (1280x650, 1366x768, 1920x1080)
+- Emoji que salían como cuadrados (sin fuente emoji) sustituidos por `icon()` (sprites): radio de Lía (evento, chat, radio), HABLAR EN EL CHAT, listo, SELLAR, decisión sellada, cabeceras de resultado/resumen, secreto/mentira/acto revelado, cuaderno (secreto, objetivo, hallazgos), ayuda; quitados emoji de pausa (sonido/ajustes/salir), de la fase y de «📍». ui.js: los iconos del rol (objetivo/secreto) se creaban con `outerHTML` antes de pintarse (async) -> ahora se insertan en el DOM.
+- Cabecera del chat: título con elipsis y botones sin recortar. Rótulo «MAPA» del mapa grande legible.
+- Minimapa: se oculta con panel modal, diálogo o cuaderno abierto (tapaba el panel de evento/«QUÉ SE ESPERA»). floatCard sube para no pisar el minimapa. Cuaderno oculta el cartel AHORA que quedaba cortado debajo.
+- ui.js: pantallas con scroll ya no aplastan sus hijos (lobby: «COMPARTE ESTE CÓDIGO» se montaba sobre el código); ficha de rol hace scroll y no solapa etiquetas (650 px); menú compacto en alturas <=760 (los 7 botones y la ayuda caben); pantalla final: rótulos «DESTINO DE LAS PERSONAS»/«Salvaron a N de M»/«NOTA DEL EQUIPO» legibles sobre el fondo claro; línea del rol con sombra.
+- Tildes/ñ en ui.js (Fácil, Cómo se juega, Créditos, Lía, guía, médica, código, Máximo, Narración, Tamaño, Información, Cartógrafo...), «¡A jugar!», español neutro («Sáquenla», «apúrense»).
+## Herramientas
+- `tools/ui10-run.js`, `tools/ui10-shots.js` (HUD real, 20 estados), `tools/ui10-ui.js` (pantallas de ui.js). Uso: `CHROME=<chromium> NODE_PATH=<playwright-core> node tools/ui10-shots.js <puerto> 1280x650 <dir>`.
+## No verificado
+- Partida real completa con el motor (solo hud-test/ui-test con assets reales); minimapa real del motor; Settings de la pantalla de ajustes dentro del HUD; fuente Press Start 2P (en mi entorno cae a fallback); emoji restantes de bajo uso (EVENT_EMOJI/ROLES.emoji solo salen sin sprites; «▶ ▼ ✔ ✘ ⚠» sí se ven); 1366x768 y 1920x1080 de pantallas ui.js solo revisadas por muestreo; modo móvil.

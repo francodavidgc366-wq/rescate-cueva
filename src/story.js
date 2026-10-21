@@ -56,7 +56,7 @@ const E = (id, title, text, art, radio, cat, e, ra) => ({ id, title, text, art, 
 // cards: [tipo, titulo, texto con {o}, fuga?]; tipo trap = "esa opción es peligrosa", gem = "esa opción es la sólida".
 const O = (n, t, x, k, e, r, f, req) => ({ n, t, x, k, e, r, f, req });
 const ROUND_D = [
-  { ev: [E('tormenta', 'Tormenta sobre la boca de la cueva', 'La lluvia cae a cántaros y el arroyo de la entrada ya rebosa. El agua se cuela hacia las galerías bajas. Cada minuto bajo el cielo negro es un minuto menos para Lía.', 'event_tormenta', 'Mateo... Elena... ¿me oís? Cae agua por la pared. Está helada.', 'agua', [4, -2, 0, 0], 0),
+  { ev: [E('tormenta', 'Tormenta sobre la boca de la cueva', 'La lluvia cae a cántaros y el arroyo de la entrada ya rebosa. El agua se cuela hacia las galerías bajas. Cada minuto bajo el cielo negro es un minuto menos para Lía.', 'event_tormenta', 'Mateo... Elena... ¿me escuchan? Cae agua por la pared. Está helada.', 'agua', [4, -2, 0, 0], 0),
       E('inundacion', 'El río subterráneo se desborda', 'Un rugido sordo sale de las galerías: el río interior creció durante la noche. En la entrada, el agua ya baña las botas y arrastra barro rojo.', 'event_inundacion', 'Oigo un rugido... el agua me llega a los tobillos. Dime que bajan.', 'agua', [6, -2, 0, 0], .02)],
     opts: [O('la galería alta', 'Bajar por la galería alta', 'Un camino largo y seco con cuerdas fijas. Lento, pero ordenado.', 'Mapa oficial: unas dos horas, tramos secos.', [4, -1, -5, 3], .12, [5, -6, -6, -3]),
       O('el pozo', 'Descender directo por el pozo', 'Ahorra una hora entera. Los anclajes del pozo son viejos y nadie los revisó.', 'Ahorra mucho tiempo; el equipo antiguo es una incógnita.', [-6, -2, -3, -1], .42, [6, -10, -8, -5]),

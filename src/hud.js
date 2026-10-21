@@ -132,21 +132,22 @@
   /* retrato grande SIN marco (diálogo / «hablando ahora»); scale = factor sobre el tamaño nativo (entero en el diálogo) */
   function bigFace(role, mood, scale) {
     var f = faceInfo(role, mood), b = ROLES[role] || ROLES.sys;
-    if (!f) return '<i class="h-big fb" style="width:' + Math.round(64 * scale) + 'px;height:' + Math.round(64 * scale) + 'px;font-size:' + Math.round(40 * scale) + 'px;line-height:' + Math.round(64 * scale) + 'px">' + b.emoji + '</i>';
-    return '<i class="h-big" style="' + faceCss(f, scale) + '"></i>';
+    if (!f) return '<i class="h-fc fb" style="width:' + Math.round(64 * scale) + 'px;height:' + Math.round(64 * scale) + 'px;font-size:' + Math.round(40 * scale) + 'px;line-height:' + Math.round(64 * scale) + 'px">' + b.emoji + '</i>';
+    return '<i class="h-fc" style="' + faceCss(f, scale) + '"></i>';
   }
   /* retrato animado: boca 1<->2 al hablar (8 fps, cerrada en pausas), parpadeo cada 2-4 s en reposo. Sin face_<id> cae al portrait estático. */
-  function faceCtl(host, role, mood, scale) {
-    var e = D.createElement('i'), st = { role: role, mood: mood, scale: scale, talk: false, closed: false, mouth: 0, blink: 0, nb: Date.now() + 1500 + Math.random() * 2000, last: '' }, tmr;
+  function faceCtl(host, role, mood, scale, box) {
+    var e = D.createElement('i'), st = { role: role, mood: mood, scale: scale, box: box, talk: false, closed: false, mouth: 0, blink: 0, nb: Date.now() + 1500 + Math.random() * 2000, last: '' }, tmr;
     host.appendChild(e);
     function paint() {
       var m = st.mood, col = 0, f = faceInfo(st.role, m, 0), an = f && f.anim;
       if (st.talk && !st.closed) { if (an) col = st.mouth ? 2 : 1; else if (st.mouth && (m === 'neutral' || m === 'talk')) m = 'talk'; }
       else if (!st.talk && an && Date.now() < st.blink) col = 3;
       f = faceInfo(st.role, m, col);
-      var k = f ? faceCss(f, st.scale) : 'fb' + st.role + st.scale; if (k === st.last) return; st.last = k;
-      if (f) { e.className = 'h-big'; e.style.cssText = k; e.textContent = ''; }
-      else { var b = ROLES[st.role] || ROLES.sys; e.className = 'h-big fb'; e.style.cssText = 'width:' + 64 * st.scale + 'px;height:' + 64 * st.scale + 'px;font-size:' + 40 * st.scale + 'px;line-height:' + 64 * st.scale + 'px'; e.textContent = b.emoji; }
+      var sc = st.scale; if (f && st.box) { sc = st.box / Math.max(f.fw, f.fh); if (sc >= 1) sc = Math.floor(sc); } // cabe SIEMPRE en el recuadro (escala entera si >=1)
+      var k = f ? faceCss(f, sc) : 'fb' + st.role + st.box + st.scale; if (k === st.last) return; st.last = k;
+      if (f) { e.className = 'h-fc'; e.style.cssText = k; e.textContent = ''; }
+      else { var b = ROLES[st.role] || ROLES.sys; e.className = 'h-fc fb'; var z = st.box || 64 * st.scale; e.style.cssText = 'width:' + z + 'px;height:' + z + 'px;font-size:' + Math.round(z * .62) + 'px;line-height:' + z + 'px'; e.textContent = b.emoji; }
     }
     function tick() {
       if (!e.isConnected) return clearInterval(tmr);
@@ -155,7 +156,7 @@
       paint();
     }
     tmr = setInterval(tick, 125); paint();
-    return { set: function (m) { st.mood = m || 'neutral'; paint(); }, who: function (r, sc) { st.role = r; if (sc) st.scale = sc; paint(); },
+    return { set: function (m) { st.mood = m || 'neutral'; paint(); }, who: function (r, sc, bx) { st.role = r; if (sc) st.scale = sc; if (bx) st.box = bx; paint(); },
       talk: function (on) { st.talk = on; if (!on) st.closed = false; paint(); }, closed: function (c) { st.closed = c; }, stop: function () { clearInterval(tmr); } };
   }
   /* texto con nombres de personajes y *palabras clave* resaltados -> [{t, c}] (c = color o 'S' = color del hablante) */
@@ -497,7 +498,7 @@
 .h-ask .h-btn{text-transform:none;font-family:var(--h-ui);font-weight:700;font-size:calc(13px*var(--h-fs));letter-spacing:0;padding:7px 11px;border-left:5px solid var(--rc,var(--h-line));white-space:normal;text-align:left}
 .h-say{display:none;flex:none;gap:10px;align-items:center;padding:8px 10px;border-bottom:2px solid var(--h-line);background:linear-gradient(90deg,#241c46,#150f2a)}
 .h-say .fc{flex:none;border:3px solid var(--c,var(--h-line));border-radius:8px;overflow:hidden;line-height:0;background:radial-gradient(circle at 50% 100%,#ffffff22,#120e26 75%);box-shadow:0 0 0 2px #000}
-.h-say.pop .fc{animation:h-pop .3s}.h-big{display:block;image-rendering:pixelated;background-repeat:no-repeat;text-align:center;font-style:normal}
+.h-say.pop .fc{animation:h-pop .3s}.h-fc{display:block;flex:none;image-rendering:pixelated;background-repeat:no-repeat;text-align:center;font-style:normal}
 .h-say .sb{min-width:0;flex:1;align-self:stretch;display:flex;flex-direction:column;gap:4px}.h-say .nm{font-weight:700;font-size:calc(14px*var(--h-fs));display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 7px}.h-say .nm i{font-style:normal;font-weight:400;color:var(--h-dim);font-size:.85em}
 .h-say .nm span{font-family:var(--h-px);font-weight:400;font-size:6px;color:var(--h-teal);margin-left:auto}.h-say .sx{font-size:calc(14px*var(--h-fs));line-height:1.4;max-height:6.4em;overflow:auto;overflow-wrap:anywhere;scrollbar-width:thin;user-select:text}
 .h-say.on{display:flex}.h-chat.min .h-say{visibility:hidden}@media (max-width:820px),(max-height:520px){.h-chat:not(.open) .h-say{display:none}}
@@ -528,10 +529,10 @@
 .dl-wrap{position:relative;max-width:1040px;margin:0 auto;--c:#f2a93b}
 .dl-box{position:relative;display:flex;align-items:center;gap:22px;padding:14px 30px 14px 14px;background:rgba(10,7,26,.9);border:2px solid #d9d0f5;border-radius:0;box-shadow:0 0 0 2px #000,0 10px 28px #000a;color:#fff;font-family:var(--h-ui)}
 .dl-fr{flex:none;position:relative;line-height:0;border:3px solid var(--c);background:color-mix(in srgb,var(--c) 55%,#140c2c);box-shadow:0 0 0 2px #000;--bob:3px}
-.dl-por{line-height:0;overflow:hidden;image-rendering:pixelated}.dl-por .h-big{image-rendering:pixelated}
-.dl-fr.pop{animation:dl-pop .3s cubic-bezier(.2,1.6,.4,1)}.dl-fr.talk .h-big,.h-sp .fc.talk .h-big{animation:dl-bob .166s steps(1) infinite}
+.dl-por{width:var(--S,144px);height:var(--S,144px);display:flex;align-items:center;justify-content:center;line-height:0;overflow:hidden;image-rendering:pixelated}.dl-por .h-fc{image-rendering:pixelated}
+.dl-fr.pop{animation:dl-pop .3s cubic-bezier(.2,1.6,.4,1)}.dl-fr.talk .h-fc,.h-sp .fc.talk .h-fc{animation:dl-bob .166s steps(1) infinite}
 @keyframes dl-pop{0%{transform:scale(.6) translateY(16px);opacity:.2}100%{opacity:1}}@keyframes dl-bob{50%{transform:translateY(var(--bob,3px))}}
-@media (prefers-reduced-motion:reduce){.dl-fr.talk .h-big,.h-sp .fc.talk .h-big,.dl-fr.pop{animation:none}}
+@media (prefers-reduced-motion:reduce){.dl-fr.talk .h-fc,.h-sp .fc.talk .h-fc,.dl-fr.pop{animation:none}}
 .dl-tx{flex:1;min-width:0;align-self:stretch;display:flex;flex-direction:column;gap:8px;justify-content:center}
 .dl-name{display:flex;align-items:baseline;gap:10px}.dl-name b{font-family:var(--h-px);font-weight:400;font-size:clamp(11px,1.7vh,15px);color:var(--c);text-shadow:0 2px 0 #000}.dl-name i{font-style:normal;font-size:clamp(12px,1.6vh,15px);color:#a89fc4}
 .dl-text{position:relative;font-size:calc(clamp(20px,3.1vh,31px)*var(--h-fs));line-height:1.45;min-height:2.9em;max-height:44vh;overflow:auto;color:#fff;text-shadow:0 2px 0 #000;overflow-wrap:anywhere}.dl-text .b{visibility:hidden}.dl-text .k{font-weight:700}
@@ -544,7 +545,7 @@
 .hud.modal .h-sy{bottom:auto;top:var(--sy-top,110px)}
 .h-sp{display:flex;gap:12px;align-items:center;padding:6px 16px 6px 6px;background:rgba(10,7,26,.9);border:2px solid #d9d0f5;border-radius:0;box-shadow:0 0 0 2px #000,0 6px 18px #000a;animation:sy-in .3s cubic-bezier(.2,1.5,.4,1)}.h-sp.out{animation:sy-out .3s forwards}
 @keyframes sy-in{from{opacity:0;transform:translateY(24px) scale(.9)}}@keyframes sy-out{to{opacity:0;transform:translateY(10px)}}
-.h-sp .fc{flex:none;line-height:0;overflow:hidden;border:3px solid var(--c);background:color-mix(in srgb,var(--c) 55%,#140c2c);box-shadow:0 0 0 2px #000;--bob:2px}.h-sp .fc .h-big{image-rendering:pixelated}
+.h-sp .fc{flex:none;display:flex;align-items:center;justify-content:center;box-sizing:content-box;line-height:0;overflow:hidden;border:3px solid var(--c);background:color-mix(in srgb,var(--c) 55%,#140c2c);box-shadow:0 0 0 2px #000;--bob:2px}.h-sp .fc .h-fc{image-rendering:pixelated}
 .h-sp .sb{min-width:0;display:flex;flex-direction:column;gap:2px}.h-sp .nm{font-family:var(--h-px);font-size:calc(10px*var(--h-fs));color:var(--c);margin-bottom:3px}.h-sp .sx{font-size:calc(17px*var(--h-fs));line-height:1.35;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere;color:#fff}.h-sp .sx .k{font-weight:700}
 /* chat discreto: compacto (historial) por defecto, T para ampliar */
 .hud.chatmin{--h-chatw:clamp(188px,15vw,232px)}
@@ -611,6 +612,9 @@
 .h-fcard .k{font-family:var(--h-px);font-size:calc(9px*var(--h-fs));color:var(--h-amber)}.h-fcard .t{font-weight:800;font-size:calc(17px*var(--h-fs));color:var(--h-amber2);margin:4px 0 2px}.h-fcard .x{font-size:calc(14px*var(--h-fs));color:var(--h-ink)}.h-fcard .u{margin-top:6px;font-size:calc(14px*var(--h-fs));color:var(--h-ink);border-top:2px solid var(--h-line);padding-top:6px}.h-fcard .u b{color:var(--h-amber2)}
 .h-brief{margin:10px 14px 0;padding:8px 12px;border-left:4px solid var(--h-amber);background:#0e0a1d;font-size:calc(15px*var(--h-fs));line-height:1.4}.h-brief b{display:block;font-family:var(--h-px);font-weight:400;font-size:calc(9px*var(--h-fs));color:var(--h-amber2);margin-bottom:4px}
 .h-ic1 .us{margin-top:6px;font-size:calc(14px*var(--h-fs));font-weight:700;color:#5a3a08}.h-ic1 .us b{color:#9b3a12}
+/* v10 */
+.h-ch .ttl{min-width:0;overflow:hidden;text-overflow:ellipsis}.h-ch .tg{flex:none}.h-big .bt{color:var(--h-amber2)}
+.hud.modal .h-mini,.hud.dlg .h-mini{visibility:hidden}.h-fcard{bottom:176px}.hud:has(.h-dos.open) .h-now,.hud:has(.h-dos.open) .h-mini{visibility:hidden}
 `
   ].join('\n');
 
@@ -784,14 +788,14 @@
     var ph = P.phase, info = PHASES[ph] || { n: String(ph || '').toUpperCase(), i: '', c: '#fff', e: '' }, r = P.round || 1;
     el.rn.textContent = r + '/5';
     el.pips.forEach(function (p, i) { p.className = 'h-pip' + (i + 1 < r ? ' done' : i + 1 === r ? ' now' : ''); p.textContent = i + 1 < r ? '✓' : (i + 1); });
-    el.phn.innerHTML = '<span class="t" style="color:' + info.c + '"><span>' + info.e + ' ' + esc(info.n) + '</span></span>';
+    el.phn.innerHTML = '<span class="t" style="color:' + info.c + '"><span>' + esc(info.n) + '</span></span>';
     var me = P.players && P.players[R], ap = V && V.ap != null ? V.ap : me && me.ap;
     var instr = info.i;
     if (ph === 'explore') instr = 'Explora y habla con el equipo; decidan cuando estés listo';
     if (ph === 'plan' && localVote) instr = 'Votaste ' + optLetter(localVote) + '. Puedes cambiar hasta que acabe el tiempo';
     if (ph === 'secret' && secretSealed) instr = 'Decisión sellada. Espera a la resolución';
     el.phi.textContent = instr; el.phi.title = instr;
-    el.evt.textContent = P.event && P.event.title && ph !== 'briefing' ? '📍 ' + P.event.title : '';
+    el.evt.textContent = P.event && P.event.title && ph !== 'briefing' ? P.event.title : '';
     el.top.style.borderColor = ph === 'explore' && P.s && P.s.agua >= 80 ? 'var(--h-red)' : '';
   }
   function optLetter(id) {
@@ -834,7 +838,7 @@
     var c = readyCfg(), key = JSON.stringify(c) + ready + done.join(',');
     if (el.bot.dataset.k === key) return; el.bot.dataset.k = key;
     el.bot.innerHTML = ready ? '<div class="h-hint"><b>✔ Listo.</b> ' + (done.length ? 'También quieren decidir: ' + esc(done.join(', ')) + '. ' : '') + 'Sigue explorando hasta que arranque.</div>'
-      : '<div class="h-rdy"><button class="h-btn ' + (c.pulse ? 'teal pulse glow' : 'alt') + '" data-act="ready" title="' + esc(c.tip) + '"' + (c.disabled ? ' disabled' : '') + '>📣 ' + esc(c.label) + ' <kbd>R</kbd></button>' + (c.after ? '<small>' + esc(c.after) + '</small>' : '') + '</div>';
+      : '<div class="h-rdy"><button class="h-btn ' + (c.pulse ? 'teal pulse glow' : 'alt') + '" data-act="ready" title="' + esc(c.tip) + '"' + (c.disabled ? ' disabled' : '') + '>' + icon('chat', 14) + ' ' + esc(c.label) + ' <kbd>R</kbd></button>' + (c.after ? '<small>' + esc(c.after) + '</small>' : '') + '</div>';
   }
 
   /* ---------- guiado: UN solo objetivo (con su porqué) ---------- */
@@ -979,7 +983,7 @@
     var src = ev.art && img(ev.art);
     var key = String(ev.id || ev.art || '').replace(/^event_/, ''), em = EVENT_EMOJI[key] || '⚠️';
     var art = '<div class="h-art"><span class="tag">⚠ EVENTO · TRAMO ' + (P.round || 1) + '</span>' + (src ? '<img alt="" src="' + src + '">' : '<span class="em">' + em + '</span>') + '</div>';
-    var rad = ev.radio ? '<div class="h-radio">' + portrait('lia', 'preocupado', 44) + '<div><div class="w">📻 LÍA · RADIO</div><div class="q" data-type="' + esc('«' + ev.radio + '»') + '"></div></div></div>' : '';
+    var rad = ev.radio ? '<div class="h-radio">' + portrait('lia', 'preocupado', 44) + '<div><div class="w">' + icon('radio', 14) + ' LÍA · RADIO</div><div class="q" data-type="' + esc('«' + ev.radio + '»') + '"></div></div></div>' : '';
     var exp = (data && data.expect) || ev.expect || 'Explora, reúne información y compártela. Después votarán el plan.';
     var p = openPanel('event', art + '<div class="h-pb"><h3 class="h-evt1">' + esc(ev.title || 'Nuevo tramo') + '</h3><div class="h-evtx">' + esc(ev.text || '') + '</div>' + rad +
       '<div class="h-expect"><b>QUÉ SE ESPERA:</b> ' + esc(exp) + '</div><div class="h-cdown"><i style="width:100%"></i></div></div>' +
@@ -1024,7 +1028,7 @@
     }).join('');
     openPanel('plan', '<div class="h-ph1"><div class="q">' + esc(plan.ask || '¿Qué hacemos ahora?') + '</div><div class="hv">Vota con <b>1</b>, <b>2</b> o <b>3</b>. Gana la mayoría.</div></div>' +
       (plan.brief ? '<div class="h-brief"><b>Lo que saben / lo que no</b>' + esc(Array.isArray(plan.brief) ? plan.brief.join(' ') : plan.brief) + '</div>' : '') +
-      '<div class="h-pb"><div class="h-opts">' + cards + '</div></div><div class="h-foot"><span class="l h-pstat"></span><button class="h-btn alt" data-act="chatfocus">💬 HABLAR EN EL CHAT <kbd>T</kbd></button></div>');
+      '<div class="h-pb"><div class="h-opts">' + cards + '</div></div><div class="h-foot"><span class="l h-pstat"></span><button class="h-btn alt" data-act="chatfocus">' + icon('chat', 14) + ' HABLAR EN EL CHAT <kbd>T</kbd></button></div>');
     updatePlan(); clockTick(); if (P.plan && P.plan.chosen) showChosen();
   }
   function updatePlan() {
@@ -1071,7 +1075,7 @@
         '<div class="h-risk">RIESGO <span class="p r' + risk + '">' + pips + '</span>' + (o.reward ? '<span style="margin-left:auto;color:var(--h-green)">' + esc(o.reward) + '</span>' : '') + '</div></button>';
     }).join('') || '<div class="h-empty">Esperando tus opciones…</div>';
     openPanel('secret', '<div class="h-ph1"><div class="q">Ahora decide en secreto qué haces tú.</div><div class="hv">Nadie lo verá hasta el final.</div></div>' +
-      '<div class="h-pb"><div class="h-sopts">' + cards + '</div></div><div class="h-foot"><span class="l h-sstat">Elige con 1, 2 o 3 y presiona SELLAR.</span><button class="h-btn red" data-act="seal" disabled>🔒 SELLAR DECISIÓN</button></div>');
+      '<div class="h-pb"><div class="h-sopts">' + cards + '</div></div><div class="h-foot"><span class="l h-sstat">Elige con 1, 2 o 3 y presiona SELLAR.</span><button class="h-btn red" data-act="seal" disabled>' + icon('candado', 14) + ' SELLAR DECISIÓN</button></div>');
     updateSecret(); clockTick();
   }
   function updateSecret() {
@@ -1081,7 +1085,7 @@
     var b = panel.querySelector('[data-act=seal]'); if (b) b.disabled = secretSel == null || secretSealed;
     if (secretSealed && !panel.querySelector('.h-seal')) {
       var o = ((V && V.secretOptions) || [])[secretSel]; var d = D.createElement('div'); d.className = 'h-seal';
-      d.innerHTML = '<div><div class="s">🔏</div><div class="a">DECISIÓN SELLADA</div><div class="b">' + (o ? esc(o.title || o.text) : '') + '<br>Nadie la verá hasta la resolución.</div></div>';
+      d.innerHTML = '<div><div class="s">' + icon('candado', 36) + '</div><div class="a">DECISIÓN SELLADA</div><div class="b">' + (o ? esc(o.title || o.text) : '') + '<br>Nadie la verá hasta la resolución.</div></div>';
       panel.appendChild(d);
     }
   }
@@ -1103,7 +1107,7 @@
     if (res.explain) return showExplain(res);
     return new Promise(function (done) {
       var skip = false, finished = false;
-      var p = openPanel('resolve', '<div class="h-ph1"><span style="font-size:26px">🎲</span><div><h2>RESULTADO</h2></div></div><div class="h-pb"><div class="h-narr"></div><div class="h-rolls"></div><div class="h-reveals"></div><div class="h-deltas"></div><div class="h-ptsbig"></div></div><div class="h-foot"><span class="l"></span><button class="h-btn teal pulse" data-act="cont">CONTINUAR ▶ <kbd>Espacio</kbd></button></div>');
+      var p = openPanel('resolve', '<div class="h-ph1">' + icon('estrella', 26) + '<div><h2>RESULTADO</h2></div></div><div class="h-pb"><div class="h-narr"></div><div class="h-rolls"></div><div class="h-reveals"></div><div class="h-deltas"></div><div class="h-ptsbig"></div></div><div class="h-foot"><span class="l"></span><button class="h-btn teal pulse" data-act="cont">CONTINUAR ▶ <kbd>Espacio</kbd></button></div>');
       p.addEventListener('click', function (e) { if (!e.target.closest('[data-act=cont],.h-mn')) skip = true; });
       p._end = function () { if (p._done) return; p._done = true; skip = true; resolving = false; closePanel(); done(); };
       var S = function (ms) { return skip ? Promise.resolve() : sleep(ms); };
@@ -1135,8 +1139,8 @@
             var v = rv[j], isLie = v.kind === 'lie' || v.type === 'lie', good = v.kind === 'good' || v.type === 'good';
             var who = v.role ? roleInfo(v.role).name : '';
             var d = D.createElement('div'); d.className = 'h-rev ' + (isLie ? 'lie' : good ? 'good' : '');
-            d.innerHTML = (v.role ? portrait(v.role, isLie ? 'enfadado' : 'neutral', 52) : '<span style="font-size:36px">🕵️</span>') +
-              '<div><div class="tt">' + (isLie ? '🤥 MENTIRA DESCUBIERTA' : good ? '✨ ACTO REVELADO' : '🔓 SECRETO REVELADO') + (who ? ' · ' + esc(who.toUpperCase()) : '') + '</div><div class="tx">' + esc(v.text || v.title || '') + '</div></div>';
+            d.innerHTML = (v.role ? portrait(v.role, isLie ? 'enfadado' : 'neutral', 52) : icon('secreto', 36)) +
+              '<div><div class="tt">' + (isLie ? icon('alerta', 14) + ' MENTIRA DESCUBIERTA' : good ? icon('estrella', 14) + ' ACTO REVELADO' : icon('secreto', 14) + ' SECRETO REVELADO') + (who ? ' · ' + esc(who.toUpperCase()) : '') + '</div><div class="tx">' + esc(v.text || v.title || '') + '</div></div>';
             revs.appendChild(d); snd(isLie ? 'lie' : 'secret_reveal'); flash(isLie ? '#ff5d5d' : '#b58cff'); shake(isLie ? .8 : .4);
             sc();
             await S(1200);
@@ -1203,7 +1207,7 @@
         cats = Object.keys(nm).map(function (k) { return { key: k, label: nm[k][0], icon: nm[k][1], pts: sc[k] || 0, note: (data.notes2 || {})[k] || '' }; });
       }
       var last = data.last || (P && P.round >= 5);
-      var p = openPanel('summary', '<div class="h-ph1"><span style="font-size:26px">📊</span><div><h2>' + esc(data.title || ('RESUMEN DEL TRAMO ' + (data.round || (P && P.round) || ''))) + '</h2><div class="sub">' + esc(data.subtitle || 'Así ha ido el tramo') + '</div></div></div>' +
+      var p = openPanel('summary', '<div class="h-ph1">' + icon('trofeo', 26) + '<div><h2>' + esc(data.title || ('RESUMEN DEL TRAMO ' + (data.round || (P && P.round) || ''))) + '</h2><div class="sub">' + esc(data.subtitle || 'Así ha ido el tramo') + '</div></div></div>' +
         '<div class="h-pb"><div class="h-rows"></div><div class="h-total" style="visibility:hidden"><span class="nm">PUNTOS DEL TRAMO</span><span class="v">0</span></div><ul class="h-notes"></ul></div>' +
         '<div class="h-foot"><span class="l"></span><button class="h-btn" data-act="cont" disabled>' + (last ? 'VER FINAL ▶' : 'SIGUIENTE TRAMO ▶') + '</button></div>');
       var rows = p.querySelector('.h-rows'), tot = 0, skip = false;
@@ -1245,9 +1249,9 @@
     var mood = m.mood || (kind === 'radio' ? 'alert' : 'talk');
     if (grouped) {
       var card = m.card || (kind === 'share' && tx ? { title: 'Información compartida', text: tx } : null), same = card && (tx === card.text || tx.indexOf(card.text) >= 0 || card.text.indexOf(tx) >= 0);
-      var pre = card ? (tx && !same ? '<div class="pre">' + esc(tx) + '</div>' : '') : esc(tx || '📎 compartió una tarjeta');
+      var pre = card ? (tx && !same ? '<div class="pre">' + esc(tx) + '</div>' : '') : esc(tx || 'compartió una tarjeta');
       var inner = card ? pre + '<div class="h-card"><div class="t">' + icon('ojo', 12) + ' ' + (me ? 'COMPARTISTE' : 'COMPARTE') + ' · ' + esc(card.title || 'Intel') + (card.reliability != null ? relTag(card.reliability) : '') + '</div><div class="x">' + esc(card.text || '') + '</div></div>' : pre;
-      inner += m.altered && me ? '<div style="font-size:11px;color:#ffb0a8;margin-top:5px">✏️ Alterada: solo tú lo sabes</div>' : '';
+      inner += m.altered && me ? '<div style="font-size:11px;color:#ffb0a8;margin-top:5px">Alterada: solo tú lo sabes</div>' : '';
       var last = el.log.lastElementChild, g;
       if (last && last.classList.contains('h-g') && last.dataset.from === from && last.dataset.mood === mood && (!m.t || !lastChatT || m.t - lastChatT < 90000)) g = last;
       else {
@@ -1259,7 +1263,7 @@
       if (kind === 'share' && me) { bb.classList.add('hl'); setTimeout(function () { try { bb.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) { } }, 60); }
     } else {
       var d = D.createElement('div'); d.className = 'h-m ' + kind;
-      d.innerHTML = kind === 'radio' ? '<div class="av">' + portrait(from === "sys" ? "lia" : from, mood, 40) + '</div><div class="bd"><div class="hd">📻 ' + esc(b.name.toUpperCase()) + ' · RADIO</div><div class="tx">' + esc(tx) + '</div></div>' : '<div class="tx">' + (kind === 'event' ? '⚠ ' : '') + esc(tx) + '</div>';
+      d.innerHTML = kind === 'radio' ? '<div class="av">' + portrait(from === "sys" ? "lia" : from, mood, 40) + '</div><div class="bd"><div class="hd">' + icon('radio', 14) + ' ' + esc(b.name.toUpperCase()) + ' · RADIO</div><div class="tx">' + esc(tx) + '</div></div>' : '<div class="tx">' + (kind === 'event' ? '⚠ ' : '') + esc(tx) + '</div>';
       el.log.appendChild(d);
     }
     chatCount++; lastChatT = m.t || 0;
@@ -1328,20 +1332,20 @@
           rounds[r].forEach(function (c) {
             var ri = relInfo(c.reliability), isEd = editing === c.id;
             body += '<div class="h-ic1 ' + ri.cls + '">' + (c.shared ? '<span class="sh">COMPARTIDA</span>' : '') + '<div class="t">' + poiIcon(c.icon || 'info', 18) + esc(c.title) + '</div><div class="x">' + esc(c.text) + '</div>' + ((c.uses || c.use) ? '<div class="us"><b>Sirve para:</b> ' + esc(c.uses || c.use) + '</div>' : '') + relHtml(c.reliability) +
-              '<div class="h-acts" style="margin-top:8px"><button class="h-btn" data-act="share" data-id="' + esc(c.id) + '">📢 Contárselo al equipo</button><button class="h-btn alt sm" data-act="edit" data-id="' + esc(c.id) + '">✏️ Cambiar y contar</button></div>' +
-              (isEd ? '<div class="h-edit"><textarea data-ta="' + esc(c.id) + '" maxlength="300">' + esc(c.text) + '</textarea><div class="w">⚠ Cambiar el texto es MENTIR. Si el equipo lo descubre, perderás confianza (pero puedes ganar si cuela).</div><div class="h-acts"><button class="h-btn red" data-act="sendlie" data-id="' + esc(c.id) + '">🤥 Enviar versión alterada</button><button class="h-btn alt" data-act="canceledit">Cancelar</button></div></div>' : '') + '</div>';
+              '<div class="h-acts" style="margin-top:8px"><button class="h-btn" data-act="share" data-id="' + esc(c.id) + '">' + icon('radio', 14) + ' Contárselo al equipo</button><button class="h-btn alt sm" data-act="edit" data-id="' + esc(c.id) + '">✏️ Cambiar y contar</button></div>' +
+              (isEd ? '<div class="h-edit"><textarea data-ta="' + esc(c.id) + '" maxlength="300">' + esc(c.text) + '</textarea><div class="w">⚠ Cambiar el texto es MENTIR. Si el equipo lo descubre, perderás confianza (pero puedes ganar si cuela).</div><div class="h-acts"><button class="h-btn red" data-act="sendlie" data-id="' + esc(c.id) + '">' + icon('alerta', 14) + ' Enviar versión alterada</button><button class="h-btn alt" data-act="canceledit">Cancelar</button></div></div>' : '') + '</div>';
           });
         });
       }
     } else if (dossierTab === 'secreto') {
       var sc = V && V.secret;
-      body = sc ? '<div class="h-sc1"><div class="lock">🔒</div><div class="t">' + esc(sc.text) + '</div><div class="n">' + (sc.revealed ? '⚠ Este secreto ya se reveló.' : 'Nadie más lo sabe. Decide si lo confiesas o lo ocultas: puede salir a la luz en la resolución.') + '</div></div>' : '<div class="h-empty">Sin secreto.</div>';
+      body = sc ? '<div class="h-sc1"><div class="lock">' + icon('candado', 32) + '</div><div class="t">' + esc(sc.text) + '</div><div class="n">' + (sc.revealed ? '⚠ Este secreto ya se reveló.' : 'Nadie más lo sabe. Decide si lo confiesas o lo ocultas: puede salir a la luz en la resolución.') + '</div></div>' : '<div class="h-empty">Sin secreto.</div>';
     } else if (dossierTab === 'objetivo') {
       var mh = '';
       if (misOv && misOv.steps && misOv.steps.length) mh = '<div class="h-gh">' + esc(misOv.title || 'MISIÓN') + '</div><ul class="h-mlist">' + misOv.steps.map(function (x) { return '<li class="' + (x.done ? 'done' : '') + '"><i>' + (x.done ? '✔' : '') + '</i><span>' + esc(x.text) + '</span></li>'; }).join('') + '</ul>';
-      var g = V && V.goal; body = mh + (g ? '<div class="h-sc1" style="border-color:var(--h-amber)"><div class="lock">🎯</div><div class="t">' + esc(g.text) + '</div><div class="n">' + (g.points ? 'Recompensa: +' + g.points + ' puntos al final. ' : '') + 'Se evalúa al terminar la partida. Es privado: tu equipo no sabe cuál es.</div></div>' : '<div class="h-empty">Sin objetivo.</div>');
+      var g = V && V.goal; body = mh + (g ? '<div class="h-sc1" style="border-color:var(--h-amber)"><div class="lock">' + icon('estrella', 32) + '</div><div class="t">' + esc(g.text) + '</div><div class="n">' + (g.points ? 'Recompensa: +' + g.points + ' puntos al final. ' : '') + 'Se evalúa al terminar la partida. Es privado: tu equipo no sabe cuál es.</div></div>' : '<div class="h-empty">Sin objetivo.</div>');
     } else {
-      var n = (P && P.hallazgos) || 0, cells = ''; for (var i = 0; i < 5; i++) cells += '<div class="' + (i < n ? 'on' : '') + '">' + (i < n ? '📜' : '?') + '</div>';
+      var n = (P && P.hallazgos) || 0, cells = ''; for (var i = 0; i < 5; i++) cells += '<div class="' + (i < n ? 'on' : '') + '">' + (i < n ? icon('mapa', 20) : '?') + '</div>';
       body = '<div class="h-gh">LORE DE LA CUEVA · ' + n + '/5</div><div class="h-hl">' + cells + '</div><div class="h-empty">Los POI secretos (brillo tenue) guardan hallazgos coleccionables.</div>';
     }
     el.dos.innerHTML = '<div class="h-dh">' + icon('ojo', 18) + ' CUADERNO <button class="x" data-act="closedos" aria-label="Cerrar">✕</button></div><div class="h-tabs">' + tabs.map(function (t) { return '<button data-act="tab" data-t="' + t[0] + '" class="' + (t[0] === dossierTab ? 'on' : '') + '">' + t[1] + '</button>'; }).join('') + '</div><div class="h-db">' + body + '</div>';
@@ -1358,10 +1362,10 @@
   }
 
   /* ---------- diálogo estilo Castlevania: SotN ---------- */
-  function dlgScale(who, mood) { // escala ENTERA según el alto/ancho de pantalla
-    var f = faceInfo(who, mood), fw = f ? f.fw : 64, vh = W.innerHeight || 700, bw = (el.dlg && el.dlg.clientWidth) || (W.innerWidth || 1000);
+  function dlgScale() { // lado del recuadro (múltiplo de 48: x2..x4) según alto/ancho de pantalla; igual para todos los personajes
+    var fw = 48, vh = W.innerHeight || 700, bw = (el.dlg && el.dlg.clientWidth) || (W.innerWidth || 1000);
     var px = Math.min(.21 * vh, .22 * bw, 224);
-    return Math.max(2, Math.min(4, Math.floor(px / fw)));
+    return fw * Math.max(2, Math.min(4, Math.floor(px / fw)));
   }
   function dialogue(lines, o) {
     if (!mounted) mount();
@@ -1387,8 +1391,8 @@
         line = lines[i]; parts = hlParts(line.text); text = parts.map(function (p) { return p.t; }).join(''); typed = 0; fin = false; swap = false;
         var b = b0 = roleInfo(line.who); wrap.style.setProperty('--c', b.color); wrap.style.setProperty('--cg', b.color + '55'); box.classList.toggle('radio', line.who === 'lia' || !!line.radio);
         nm.querySelector('b').textContent = line.name || b.name; nm.querySelector('i').textContent = line.title != null ? line.title : b.title; nm.style.display = (line.name || b.name) ? '' : 'none';
-        var sc = dlgScale(line.who, line.mood); fr.style.setProperty('--bob', sc + 'px');
-        if (!ctl) ctl = faceCtl(por, line.who, line.mood, sc); else { ctl.who(line.who, sc); ctl.set(line.mood); }
+        var sc = dlgScale(); fr.style.setProperty('--S', sc + 'px'); fr.style.setProperty('--bob', sc / 48 + 'px');
+        if (!ctl) ctl = faceCtl(por, line.who, line.mood, 1, sc); else { ctl.who(line.who, 1, sc); ctl.set(line.mood); }
         ctl.closed(false); ctl.talk(true); fr.classList.remove('pop'); void fr.offsetWidth; fr.classList.add('pop'); fr.classList.add('talk');
         ta.innerHTML = ''; tb.textContent = text; arr.style.visibility = 'hidden'; pg.textContent = lines.length > 1 ? (i + 1) + '/' + lines.length : '';
         if (o.onLine) { try { o.onLine(line, i); } catch (e) { } }
@@ -1434,7 +1438,7 @@
     var h = HELP[ph]; if (!h) return;
     if (auto) { return; /* v6: sin ayudas automáticas (H la abre) */ if (!opts.help || helpSeen[ph] || ph === 'resolve' || ph === 'summary' || ph === 'briefing' || ph === 'plan' || ph === 'secret') return; helpSeen[ph] = 1; lsSet('rcv3_hudhelp', helpSeen); }
     var d = D.createElement('div'); d.className = 'h-hb';
-    d.innerHTML = '<h4>💡 ' + esc(h[0]) + '</h4><p>' + esc(h[1]) + '</p><div class="r"><span>H para volver a verla</span><button class="h-btn" data-act="closehelp">ENTENDIDO</button></div>';
+    d.innerHTML = '<h4>' + icon('ojo', 16) + ' ' + esc(h[0]) + '</h4><p>' + esc(h[1]) + '</p><div class="r"><span>H para volver a verla</span><button class="h-btn" data-act="closehelp">ENTENDIDO</button></div>';
     var run = function () {
       if (!(cur.phase === ph || !auto)) return; snd('toast');
       if (panel && (panelName === 'plan' || panelName === 'secret')) { d.classList.add('inl'); var pb = panel.querySelector('.h-pb'); pb.insertBefore(d, pb.firstChild); }
@@ -1445,7 +1449,7 @@
   function toggleHelp() { var x = root.querySelector('.h-hb'); if (x) x.remove(); else helpFor(cur.phase, false); }
   function openPause() {
     paused = true; var snd_ = W.Sound && W.Sound.state ? W.Sound.state() : null, mute = snd_ && snd_.muted;
-    el.pause.innerHTML = '<div class="h-pm"><h2>PAUSA</h2><button class="h-btn teal" data-act="resume">▶ Reanudar</button><button class="h-btn alt" data-act="helpfull">? Cómo se juega</button><button class="h-btn alt" data-act="mute">' + (mute ? '🔇 Sonido: NO' : '🔊 Sonido: SÍ') + '</button><button class="h-btn alt" data-act="settings">⚙ Ajustes</button><button class="h-btn alt" data-act="textsize">Aa Texto grande: ' + (opts.big ? 'SÍ' : 'NO') + '</button><button class="h-btn red" data-act="exit">⏏ Salir al menú</button><small>En partidas con más humanos el juego NO se detiene.</small></div>';
+    el.pause.innerHTML = '<div class="h-pm"><h2>PAUSA</h2><button class="h-btn teal" data-act="resume">▶ Reanudar</button><button class="h-btn alt" data-act="helpfull">? Cómo se juega</button><button class="h-btn alt" data-act="mute">' + (mute ? 'Sonido: NO' : 'Sonido: SÍ') + '</button><button class="h-btn alt" data-act="settings">Ajustes</button><button class="h-btn alt" data-act="textsize">Aa Texto grande: ' + (opts.big ? 'SÍ' : 'NO') + '</button><button class="h-btn red" data-act="exit">Salir al menú</button><small>En partidas con más humanos el juego NO se detiene.</small></div>';
     el.pause.classList.add('open'); snd('open'); if (cb.pause) cb.pause(true);
   }
   function closePause() { paused = false; el.pause.classList.remove('open'); if (cb.pause) cb.pause(false); }
@@ -1543,12 +1547,12 @@
     if (!mounted) mount(); if (!o || !o.text || o.who === 'sys' || dlgOpen || paused) return;
     var ms = (opt && opt.ms) || 4500, who = o.who || o.from || 'director', mood = o.mood || 'talk', b = roleInfo(who), txt = String(o.text);
     var n = D.createElement('div'); n.className = 'h-sp'; n.style.setProperty('--c', b.color);
-    var sc = Math.max(1, Math.round(72 / ((faceInfo(who, mood) || { fw: 64 }).fw))), shown = txt.length > 150 ? txt.slice(0, 147) + '…' : txt, parts = hlParts(shown);
-    n.innerHTML = '<div class="fc talk" style="--bob:' + sc + 'px"></div><div class="sb"><div class="nm">' + esc(b.name) + '</div><div class="sx">' + hlHtml(parts, 999, b.color) + '</div></div>';
+    var sc = 96, shown = txt.length > 150 ? txt.slice(0, 147) + '…' : txt, parts = hlParts(shown);
+    n.innerHTML = '<div class="fc talk" style="--bob:2px;width:' + sc + 'px;height:' + sc + 'px"></div><div class="sb"><div class="nm">' + esc(b.name) + '</div><div class="sx">' + hlHtml(parts, 999, b.color) + '</div></div>';
     while (el.sy.children.length >= 2) el.sy.firstChild.remove();
     el.sy.style.setProperty('--sy-top', (el.gd.getBoundingClientRect().bottom - el.mid.getBoundingClientRect().top + 40) + 'px');
     el.sy.appendChild(n);
-    var fc = n.querySelector('.fc'), ctl = faceCtl(fc, who, mood, sc); ctl.talk(true);
+    var fc = n.querySelector('.fc'), ctl = faceCtl(fc, who, mood, 1, sc); ctl.talk(true);
     setTimeout(function () { ctl.talk(false); fc.classList.remove('talk'); }, Math.min(ms - 400, 700 + shown.length * 35));
     setTimeout(function () { ctl.stop(); n.classList.add('out'); setTimeout(function () { n.remove(); }, 320); }, ms);
   }

@@ -19,9 +19,9 @@ const snd = (m, a, b) => { try { if (window.Sound && Sound[m]) return Sound[m](a
 const sfx = (n, o) => snd('sfx', n, o);
 const RK = ['guia', 'medica', 'ing'];
 const RD = {
-  guia: { n: 'Mateo', t: 'El guia', col: '#f0a030', hat: '#e0a030', body: '#c0392b', skill: 'Conoce las galerias: lee rutas y abre atajos.', ai: 'Cauto y reservado', goal: 'Mantener unido al equipo.' },
-  medica: { n: 'Elena', t: 'La medica', col: '#2fd0b0', hat: '#e8e8f0', body: '#2e9e6b', skill: 'Cuida de Lia: lee su estado y detecta lo que otros no ven.', ai: 'Empatica, directa', goal: 'Que Lia llegue con salud.' },
-  ing: { n: 'Samuel', t: 'El ingeniero', col: '#5aa8ff', hat: '#4aa0e8', body: '#7a5a3a', skill: 'Mide el agua y gestiona el material y los anclajes.', ai: 'Tecnico, algo orgulloso', goal: 'Cuidar el material.' }
+  guia: { n: 'Mateo', t: 'El guía', col: '#f0a030', hat: '#e0a030', body: '#c0392b', skill: 'Conoce las galerías: lee rutas y abre atajos.', ai: 'Cauto y reservado', goal: 'Mantener unido al equipo.' },
+  medica: { n: 'Elena', t: 'La médica', col: '#2fd0b0', hat: '#e8e8f0', body: '#2e9e6b', skill: 'Cuida de Lía: lee su estado y detecta lo que otros no ven.', ai: 'Empática, directa', goal: 'Que Lía llegue con salud.' },
+  ing: { n: 'Samuel', t: 'El ingeniero', col: '#5aa8ff', hat: '#4aa0e8', body: '#7a5a3a', skill: 'Mide el agua y gestiona el material y los anclajes.', ai: 'Técnico, algo orgulloso', goal: 'Cuidar el material.' }
 };
 const rinfo = k => { const R = (window.Story && Story.ROLES && Story.ROLES[k]) || {}; const d = RD[k]; return { id: k, n: R.short || d.n, full: R.name || (d.n + ', ' + d.t), t: d.t, col: d.col, hat: R.hat || d.hat, body: R.body || d.body, skill: R.skill || d.skill, ai: R.personality || d.ai, goal: R.goal || d.goal }; };
 const GRADE = { S: '#ffd34d', A: '#6be08a', B: '#5ab8ff', C: '#ff9a4d', D: '#ff5a5a' };
@@ -206,7 +206,7 @@ const css = `
 #rcv3 .sbox{width:100%;text-align:left;padding:.8em 1em;border-radius:3px;background:#14102a;border:2px solid var(--c);position:relative}
 #rcv3 .sbox .t{line-height:1.5;transition:filter .5s}
 #rcv3 .sbox.hid .t{filter:blur(7px)}
-#rcv3 .sbox.hid::after{content:'Presiona para revelar (solo lo ves tu)';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.9em;color:#fff;text-shadow:0 0 6px #000;cursor:pointer}
+#rcv3 .sbox.hid::after{content:'Presiona para revelar (solo lo ves tú)';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.9em;color:#fff;text-shadow:0 0 6px #000;cursor:pointer}
 /* lobby */
 #rcv3 .lobby{padding:16px;align-items:center;gap:1em}
 #rcv3 .lobby>*{width:min(900px,100%);flex:none}
@@ -264,6 +264,9 @@ const css = `
 @media(max-width:720px){#rcv3 .tcard{grid-template-columns:1fr}#rcv3 .grid2{grid-template-columns:1fr}#rcv3 .cards{gap:.4em}#rcv3 .rc{padding:.5em .3em;font-size:.82em}#rcv3 .tut{justify-content:flex-start;overflow-y:auto}#rcv3 .tart{min-height:0}}
 @media(prefers-reduced-motion:reduce){#rcv3 *{animation-duration:.01s!important}}
 #rcv3.rm *{animation-duration:.01s!important}
+/* v10: pantallas bajas (650px): nada se aplasta, el rol hace scroll, menu compacto */
+#rcv3 .final .rel>.lab{color:#ffe9b8;text-shadow:0 2px 0 #000,0 0 8px #000}#rcv3 .final .rel>.fsum{color:#fff;text-shadow:0 2px 0 #000,0 0 8px #000}#rcv3 .rcard>.mut{color:#d9d0f5;text-shadow:0 2px 4px #000,0 0 8px #000}#rcv3 .scr.scroll>*{flex:none}#rcv3 .rcard>*{flex:none}#rcv3 .role{overflow-y:auto;justify-content:flex-start}#rcv3 .rcard{margin:auto 0}
+@media (max-height:760px){#rcv3 .menu{gap:8px;padding:2vh 16px}#rcv3 .menu h1{font-size:clamp(18px,3.6vw,32px)}#rcv3 .mlist{gap:.35em}#rcv3 .mlist .btn{padding-top:.55em;padding-bottom:.55em}}
 `;
 
 /* ================= Raiz, pantallas, bucle ================= */
@@ -356,13 +359,13 @@ const bgc = (p, id, o) => { const c = $('canvas', 'bgc pix', p); c.style.imageRe
 /* ================= MENU ================= */
 function showMenu() {
   ensure(); const s = mkScr('menu', 'menu'); s.innerHTML = '';
-  const items = [['Jugar en solitario', 'solo', '1', 'go'], ['Crear sala', 'host', '2'], ['Unirse a sala', 'join', '3'], ['Como se juega', 'tut', '4'], ['Logros', 'ach', '5'], ['Ajustes', 'set', '6'], ['Creditos', 'cred', '7']];
+  const items = [['Jugar en solitario', 'solo', '1', 'go'], ['Crear sala', 'host', '2'], ['Unirse a sala', 'join', '3'], ['Cómo se juega', 'tut', '4'], ['Logros', 'ach', '5'], ['Ajustes', 'set', '6'], ['Créditos', 'cred', '7']];
   go('menu', { music: 'menu', keys: e => { const k = e.key; if (/^[1-7]$/.test(k)) { const b = s.querySelectorAll('.mlist .btn')[+k - 1]; b && b.click(); return; } if (k === 'd' || k === 'D' || k === 'ArrowLeft' || k === 'ArrowRight') { const o = ['facil', 'normal', 'everest'], i = o.indexOf(S.diff); setDiff(o[(i + (k === 'ArrowLeft' ? 2 : 1)) % 3]); return; } if (k === 'm' || k === 'M') { toggleMute(); return; } return listKeys(() => [...s.querySelectorAll('.mlist .btn')])(e); } });
   bgc(s, 'valle', { kind: 'snow' });
   const t = $('div', 'rel', s); t.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:14px'; const h = $('h1', '', t, 'RESCATE<br>EN LA CUEVA'); h.style.animation = 'rglow 3s infinite';
-  $('div', 'sub rel', t, 'Cuatro cabezas, tres rescatadores, una cueva que se inunda. Habla, comparte lo que sabes... y decide en quien confias.');
+  $('div', 'sub rel', t, 'Cuatro cabezas, tres rescatadores, una cueva que se inunda. Habla, comparte lo que sabes... y decide en quién confías.');
   const dv = $('div', 'diff rel', s); $('span', 'lab', dv, 'DIFICULTAD'); const chips = {};
-  [['facil', 'Facil'], ['normal', 'Normal'], ['everest', 'Everest']].forEach(([k, n]) => { const c = chips[k] = $('button', 'chip' + (S.diff === k ? ' on' : ''), dv, n); c.onclick = () => setDiff(k); });
+  [['facil', 'Fácil'], ['normal', 'Normal'], ['everest', 'Everest']].forEach(([k, n]) => { const c = chips[k] = $('button', 'chip' + (S.diff === k ? ' on' : ''), dv, n); c.onclick = () => setDiff(k); });
   function setDiff(k) { S.diff = k; saveS(); Object.keys(chips).forEach(x => chips[x].classList.toggle('on', x === k)); sfx('select'); }
   const L = $('div', 'mlist rel', s);
   const act = { solo: () => startFlow('solo'), host: () => startFlow('host'), join: () => joinDialog(), tut: () => showTutorial(), ach: () => showAchievements(), set: () => openSettings(), cred: () => showCredits() };
@@ -378,8 +381,8 @@ async function startFlow(mode) {
   showLobby({ mode: mode === 'solo' ? 'idle' : 'host' });
 }
 function joinDialog() {
-  modal((p, close) => { $('h2', '', p, 'Unirse a una sala'); $('p', 'mut', p, 'Pega el enlace o escribe el codigo de 5 letras que te pasa el anfitrion.'); const i = $('input', '', p); i.type = 'text'; i.placeholder = 'ABCDE'; i.maxLength = 200; i.style.cssText = 'width:100%;margin:.6em 0;text-transform:uppercase'; i.setAttribute('aria-label', 'Codigo de sala'); try { const h = window.Net && Net.codeFromHash && Net.codeFromHash(); if (h) i.value = h; } catch (e) { }
-    const r = $('div', 'row', p), a = $('button', 'btn sec', r, 'Cancelar'), b = $('button', 'btn go', r, 'Unirme'); a.onclick = () => { sfx('back'); close(); }; b.onclick = () => { const v = i.value.trim(); if (!v) { sfx('error'); return toast('Escribe un codigo o pega el enlace', { bad: 1 }); } close(); showLobby({ mode: 'join', code: v }); }; i.onkeydown = e => { if (e.key === 'Enter') b.click(); }; });
+  modal((p, close) => { $('h2', '', p, 'Unirse a una sala'); $('p', 'mut', p, 'Pega el enlace o escribe el código de 5 letras que te pasa el anfitrion.'); const i = $('input', '', p); i.type = 'text'; i.placeholder = 'ABCDE'; i.maxLength = 200; i.style.cssText = 'width:100%;margin:.6em 0;text-transform:uppercase'; i.setAttribute('aria-label', 'Código de sala'); try { const h = window.Net && Net.codeFromHash && Net.codeFromHash(); if (h) i.value = h; } catch (e) { }
+    const r = $('div', 'row', p), a = $('button', 'btn sec', r, 'Cancelar'), b = $('button', 'btn go', r, 'Unirme'); a.onclick = () => { sfx('back'); close(); }; b.onclick = () => { const v = i.value.trim(); if (!v) { sfx('error'); return toast('Escribe un código o pega el enlace', { bad: 1 }); } close(); showLobby({ mode: 'join', code: v }); }; i.onkeydown = e => { if (e.key === 'Enter') b.click(); }; });
 }
 
 /* ================= LOBBY ================= */
@@ -389,7 +392,7 @@ function showLobby(o) {
   ensure(); o = o || {}; const s = mkScr('lobby', 'lobby scroll'); U = Object.assign({ mode: 'idle', code: '', link: '', players: [], role: U.role || 'guia', ready: false }, { mode: o.mode || 'idle' });
   go('lobby', { music: 'menu', keys: e => { if (e.key === 'Escape') { back(); return; } const i = '123'.indexOf(e.key); if (i >= 0) pickRole(RK[i]); else if (e.key === 'Enter') { s.querySelector('.go') && s.querySelector('.go').click(); } else return false; } });
   if (window.Net && Net.on && !lobbyOff) { const f = () => { U.players = Net.players || []; if (cur === 'lobby') render(); }; Net.on('players', f); lobbyOff = () => { try { Net.off && Net.off('players', f); } catch (e) { } lobbyOff = null; }; own(lobbyOff); }
-  if (U.mode === 'host') { toast('Creando sala...'); Promise.resolve(window.Net && Net.host ? Net.host({ name: 'Anfitrion' }) : Promise.reject(new Error('Multijugador no disponible'))).then(r => { U.code = r.roomCode; U.link = r.link; try { Net.setRole && Net.setRole(U.role); } catch (e) { } emit('host', r); render(); }).catch(e => { sfx('error'); toast((e && e.message) || 'No se pudo crear la sala', { bad: 1 }); U.mode = 'idle'; render(); }); }
+  if (U.mode === 'host') { toast('Creando sala…'); Promise.resolve(window.Net && Net.host ? Net.host({ name: 'Anfitrión' }) : Promise.reject(new Error('Multijugador no disponible'))).then(r => { U.code = r.roomCode; U.link = r.link; try { Net.setRole && Net.setRole(U.role); } catch (e) { } emit('host', r); render(); }).catch(e => { sfx('error'); toast((e && e.message) || 'No se pudo crear la sala', { bad: 1 }); U.mode = 'idle'; render(); }); }
   if (U.mode === 'join') { toast('Conectando...'); Promise.resolve(Net.join(o.code, { name: 'Jugador' })).then(r => { U.code = r.roomCode || o.code; if (r.role) U.role = r.role; if (r.id) localId = r.id; emit('join', r); render(); }).catch(e => { sfx('error'); toast((e && e.message) || 'No se pudo unir', { bad: 1 }); showMenu(); }); }
   showLobby.rerender = render; render(); return s;
   function back() { sfx('back'); if (U.mode !== 'idle') { try { Net.leave && Net.leave(); } catch (e) { } } emit('menu', { lobby: 1 }); showMenu(); }
@@ -397,12 +400,12 @@ function showLobby(o) {
   function taken(k) { return U.players.find(p => p && p.role === k && p.id !== localId && p.id !== (window.Net && Net.localId) && !p.bot && p.connected !== false); }
   function render() {
     s.innerHTML = ''; const top = $('div', 'row', s); top.style.justifyContent = 'space-between'; $('h2', '', top, U.mode === 'idle' ? 'PARTIDA EN SOLITARIO' : U.mode === 'host' ? 'TU SALA' : 'SALA DE ' + esc(U.code)); const bk = $('button', 'btn sec', top, 'Volver'); bk.onclick = back;
-    if (U.mode === 'host' || U.mode === 'join') { const b = $('div', 'panel', s); $('div', 'lab', b, U.mode === 'host' ? 'COMPARTE ESTE CODIGO CON TUS AMIGOS' : 'CONECTADO A LA SALA'); $('div', 'code', b, esc(U.code || '. . . . .')); if (U.link) { const r = $('div', 'row', b); r.style.flexWrap = 'nowrap'; r.style.marginTop = '.6em'; const i = $('input', '', r); i.type = 'text'; i.readOnly = true; i.value = U.link; i.setAttribute('aria-label', 'Enlace'); const c = $('button', 'btn', r, 'Copiar'); c.onclick = () => { try { navigator.clipboard.writeText(U.link).then(() => { toast('Enlace copiado'); }, () => { i.select(); document.execCommand('copy'); toast('Enlace copiado'); }); } catch (x) { i.select(); toast('Copia el enlace a mano', { bad: 1 }); } }; } }
-    const p = $('div', 'panel', s); $('div', 'lab', p, 'ELIGE TU ROL (1 / 2 / 3) &middot; LOS HUECOS LOS LLEVAN COMPANEROS IA'); const cards = $('div', 'cards', p); cards.style.marginTop = '.7em';
+    if (U.mode === 'host' || U.mode === 'join') { const b = $('div', 'panel', s); $('div', 'lab', b, U.mode === 'host' ? 'COMPARTE ESTE CÓDIGO CON TUS AMIGOS' : 'CONECTADO A LA SALA'); $('div', 'code', b, esc(U.code || '. . . . .')); if (U.link) { const r = $('div', 'row', b); r.style.flexWrap = 'nowrap'; r.style.marginTop = '.6em'; const i = $('input', '', r); i.type = 'text'; i.readOnly = true; i.value = U.link; i.setAttribute('aria-label', 'Enlace'); const c = $('button', 'btn', r, 'Copiar'); c.onclick = () => { try { navigator.clipboard.writeText(U.link).then(() => { toast('Enlace copiado'); }, () => { i.select(); document.execCommand('copy'); toast('Enlace copiado'); }); } catch (x) { i.select(); toast('Copia el enlace a mano', { bad: 1 }); } }; } }
+    const p = $('div', 'panel', s); $('div', 'lab', p, 'ELIGE TU ROL (1 / 2 / 3) &middot; LOS HUECOS LOS LLEVAN COMPAÑEROS IA'); const cards = $('div', 'cards', p); cards.style.marginTop = '.7em';
     RK.forEach((k, i) => { const d = rinfo(k), t = taken(k), b = $('button', 'rc' + (U.role === k ? ' sel' : '') + (t ? ' taken' : ''), cards); b.style.setProperty('--c', d.col); b.appendChild(portrait(k, U.role === k ? 'feliz' : 'neutral', 72)); $('b', '', b, esc(d.n)).style.color = d.col; $('span', 'mut', b, esc(d.t)); const sk = $('span', '', b, esc(d.skill)); sk.style.cssText = 'font-size:.85em;line-height:1.35'; $('span', 'tag' + (U.role === k ? ' me' : ''), b, U.role === k ? 'TU' : t ? esc(t.name || 'Jugador') : 'IA: ' + esc(d.ai)); b.onclick = () => pickRole(k); });
-    const hum = U.players.filter(x => x && !x.bot); if (U.mode !== 'idle') $('div', 'mut', p, (hum.length ? hum.map(x => '<span class="ok">●</span> ' + esc(x.name || x.id) + (x.host ? ' (anfitrion)' : '')).join(' &nbsp; ') : 'Esperando jugadores...') + '<br>Maximo 3 humanos. Si alguien se va, lo sustituye la IA.').style.marginTop = '.7em';
+    const hum = U.players.filter(x => x && !x.bot); if (U.mode !== 'idle') $('div', 'mut', p, (hum.length ? hum.map(x => '<span class="ok">●</span> ' + esc(x.name || x.id) + (x.host ? ' (anfitrión)' : '')).join(' &nbsp; ') : 'Esperando jugadores...') + '<br>Máximo 3 humanos. Si alguien se va, lo sustituye la IA.').style.marginTop = '.7em';
     else $('div', 'mut', p, 'Juegas con ' + esc(rinfo(U.role).n) + '. Los otros dos son IA con personalidad propia: pueden callar, compartir o mentir. Rejuega con otro rol para ver la otra cara.').style.marginTop = '.7em';
-    if (U.mode !== 'join') { const dv = $('div', 'diff', s); $('span', 'lab', dv, 'DIFICULTAD'); [['facil', 'Facil'], ['normal', 'Normal'], ['everest', 'Everest']].forEach(([k, n]) => { const c = $('button', 'chip' + (S.diff === k ? ' on' : ''), dv, n); c.onclick = () => { S.diff = k; saveS(); sfx('select'); render(); }; }); }
+    if (U.mode !== 'join') { const dv = $('div', 'diff', s); $('span', 'lab', dv, 'DIFICULTAD'); [['facil', 'Fácil'], ['normal', 'Normal'], ['everest', 'Everest']].forEach(([k, n]) => { const c = $('button', 'chip' + (S.diff === k ? ' on' : ''), dv, n); c.onclick = () => { S.diff = k; saveS(); sfx('select'); render(); }; }); }
     const act = $('div', 'row', s); act.style.justifyContent = 'flex-end'; const go2 = $('button', 'btn go', act, U.mode === 'join' ? (U.ready ? 'No estoy listo' : 'Estoy listo') : 'Empezar'); go2.focus();
     go2.onclick = () => { snd('unlock'); sfx('confirm'); if (U.mode === 'join') { U.ready = !U.ready; emit('ready', U.ready); try { Net.send('ready', { ready: U.ready }); } catch (e) { } render(); } else emit('start', { role: U.role, host: U.mode === 'host', solo: U.mode === 'idle', difficulty: S.diff }); };
     if (U.mode === 'join') $('span', 'mut', act, 'Esperando al anfitrion...');
@@ -512,7 +515,7 @@ function showTutorial() {
     function draw() {
       offTick.splice(1).forEach(f => f()); card.innerHTML = ''; card.style.animation = 'none'; void card.offsetWidth; card.style.animation = ''; const t = TSTEPS[i]; seen.add(i);
       const art = $('div', 'tart', card); t.art(art); const tx = $('div', 'ttext', card); $('div', 'lab', tx, 'PASO ' + (i + 1) + ' DE ' + TSTEPS.length); $('h2', '', tx, esc(t.t)); $('p', '', tx, t.p); $('div', 'tip', tx, '<b>Consejo:</b> ' + t.tip);
-      dots.querySelectorAll('i').forEach((d, k) => { d.className = k === i ? 'on' : seen.has(k) ? 'done' : ''; }); mid.textContent = ''; nx.textContent = i === TSTEPS.length - 1 ? 'A jugar!' : 'Siguiente ›'; bp.style.visibility = i ? 'visible' : 'hidden';
+      dots.querySelectorAll('i').forEach((d, k) => { d.className = k === i ? 'on' : seen.has(k) ? 'done' : ''; }); mid.textContent = ''; nx.textContent = i === TSTEPS.length - 1 ? '¡A jugar!' : 'Siguiente ›'; bp.style.visibility = i ? 'visible' : 'hidden';
     }
     function next() { sfx('click'); if (i >= TSTEPS.length - 1) return finish(); i++; draw(); }
     function prev() { if (!i) return; sfx('back'); i--; draw(); }
@@ -525,19 +528,19 @@ function showTutorial() {
 const FXD = { valle: ['snow', 'fog'], cabina: ['sway', 'rain'], tormenta: ['rain', 'lightning'], entrada: ['dust', 'torch'], radio: ['radio'], mapa: ['dust', 'torch'], inundada: ['drip', 'fog'], rescate: ['dust', 'light'], derrota: ['rain', 'fog'] };
 const GRADEC = { valle: 'rgba(255,140,60,.16)', cabina: 'rgba(60,70,140,.18)', tormenta: 'rgba(40,70,140,.22)', entrada: 'rgba(255,150,60,.10)', radio: 'rgba(40,200,120,.10)', mapa: 'rgba(255,170,80,.14)', inundada: 'rgba(30,110,160,.2)', rescate: 'rgba(255,230,160,.18)', derrota: 'rgba(20,40,70,.3)' };
 const INTRO_DEF = [
-  { still: 'valle', text: 'Valle de Sorrosal. Atardece. Hace dos horas que nadie sabe nada de Lia.' },
-  { still: 'cabina', text: 'Mateo, Elena y Samuel suben en el viejo teleferico. Nadie habla. Cada uno guarda algo que los demas no saben.' },
-  { still: 'tormenta', text: 'La tormenta cae de golpe. El cable se sacude... y la cabina se queda colgada sobre el vacio.' },
-  { still: 'entrada', text: 'La boca de la cueva. El suelo ya esta mojado, y el agua no deberia estar aqui.' },
-  { still: 'radio', who: 'Lia (radio)', text: '"...aqui Lia... estoy atrapada... la pierna... el agua sube. Por favor... daos prisa."' },
+  { still: 'valle', text: 'Valle de Sorrosal. Atardece. Hace dos horas que nadie sabe nada de Lía.' },
+  { still: 'cabina', text: 'Mateo, Elena y Samuel suben en el viejo teleférico. Nadie habla. Cada uno guarda algo que los demás no saben.' },
+  { still: 'tormenta', text: 'La tormenta cae de golpe. El cable se sacude... y la cabina se queda colgada sobre el vacío.' },
+  { still: 'entrada', text: 'La boca de la cueva. El suelo ya está mojado, y el agua no debería estar aquí.' },
+  { still: 'radio', who: 'Lía (radio)', text: '"...aquí Lía... estoy atrapada... la pierna... el agua sube. Por favor... apúrense."' },
   { still: 'mapa', text: 'Cinco tramos. Un mapa incompleto. Y tres personas que no cuentan todo lo que saben.' },
-  { still: 'inundada', text: 'Sacadla con vida... y que cada uno pueda mirarse al espejo despues.' },
+  { still: 'inundada', text: 'Sáquenla con vida... y que cada uno pueda mirarse al espejo después.' },
   { still: 'entrada', title: 'RESCATE EN LA CUEVA', text: 'Cinco decisiones. Una sola salida.', dur: 5 }
 ];
 const KEYS = [[/radio|lia\b.*:|transmisi/i, 'radio'], [/tormenta|relampago|rayo|lluvia|cae/i, 'tormenta'], [/telef|cabina|suben/i, 'cabina'], [/mapa|ruta|tramos/i, 'mapa'], [/inunda|agua sube|llena|espejo/i, 'inundada'], [/cueva|entrada|boca|galeria/i, 'entrada']];
 function buildShots(id, o) {
   if (o && o.shots) return o.shots;
-  if (id === 'rescate') return [{ still: 'rescate', text: o && o.text || 'La luz del dia. Lia respira. Lo lograron.', who: '' }];
+  if (id === 'rescate') return [{ still: 'rescate', text: o && o.text || 'La luz del día. Lía respira. Lo lograron.', who: '' }];
   if (id === 'derrota') return [{ still: 'derrota', text: o && o.text || 'El agua lo cubre todo. El silencio es lo peor.', who: '' }];
   let I = window.Story && Array.isArray(Story.intro) && Story.intro.length >= 3 ? Story.intro : null; if (!I) return INTRO_DEF;
   // la cinematica la ven TODOS: fuera las lineas que cuentan lo privado de un rol (empiezan por su nombre) o el secreto
@@ -620,9 +623,10 @@ function showRole(priv, role) {
     const c = $('div', 'rcard rel', s); c.style.setProperty('--c', d.col); $('div', 'lab', c, 'TU PAPEL EN EL RESCATE'); const pc = portrait(role, 'preocupado', 128); pc.className += ' big'; c.appendChild(pc); sfx('select');
     const h = $('h1', '', c, 'ERES ' + esc(d.n.toUpperCase())); h.style.color = d.col; $('div', 'mut', c, esc(d.t) + ' &middot; ' + esc(d.skill));
     const goal = priv.goal && (priv.goal.text || priv.goal), sec = priv.secret && (priv.secret.text || priv.secret), rb = Story_role(role);
-    const gb = $('div', 'sbox', c, '<div class="lab">' + icon('estrella', 14).outerHTML + ' TU OBJETIVO SECRETO' + (priv.goal && priv.goal.points ? ' (+' + priv.goal.points + ' pts)' : '') + '</div><div class="t">' + esc(goal || rb.goal || 'Ayuda al equipo.') + '</div>');
-    const sb = $('div', 'sbox hid', c, '<div class="lab">' + icon('candado', 14).outerHTML + ' TU SECRETO (solo lo sabes tu)</div><div class="t">' + esc(sec || rb.secret || 'Guardas algo que el equipo no sabe.') + '</div>'); let shown = false;
-    $('div', 'mut', c, 'Nadie mas ve esto. Decide si lo cuentas, lo callas o lo escondes bajo una mentira.');
+    const gb = $('div', 'sbox', c, '<div class="lab">' + ' TU OBJETIVO SECRETO' + (priv.goal && priv.goal.points ? ' (+' + priv.goal.points + ' pts)' : '') + '</div><div class="t">' + esc(goal || rb.goal || 'Ayuda al equipo.') + '</div>');
+    const sb = $('div', 'sbox hid', c, '<div class="lab">' + ' TU SECRETO (solo lo sabes tú)</div><div class="t">' + esc(sec || rb.secret || 'Guardas algo que el equipo no sabe.') + '</div>'); let shown = false;
+    gb.firstChild.prepend(icon('estrella', 14), ' '); sb.firstChild.prepend(icon('candado', 14), ' '); // el icono se pinta async: debe estar en el DOM
+    $('div', 'mut', c, 'Nadie más ve esto. Decide si lo cuentas, lo callas o lo escondes bajo una mentira.');
     const b = $('button', 'btn go', c, 'Revelar mi secreto'); b.onclick = adv; sb.onclick = () => adv(true);
     function adv(only) { if (!shown) { shown = true; sb.classList.remove('hid'); sfx('secret_reveal'); b.textContent = 'Entendido, a la cueva'; burst(innerWidth / 2, innerHeight * .6, d.col, 18); if (only) return; return; } sfx('confirm'); snd('music', 'explore'); s.classList.remove('on'); cur = null; res(); }
   });
@@ -644,7 +648,7 @@ function showFinal(result, state) {
     hero.style.cssText = 'text-align:center'; const hd = $('div', 'fhead', hero, esc(en && en.title ? en.title : sv ? 'Lía está a salvo' : 'No llegamos a tiempo')); hd.style.color = sv ? '#9affc0' : '#ffb0a8'; hd.style.fontSize = 'clamp(32px,7vw,64px)';
     if (en && en.sub) $('div', 'mut', hero, esc(en.sub)).style.cssText = 'font-size:1.2em;margin:.2em 0 .6em'; }
   if (fates.length) {
-    const ok = fates.filter(f => f.status !== 'muerto').length; $('div', 'lab', c, 'DESTINO DE LAS PERSONAS').style.textAlign = 'center'; $('div', '', c, 'Salvaron a <b>' + ok + '</b> de ' + fates.length).style.cssText = 'text-align:center;font-size:1.25em;margin:.2em 0';
+    const ok = fates.filter(f => f.status !== 'muerto').length; $('div', 'lab', c, 'DESTINO DE LAS PERSONAS').style.textAlign = 'center'; $('div', '', c, 'Salvaron a <b>' + ok + '</b> de ' + fates.length).style.cssText = 'color:#fff;text-shadow:0 2px 0 #000,0 0 8px #000;text-align:center;font-size:1.25em;margin:.2em 0';
     const fg = $('div', 'fates', c); fates.forEach(f => { const dead = f.status === 'muerto', e = $('div', 'fate ' + (f.status || 'vivo'), fg); e.style.opacity = 0; const pt = $('div', 'pt', e); pt.appendChild(fateFace(f));
       $('div', '', e, '<b>' + esc(f.name || f.id) + '</b>' + (dead ? '<i class="cdl"></i>' : '') + '<br><span class="st">' + (dead ? 'NO SOBREVIVIÓ' : f.status === 'herido' ? 'HERIDO' : 'A SALVO') + '</span><br><span class="mut">' + esc(f.why || '') + '</span>');
       step(() => { e.style.opacity = 1; e.style.animation = 'rrise .5s both'; sfx('tick'); }, 450); });
@@ -652,7 +656,7 @@ function showFinal(result, state) {
   const gh = $('div', 'grade', c, grade); gh.style.visibility = 'hidden'; $('div', 'lab', c, 'NOTA DEL EQUIPO').style.textAlign = 'center';
   step(() => { gh.style.visibility = 'visible'; sfx(good ? 'grade_s' : 'grade_low'); flashEl(gc); if (good) { confetti(grade === 'S' ? 140 : 70); burst(innerWidth / 2, innerHeight * .25, ['#ffd34d', gc], 30, { v: 300 }); } }, 700);
   const g2 = $('div', 'grid2', c); g2.style.marginTop = '1em'; const sc = result.score || state.score || {}, L = $('div', 'panel', g2), R = $('div', 'panel', g2);
-  $('div', 'lab', L, 'PUNTUACION'); const names = { equipo: 'Equipo', info: 'Informacion', honestidad: 'Honestidad', riesgo: 'Riesgo calculado' };
+  $('div', 'lab', L, 'PUNTUACIÓN'); const names = { equipo: 'Equipo', info: 'Información', honestidad: 'Honestidad', riesgo: 'Riesgo calculado' };
   Object.keys(names).forEach(k => { if (sc[k] == null) return; const ln = $('div', 'ln', L, '<span>' + names[k] + '</span><b class="px" data-v="' + sc[k] + '">0</b>'); ln.style.opacity = 0; step(() => { ln.style.opacity = 1; count(ln.querySelector('b'), sc[k]); sfx('tick'); }, 280); });
   if (sc.total != null) { const ln = $('div', 'ln', L, '<b>TOTAL</b><b class="px" style="color:' + gc + '">0</b>'); ln.style.opacity = 0; step(() => { ln.style.opacity = 1; count(ln.lastChild, sc.total, 900); sfx('confirm'); }, 400); }
   $('div', 'lab', R, 'OBJETIVOS INDIVIDUALES'); const obj = result.objectives || []; obj.forEach(o => { const d = rinfo(o.role), ln = $('div', 'ln', R, '<span style="color:' + d.col + '">' + esc(d.n) + '</span><span class="' + (o.ok ? 'ok' : 'no') + '">' + (o.ok ? '✔ ' : '✘ ') + esc(o.text || '') + '</span>'); ln.style.opacity = 0; step(() => { ln.style.opacity = 1; sfx(o.ok ? 'resolve_good' : 'resolve_bad'); }, 420); });
@@ -663,7 +667,7 @@ function showFinal(result, state) {
   // estadisticas
   const stt = result.stats || state.stats || null; if (stt) { const P = $('div', 'panel', c); P.style.marginTop = '1em'; $('div', 'lab', P, 'ESTADISTICAS'); Object.keys(stt).forEach(k => $('div', 'ln', P, '<span>' + esc(NICE[k] || k) + '</span><b>' + esc(stt[k]) + '</b>').style.animation = 'none'); }
   const vp = $('div', 'panel', c); vp.style.marginTop = '1em'; $('div', 'lab', vp, 'VEREDICTO'); const vt = $('div', '', vp, ''); vt.style.cssText = 'line-height:1.55;font-size:1.05em;margin-top:.4em;min-height:3em';
-  step(() => typeInto(vt, String(result.verdict || state.verdict || (result.saved === false ? 'No lo lograron esta vez. Cada decision cuenta: vuelvan a jugar con otro rol.' : 'Lia esta fuera. Lo que cada uno hizo en la oscuridad, quedara entre ustedes.')), 36), 500);
+  step(() => typeInto(vt, String(result.verdict || state.verdict || (result.saved === false ? 'No lo lograron esta vez. Cada decisión cuenta: vuelvan a jugar con otro rol.' : 'Lía está fuera. Lo que cada uno hizo en la oscuridad, quedará entre ustedes.')), 36), 500);
   const bt = $('div', 'row', c); bt.style.cssText = 'justify-content:center;margin-top:1.2em'; const b1 = $('button', 'btn go', bt, 'Otra partida<span class="k">R</span>'), b2 = $('button', 'btn', bt, 'Cambiar de rol'), b3 = $('button', 'btn sec', bt, 'Menu<span class="k">M</span>');
   b1.onclick = () => { sfx('confirm'); emit('restart', { changeRole: false }); }; b2.onclick = () => { sfx('click'); emit('restart', { changeRole: true }); showLobby({ mode: 'idle' }); }; b3.onclick = () => { sfx('back'); emit('menu', {}); showMenu(); };
   return s;
@@ -682,7 +686,7 @@ function count(el, to, ms) { ms = ms || 700; let t0 = performance.now(); const f
 function typeInto(el, txt, cps) { let i = 0; const iv = setInterval(() => { i += 2; el.textContent = txt.slice(0, i); if (i >= txt.length || !el.isConnected) clearInterval(iv); }, 1000 / (cps || 30) * 2); }
 
 /* ================= LOGROS ================= */
-const ACH_DEF = [['confesion', 'Confesion', 'Revela tu secreto al equipo.'], ['cero_bajas', 'Cero bajas', 'Termina con Lia a salvo y la salud sobre 70.'], ['cartografo', 'Cartografo', 'Examina todos los puntos de interes de un tramo.'], ['lengua_plata', 'Lengua de plata', 'Miente y que nadie lo descubra.'], ['detective', 'Detective de mentiras', 'Descubre una mentira del equipo.'], ['al_borde', 'Al borde', 'Gana con el agua por encima de 90.'], ['todos_cumplen', 'Todo el equipo cumple', 'Que los tres objetivos individuales se cumplan.'], ['sin_pausas', 'Sin pausas', 'Usa las 3 acciones en cada tramo.'], ['everest', 'Everest', 'Gana en dificultad Everest.'], ['primer_rescate', 'Primer rescate', 'Saca a Lia de la cueva.'], ['manos_limpias', 'Manos limpias', 'Termina sin mentir ni una vez.'], ['coleccionista', 'Coleccionista', 'Encuentra los 5 hallazgos secretos.'], ['voz_equipo', 'Voz del equipo', 'Consigue que tu plan gane 3 votaciones.'], ['rejugable', 'Otra cara', 'Termina una partida con cada rol.']];
+const ACH_DEF = [['confesion', 'Confesión', 'Revela tu secreto al equipo.'], ['cero_bajas', 'Cero bajas', 'Termina con Lía a salvo y la salud sobre 70.'], ['cartografo', 'Cartógrafo', 'Examina todos los puntos de interés de un tramo.'], ['lengua_plata', 'Lengua de plata', 'Miente y que nadie lo descubra.'], ['detective', 'Detective de mentiras', 'Descubre una mentira del equipo.'], ['al_borde', 'Al borde', 'Gana con el agua por encima de 90.'], ['todos_cumplen', 'Todo el equipo cumple', 'Que los tres objetivos individuales se cumplan.'], ['sin_pausas', 'Sin pausas', 'Usa las 3 acciones en cada tramo.'], ['everest', 'Everest', 'Gana en dificultad Everest.'], ['primer_rescate', 'Primer rescate', 'Saca a Lía de la cueva.'], ['manos_limpias', 'Manos limpias', 'Termina sin mentir ni una vez.'], ['coleccionista', 'Coleccionista', 'Encuentra los 5 hallazgos secretos.'], ['voz_equipo', 'Voz del equipo', 'Consigue que tu plan gane 3 votaciones.'], ['rejugable', 'Otra cara', 'Termina una partida con cada rol.']];
 function achList() { try { const l = window.Story && Story.achievementsList && Story.achievementsList(); if (l && l.length) return l.map(a => Array.isArray(a) ? { id: a[0], name: a[1], desc: a[2] } : a); } catch (e) { } return ACH_DEF.map(a => ({ id: a[0], name: a[1], desc: a[2] })); }
 function showAchievements() {
   ensure(); const s = mkScr('ach', 'scroll'); s.innerHTML = ''; go('ach', { music: 'menu', keys: e => { if (e.key === 'Escape' || e.key === 'Enter') { back.click(); return; } return false; } }); bgc(s, 'mapa', { dark: .88, light: false, n: 30 });
@@ -697,14 +701,14 @@ function openSettings() {
   ensure(); snd('unlock'); modal((p, close) => {
     $('h2', '', p, 'AJUSTES'); const row = (name, el) => { const l = $('label', '', p); $('span', '', l, name); l.appendChild(el); return l; }, tog = (k, f) => { const t = $('button', 'tog' + (S[k] ? ' on' : '')); t.setAttribute('role', 'switch'); t.setAttribute('aria-checked', !!S[k]); t.onclick = () => { S[k] = !S[k]; t.classList.toggle('on', S[k]); t.setAttribute('aria-checked', S[k]); saveS(); f && f(); sfx('click'); changed(); }; return t; };
     const changed = () => { saveS(); applyLook(); applySound(); emit('settings', Object.assign({}, S)); };
-    const dv = $('div', 'diff'); [['facil', 'Facil'], ['normal', 'Normal'], ['everest', 'Everest']].forEach(([k, n]) => { const c = $('button', 'chip' + (S.diff === k ? ' on' : ''), dv, n); c.onclick = () => { S.diff = k; dv.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === c)); sfx('select'); changed(); }; }); row('Dificultad', dv);
+    const dv = $('div', 'diff'); [['facil', 'Fácil'], ['normal', 'Normal'], ['everest', 'Everest']].forEach(([k, n]) => { const c = $('button', 'chip' + (S.diff === k ? ' on' : ''), dv, n); c.onclick = () => { S.diff = k; dv.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === c)); sfx('select'); changed(); }; }); row('Dificultad', dv);
     { const r = $('input'); r.type = 'range'; r.min = 0; r.max = 100; let v0 = S.vol.master; try { if (v0 == null && window.Sound && Sound.getVolume) v0 = Sound.getVolume(); } catch (e) { } r.value = Math.round((v0 == null ? .4 : v0) * 100); r.setAttribute('aria-label', 'Volumen general'); r.oninput = () => { S.vol.master = r.value / 100; applySound(); }; r.onchange = () => { sfx('click'); changed(); }; row('Volumen general', r); }
-    [['music', 'Musica'], ['sfx', 'Efectos'], ['voice', 'Voz']].forEach(([k, n]) => { const r = $('input'); r.type = 'range'; r.min = 0; r.max = 100; r.value = Math.round(S.vol[k] * 100); r.setAttribute('aria-label', n); r.oninput = () => { S.vol[k] = r.value / 100; applySound(); }; r.onchange = () => { sfx('click'); changed(); }; row(n, r); });
-    row('Silenciar todo', tog('mute')); row('Narracion (voz)', tog('narr', () => { if (S.narr) snd('speak', 'Narracion activada.', { who: 'narrador' }); }));
-    const ts = $('div', 'diff'); [['Normal', 1], ['Grande', 1.2], ['Muy grande', 1.4]].forEach(([n, v]) => { const c = $('button', 'chip' + (S.ts === v ? ' on' : ''), ts, n); c.onclick = () => { S.ts = v; ts.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === c)); sfx('select'); changed(); }; }); row('Tamano de texto', ts);
+    [['music', 'Música'], ['sfx', 'Efectos'], ['voice', 'Voz']].forEach(([k, n]) => { const r = $('input'); r.type = 'range'; r.min = 0; r.max = 100; r.value = Math.round(S.vol[k] * 100); r.setAttribute('aria-label', n); r.oninput = () => { S.vol[k] = r.value / 100; applySound(); }; r.onchange = () => { sfx('click'); changed(); }; row(n, r); });
+    row('Silenciar todo', tog('mute')); row('Narración (voz)', tog('narr', () => { if (S.narr) snd('speak', 'Narración activada.', { who: 'narrador' }); }));
+    const ts = $('div', 'diff'); [['Normal', 1], ['Grande', 1.2], ['Muy grande', 1.4]].forEach(([n, v]) => { const c = $('button', 'chip' + (S.ts === v ? ' on' : ''), ts, n); c.onclick = () => { S.ts = v; ts.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === c)); sfx('select'); changed(); }; }); row('Tamaño de texto', ts);
     row('Reducir flashes y movimiento', tog('flash', changed));
-    const ky = $('input'); ky.type = 'password'; ky.placeholder = 'sk-ant-... (opcional)'; ky.autocomplete = 'off'; ky.value = store.get('rcv3_key') || ''; ky.setAttribute('aria-label', 'Clave API'); ky.onchange = () => { store.set('rcv3_key', ky.value.trim()); try { window.Story && Story.setKey && Story.setKey(ky.value.trim()); } catch (e) { } toast(ky.value.trim() ? 'Clave guardada: la IA real hara de director y companeros' : 'Sin clave: modo demo (funciona igual, sin internet)'); emit('settings', Object.assign({}, S, { key: !!ky.value.trim() })); };
-    row('Clave API Claude', ky); $('p', 'mut', p, 'Opcional. Con una clave de Anthropic, el director y los companeros IA usan Claude de verdad. Se guarda solo en este navegador. Sin ella el juego usa contenido pregrabado y funciona sin conexion.').style.cssText = 'font-size:.85em;line-height:1.45;margin:.3em 0 .8em';
+    const ky = $('input'); ky.type = 'password'; ky.placeholder = 'sk-ant-... (opcional)'; ky.autocomplete = 'off'; ky.value = store.get('rcv3_key') || ''; ky.setAttribute('aria-label', 'Clave API'); ky.onchange = () => { store.set('rcv3_key', ky.value.trim()); try { window.Story && Story.setKey && Story.setKey(ky.value.trim()); } catch (e) { } toast(ky.value.trim() ? 'Clave guardada: la IA real hará de director y compañeros' : 'Sin clave: modo demo (funciona igual, sin internet)'); emit('settings', Object.assign({}, S, { key: !!ky.value.trim() })); };
+    row('Clave API Claude', ky); $('p', 'mut', p, 'Opcional. Con una clave de Anthropic, el director y los compañeros IA usan Claude de verdad. Se guarda solo en este navegador. Sin ella el juego usa contenido pregrabado y funciona sin conexión.').style.cssText = 'font-size:.85em;line-height:1.45;margin:.3em 0 .8em';
     const b = $('button', 'btn go', p, 'Listo'); b.onclick = () => { sfx('back'); close(); };
   });
 }
@@ -713,7 +717,7 @@ function openSettings() {
 function showCredits() {
   ensure(); const s = mkScr('cred', 'cred'); s.innerHTML = ''; go('cred', { music: 'menu', keys: e => { if (e.key === 'Escape' || e.key === 'Enter') { sfx('back'); showMenu(); return; } return false; } }); bgc(s, 'valle', { dark: .85, n: 50 });
   const r = $('div', 'roll', s); $('h1', '', r, 'RESCATE<br>EN LA CUEVA'); const ln = (a, b) => { $('div', '', r, (a ? '<div class="lab">' + a + '</div>' : '') + '<div>' + b + '</div>'); };
-  ln('DISENO Y PROGRAMACION', 'Un equipo de agentes de IA coordinados, dirigidos por una persona'); ln('ARTE', 'Todos los sprites, fondos e ilustraciones estan generados por codigo (CC0)'); ln('MUSICA Y SONIDO', 'Sintetizados en tiempo real con WebAudio, sin muestras'); ln('HISTORIA', 'Cueva inundada: informacion asimetrica, confianza y decisiones bajo presion');
+  ln('DISEÑO Y PROGRAMACIÓN', 'Un equipo de agentes de IA coordinados, dirigidos por una persona'); ln('ARTE', 'Todos los sprites, fondos e ilustraciones están generados por código (CC0)'); ln('MÚSICA Y SONIDO', 'Sintetizados en tiempo real con WebAudio, sin muestras'); ln('HISTORIA', 'Cueva inundada: información asimétrica, confianza y decisiones bajo presion');
   const cr = window.ASSETS && ASSETS.credits; (cr || []).forEach(c => ln('', esc(c))); ln('FUENTE', 'Press Start 2P (CodeMan38, SIL OFL 1.1)'); ln('RED', 'PeerJS (MIT)'); ln('', 'Gracias por jugar.');
   const b = $('button', 'btn sec rel', s, 'Volver (Esc)'); b.style.cssText = 'position:absolute;top:10px;right:10px;z-index:5'; b.onclick = () => { sfx('back'); showMenu(); };
 }
