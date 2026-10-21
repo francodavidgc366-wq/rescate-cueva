@@ -415,7 +415,7 @@ const DIF = {
 };
 const dname = n => { n = NORM(n || 'normal'); return n === 'easy' || n === 'facil' ? 'facil' : n === 'hard' || n === 'everest' ? 'everest' : 'normal'; };
 const difficulty = n => Object.assign({}, DIF[dname(n)], { start: Object.assign({}, DIF[dname(n)].start) });
-const QUICK = { briefing: 5, explore: 35, plan: 15, secret: 10 }; // modo rápido (vídeo de 1 min): el agua por fase se conserva porque waterRate divide entre explore
+const QUICK = { briefing: 3, explore: 22, plan: 9, secret: 7 }; // modo rápido (vídeo de 1 min): el agua por fase se conserva porque waterRate divide entre explore
 const isQuick = st => !!(st && st.quick);
 const dif = st => isQuick(st) ? Object.assign({}, DIF[dname(st.difficulty)], QUICK) : DIF[dname(st.difficulty)];
 const expTime = st => Math.round(dif(st).explore * ((st.hid && st.hid.expMul) || 1));
@@ -7931,7 +7931,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
             Story.advance(st);
             if (tr && eng.playTravel) await new Promise(res => { let d = false; const fin = () => { if (!d) { d = true; res(); } };
               try { Hud.setNow({ text: tr.caption || 'Viajan a la siguiente zona', sub: '', kind: 'info' }); } catch (e) { }
-              const ok = eng.playTravel({ toZone: st.round, kind: tr.kind, outcome: tr.outcome, ms: st.quick ? 6500 : 11500, onShot: (i) => { try { Hud.setNow({ text: [tr.caption || 'Salen de la zona', 'Recorren el camino', 'Llegan a la nueva zona'][i] || '', sub: '', kind: 'info' }); } catch (e) { } } }, fin); if (ok === false) return fin();
+              const ok = eng.playTravel({ toZone: st.round, kind: tr.kind, outcome: tr.outcome, ms: st.quick ? 4500 : 11500, onShot: (i) => { try { Hud.setNow({ text: [tr.caption || 'Salen de la zona', 'Recorren el camino', 'Llegan a la nueva zona'][i] || '', sub: '', kind: 'info' }); } catch (e) { } } }, fin); if (ok === false) return fin();
               if (Hud.dialogue && tr.lines && tr.lines.length) Hud.dialogue(tr.lines, { auto: 3400 }); setTimeout(fin, 20000); }); }
           await startRound(); return;
       }

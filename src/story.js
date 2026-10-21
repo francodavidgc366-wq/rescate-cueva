@@ -45,7 +45,7 @@ const DIF = {
 };
 const dname = n => { n = NORM(n || 'normal'); return n === 'easy' || n === 'facil' ? 'facil' : n === 'hard' || n === 'everest' ? 'everest' : 'normal'; };
 const difficulty = n => Object.assign({}, DIF[dname(n)], { start: Object.assign({}, DIF[dname(n)].start) });
-const QUICK = { briefing: 5, explore: 35, plan: 15, secret: 10 }; // modo rápido (vídeo de 1 min): el agua por fase se conserva porque waterRate divide entre explore
+const QUICK = { briefing: 3, explore: 22, plan: 9, secret: 7 }; // modo rápido (vídeo de 1 min): el agua por fase se conserva porque waterRate divide entre explore
 const isQuick = st => !!(st && st.quick);
 const dif = st => isQuick(st) ? Object.assign({}, DIF[dname(st.difficulty)], QUICK) : DIF[dname(st.difficulty)];
 const expTime = st => Math.round(dif(st).explore * ((st.hid && st.hid.expMul) || 1));
