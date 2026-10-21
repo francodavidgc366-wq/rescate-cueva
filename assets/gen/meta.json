@@ -181,35 +181,59 @@
     "row": 0,
     "frames": 4,
     "fps": 8,
-    "note": "llama; anclar en tile de pared, luz en (8,4)"
+    "note": "llama; anclar en tile de pared, luz en (8,4)",
+    "baseY": 14,
+    "anchorX": 8,
+    "anchorY": 14,
+    "padBottom": 1
    },
    "crystal": {
     "row": 1,
     "frames": 4,
     "fps": 4,
-    "note": "brilla, luz cian"
+    "note": "brilla, luz cian",
+    "baseY": 15,
+    "anchorX": 8,
+    "anchorY": 15,
+    "padBottom": 0
    },
    "radio": {
     "row": 2,
     "frames": 4,
     "fps": 3,
-    "note": "0-1 espera, 2-3 recibiendo"
+    "note": "0-1 espera, 2-3 recibiendo",
+    "baseY": 15,
+    "anchorX": 8,
+    "anchorY": 15,
+    "padBottom": 0
    },
    "rope": {
     "row": 3,
     "frames": 3,
-    "note": "0 segmento vertical tileable, 1 gancho superior, 2 rollo"
+    "note": "0 segmento vertical tileable, 1 gancho superior, 2 rollo",
+    "baseY": 15,
+    "anchorX": 8,
+    "anchorY": 15,
+    "padBottom": 0
    },
    "box": {
     "row": 4,
     "frames": 2,
-    "note": "0 cerrada, 1 abierta"
+    "note": "0 cerrada, 1 abierta",
+    "baseY": 15,
+    "anchorX": 8,
+    "anchorY": 15,
+    "padBottom": 0
    },
    "marker": {
     "row": 5,
     "frames": 4,
     "fps": 6,
-    "note": "icono \"!\" interactuable"
+    "note": "icono \"!\" interactuable",
+    "baseY": 14,
+    "anchorX": 8,
+    "anchorY": 14,
+    "padBottom": 1
    }
   }
  },
@@ -300,11 +324,11 @@
   "note": "ilustraci\u00f3n de cinem\u00e1tica 320x180, para Ken Burns/parallax; sin alfa"
  },
  "portrait_guia": {
-  "w": 192,
-  "h": 48,
-  "cell": 48,
-  "fw": 48,
-  "fh": 48,
+  "w": 256,
+  "h": 64,
+  "cell": 64,
+  "fw": 64,
+  "fh": 64,
   "frames": 4,
   "cols": 4,
   "expressions": [
@@ -313,14 +337,14 @@
    "enfadado",
    "feliz"
   ],
-  "note": "fila \u00fanica: neutral, preocupado, enfadado, feliz (x=i*48)"
+  "note": "v4 64x64: hoja horizontal neutral, preocupado, enfadado, feliz (x=i*64). Fondo transparente"
  },
  "portrait_medica": {
-  "w": 192,
-  "h": 48,
-  "cell": 48,
-  "fw": 48,
-  "fh": 48,
+  "w": 256,
+  "h": 64,
+  "cell": 64,
+  "fw": 64,
+  "fh": 64,
   "frames": 4,
   "cols": 4,
   "expressions": [
@@ -329,14 +353,14 @@
    "enfadado",
    "feliz"
   ],
-  "note": "fila \u00fanica: neutral, preocupado, enfadado, feliz (x=i*48)"
+  "note": "v4 64x64: hoja horizontal neutral, preocupado, enfadado, feliz (x=i*64). Fondo transparente"
  },
  "portrait_ing": {
-  "w": 192,
-  "h": 48,
-  "cell": 48,
-  "fw": 48,
-  "fh": 48,
+  "w": 256,
+  "h": 64,
+  "cell": 64,
+  "fw": 64,
+  "fh": 64,
   "frames": 4,
   "cols": 4,
   "expressions": [
@@ -345,14 +369,14 @@
    "enfadado",
    "feliz"
   ],
-  "note": "fila \u00fanica: neutral, preocupado, enfadado, feliz (x=i*48)"
+  "note": "v4 64x64: hoja horizontal neutral, preocupado, enfadado, feliz (x=i*64). Fondo transparente"
  },
  "portrait_lia": {
-  "w": 192,
-  "h": 48,
-  "cell": 48,
-  "fw": 48,
-  "fh": 48,
+  "w": 256,
+  "h": 64,
+  "cell": 64,
+  "fw": 64,
+  "fh": 64,
   "frames": 4,
   "cols": 4,
   "expressions": [
@@ -361,7 +385,7 @@
    "enfadado",
    "feliz"
   ],
-  "note": "fila \u00fanica: neutral, preocupado, enfadado, feliz (x=i*48)"
+  "note": "v4 64x64: hoja horizontal neutral, preocupado, enfadado, feliz (x=i*64). Fondo transparente"
  },
  "portrait_director": {
   "w": 192,
@@ -378,6 +402,78 @@
    "feliz"
   ],
   "note": "fila \u00fanica: neutral, preocupado, enfadado, feliz (x=i*48)"
+ },
+ "portrait_guia_alert": {
+  "w": 64,
+  "h": 64,
+  "expression": "alert",
+  "note": "64x64 suelta; fondo transparente"
+ },
+ "portrait_guia_hurt": {
+  "w": 64,
+  "h": 64,
+  "expression": "hurt",
+  "note": "64x64 suelta; fondo transparente"
+ },
+ "portrait_guia_talk": {
+  "w": 64,
+  "h": 64,
+  "expression": "talk",
+  "note": "64x64 suelta; fondo transparente"
+ },
+ "portrait_medica_alert": {
+  "w": 64,
+  "h": 64,
+  "expression": "alert",
+  "note": "64x64 suelta; fondo transparente"
+ },
+ "portrait_medica_hurt": {
+  "w": 64,
+  "h": 64,
+  "expression": "hurt",
+  "note": "64x64 suelta; fondo transparente"
+ },
+ "portrait_medica_talk": {
+  "w": 64,
+  "h": 64,
+  "expression": "talk",
+  "note": "64x64 suelta; fondo transparente"
+ },
+ "portrait_ing_alert": {
+  "w": 64,
+  "h": 64,
+  "expression": "alert",
+  "note": "64x64 suelta; fondo transparente"
+ },
+ "portrait_ing_hurt": {
+  "w": 64,
+  "h": 64,
+  "expression": "hurt",
+  "note": "64x64 suelta; fondo transparente"
+ },
+ "portrait_ing_talk": {
+  "w": 64,
+  "h": 64,
+  "expression": "talk",
+  "note": "64x64 suelta; fondo transparente"
+ },
+ "portrait_lia_alert": {
+  "w": 64,
+  "h": 64,
+  "expression": "alert",
+  "note": "64x64 suelta; fondo transparente"
+ },
+ "portrait_lia_hurt": {
+  "w": 64,
+  "h": 64,
+  "expression": "hurt",
+  "note": "64x64 suelta; fondo transparente"
+ },
+ "portrait_lia_talk": {
+  "w": 64,
+  "h": 64,
+  "expression": "talk",
+  "note": "64x64 suelta; fondo transparente"
  },
  "icons": {
   "w": 160,
@@ -620,5 +716,63 @@
    "danger"
   ],
   "note": "9-slice slice=6; fila=variante, columna=estado"
+ },
+ "portrait_frame": {
+  "w": 16,
+  "h": 16,
+  "slice": 6,
+  "note": "9-slice 16x16 (slice=6), centro TRANSPARENTE (poner detras el retrato); borde 5px con bisel + sombra interior"
+ },
+ "portrait_frame_turq": {
+  "w": 16,
+  "h": 16,
+  "slice": 6,
+  "note": "9-slice 16x16 (slice=6), centro TRANSPARENTE (poner detras el retrato); borde 5px con bisel + sombra interior"
+ },
+ "portrait_frame_violet": {
+  "w": 16,
+  "h": 16,
+  "slice": 6,
+  "note": "9-slice 16x16 (slice=6), centro TRANSPARENTE (poner detras el retrato); borde 5px con bisel + sombra interior"
+ },
+ "lamp_hang": {
+  "w": 64,
+  "h": 28,
+  "fw": 16,
+  "fh": 28,
+  "cols": 4,
+  "frames": 4,
+  "fps": 7,
+  "anchorX": 8,
+  "anchorY": 0,
+  "hookX": 8,
+  "hookY": 0,
+  "lightX": 8,
+  "lightY": 18,
+  "baseY": 27,
+  "note": "lampara colgante: colgar con el pixel (anchorX,anchorY) en la viga; foco de luz en (lightX,lightY) dentro del frame; 4 frames de parpadeo; para cadena mas larga repetir lamp_chain bajo el gancho y bajar el cuerpo"
+ },
+ "lantern_floor": {
+  "w": 64,
+  "h": 16,
+  "fw": 16,
+  "fh": 16,
+  "cols": 4,
+  "frames": 4,
+  "fps": 7,
+  "anchorX": 8,
+  "anchorY": 15,
+  "baseY": 15,
+  "lightX": 8,
+  "lightY": 8,
+  "note": "linterna de suelo: base en la ULTIMA fila (y=15); anclar (anchorX,anchorY) al suelo; foco en (8,8)"
+ },
+ "lamp_chain": {
+  "w": 8,
+  "h": 8,
+  "anchorX": 4,
+  "anchorY": 0,
+  "tile": "vertical",
+  "note": "eslabon 8x8 tileable en vertical; colocar bajo el gancho de lamp_hang (empalma con y=0 de su cuerpo)"
  }
 }

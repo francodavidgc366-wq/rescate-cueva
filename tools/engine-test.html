@@ -22,16 +22,17 @@ var T=window.T={inst:inst,state:state,log:log,sfx:[],
   setRole:function(r){inst.setLocal(r)},
   bots:function(){['guia','medica','ing'].forEach(function(r,i){if(r!==inst.active)inst.botGoto(r,'p'+(i+1))})}};
 // test automatizado: cada rol llega a pie a los 4 POI de cada tramo (maxSec simulados por POI), sin fundidos
-T.reach=function(maxSec,fromFloor){maxSec=maxSec||50;var res=[],fails=0;inst.stop();
+T.reach=function(maxSec,fromFloor,wfix){maxSec=maxSec||50;var res=[],fails=0;inst.stop();
   ['guia','medica','ing'].forEach(function(role){inst.setLocal('guia');[1,2,3,4,5].forEach(function(r){
     state.round=r;inst.gather(r);['guia','medica','ing'].forEach(function(x){inst.setBot(x,x===role)});
     state.players.guia.ap=state.players.medica.ap=state.players.ing.ap=99;
+    if(wfix!==undefined){inst.setWater(wfix===true?5+r*6:wfix);for(var s0=0;s0<900;s0++)inst.step()}
     inst.setPois(r,[0,1,2,3].map(function(i){return{id:'p'+i,slot:i,label:LAB[i],icon:ICON[i],kind:i==3?'secreto':'info'}}));
-    var b=inst.bodies[role];if(fromFloor){b.x=8*16+8;b.y=14*16;b.x+=(r-1)*960}
+    var b=inst.bodies[role];if(fromFloor){b.x=9*16+8;b.y=25*16;b.x+=(r-1)*960}
     var w0=inst.stats.warps;
     [0,1,2,3].forEach(function(i){inst.gather(r);var id='p'+i,t0=inst.tick,ok=inst.botGoto(role,id),done=false,n0=log.length;
       for(var k=0;k<maxSec*60&&ok&&!done;k++){inst.step();for(var q=n0;q<log.length;q++)if(log[q]===role+':'+id)done=true}
-      if(!done)fails++;res.push((done?'OK ':'FAIL ')+role+' r'+r+' '+id+' '+((inst.tick-t0)/60).toFixed(1)+'s'+(ok?'':' (sin ruta)'))});
+      if(!done)fails++;var bb=inst.bodies[role];res.push((done?'OK ':'FAIL ')+role+' r'+r+' '+id+' '+((inst.tick-t0)/60).toFixed(1)+'s'+(ok?'':' (sin ruta)')+(done?'':' @'+((bb.x-(r-1)*960)/16|0)+','+(bb.y/16|0)+' w='+inst.water.toFixed(0)))});
     res.push('  warps '+(inst.stats.warps-w0))})});
   inst.start();return{fails:fails,warps:inst.stats.warps,res:res}};
 // conectividad: desde cada POI se llega a los otros 3 (grafo de saltos)
@@ -49,6 +50,7 @@ T.soak=function(minutes){minutes=minutes||5;inst.stop();var out=[],tot=minutes*3
     inst.step();
     if(k%30===0)['guia','medica','ing'].forEach(function(x){var b=inst.bodies[x];still[x]=Math.abs(b.x-lastx[x])<1&&Math.abs(b.y-(pos0[x]||0))<1?(still[x]||0)+30:0;lastx[x]=b.x;pos0[x]=b.y;maxStill=Math.max(maxStill,still[x])})}
   inst.start();return{warps:inst.stats.warps-w0,maxStillSec:maxStill/60,interacts:inst.stats.interacts}};
+T.dump=function(sec){var o=[],g=inst.world.g;for(var r=0;r<30;r++){var l='';for(var c=0;c<60;c++){var v=g[r*300+sec*60+c];l+=v==1?'#':v==2?'=':'.'}o.push(l)}return o.join('\n')};
 T.round(1);
 var keys={};
 function send(){inst.setInput(inst.active,{left:keys.ArrowLeft||keys.a,right:keys.ArrowRight||keys.d,jump:keys[' '],interact:keys.e,up:keys.ArrowUp||keys.w,down:keys.ArrowDown||keys.s});}

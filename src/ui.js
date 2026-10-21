@@ -484,6 +484,8 @@ function buildShots(id, o) {
   if (id === 'rescate') return [{ still: 'rescate', text: o && o.text || 'La luz del dia. Lia respira. Lo habeis conseguido.', who: '' }];
   if (id === 'derrota') return [{ still: 'derrota', text: o && o.text || 'El agua lo cubre todo. El silencio es lo peor.', who: '' }];
   let I = window.Story && Array.isArray(Story.intro) && Story.intro.length >= 3 ? Story.intro : null; if (!I) return INTRO_DEF;
+  // la cinematica la ven TODOS: fuera las lineas que cuentan lo privado de un rol (empiezan por su nombre) o el secreto
+  I = I.filter(e => !/^\s*(Nico|Ona|Iv[aá]n)\b/i.test(typeof e === 'string' ? e : (e && e.text) || '')); if (I.length < 3) return INTRO_DEF;
   const ord = ['valle', 'cabina', 'tormenta', 'entrada', 'radio', 'mapa', 'inundada'];
   const sh = I.map((e, n) => { const t = typeof e === 'string' ? { text: e } : Object.assign({}, e); if (!t.still) { const k = KEYS.find(x => x[0].test(t.text || '')); t.still = n === 0 ? 'valle' : k ? k[1] : ord[Math.min(n, ord.length - 1)]; } return t; });
   sh.push(INTRO_DEF[INTRO_DEF.length - 1]); return sh;

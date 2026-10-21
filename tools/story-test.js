@@ -63,7 +63,20 @@ const strip = x => JSON.stringify(x, (k, v) => k === 't' ? undefined : v);
   const ai = Story.newGame({ seed: 3, demo: false }); const rs = await Story.roundStart(ai); assert(rs.fallback && ai.event.title, 'director IA inválido debe caer a demo');
   global.fetch = async () => { throw new Error('red'); }; assert(typeof (await Story.finish(ai)).verdict === 'string'); Story.setKey('');
   // chat demo: sin repetir seguidas
-  const ch = Story.newGame({ seed: 11 }); await Story.roundStart(ch); const seen = []; for (let i = 0; i < 40; i++) { const m = await Story.botChat(ch, RK[i % 3], 'idle', {}); seen.push(m.text); }
-  for (let i = 1; i < seen.length; i++) assert(seen[i] !== seen[i - 1], 'línea repetida seguida');
+  const ch = Story.newGame({ seed: 11 }); await Story.roundStart(ch); const seen = []; for (let i = 0; i < 40; i++) { tick += 10000; const m = await Story.botChat(ch, RK[i % 3], 'idle', {}); if (m) { seen.push(m.text); assert(m.delay >= 0); } }
+  assert(seen.length >= 10, 'demasiado pocos mensajes'); for (let i = 1; i < seen.length; i++) assert(seen[i] !== seen[i - 1], 'línea repetida seguida');
+  // limitador: ráfaga sin pasar tiempo -> solo 1 espontáneo; sin repetir en las últimas 12 del mismo bot
+  const lim = Story.newGame({ seed: 12 }); await Story.roundStart(lim); tick += 99999; let n = 0; for (let i = 0; i < 10; i++) if (await Story.botChat(lim, RK[i % 3], 'explore', {})) n++; assert.strictEqual(n, 1, 'limitador espontáneo');
+  const rp = Story.newGame({ seed: 13 }); await Story.roundStart(rp); let nr = 0; for (let i = 0; i < 6; i++) if (await Story.botChat(rp, RK[i % 3], 'chat', { text: 'hola', fromRole: 'ing' })) nr++; assert.strictEqual(nr, 2, 'máx. 2 respuestas seguidas'); Story.say(rp, 'ing', 'hola', 'chat'); rp.players.ing.ai = false; Story.say(rp, 'ing', 'otra', 'chat'); assert(await Story.botChat(rp, 'guia', 'chat', { text: 'x', fromRole: 'ing' }), 'tras hablar el jugador responden de nuevo');
+  const mem = Story.newGame({ seed: 14 }); await Story.roundStart(mem); const last = []; for (let i = 0; i < 60; i++) { tick += 10000; const m = await Story.botChat(mem, 'medica', 'poi', { poi: 'Cristal que canta' }); if (m) { assert(!last.slice(-12).includes(m.text), 'repetida en 12: ' + m.text); last.push(m.text); } }
+  // intro/roleBrief no filtran secretos
+  const leak = /desvi|desvió|lesión|lesion|caudal|reserva|sangre|culpa/i; Story.intro.forEach(x => assert(!leak.test(x), 'intro filtra secreto: ' + x)); RK.forEach(k => { const b = Story.roleBrief(ch, k); assert(!leak.test(JSON.stringify(b)), 'roleBrief filtra secreto ' + k); });
+  // misiones, etiquetas, eventos
+  const ms = Story.newGame({ seed: 21 }); for (let r = 1; r <= 5; r++) { ms.round = r; await Story.roundStart(ms); assert(ms.event.caption && ms.event.focus && ms.event.focus.slot != null && ms.event.lines.length === 2, 'evento sin focus/caption'); assert(ms.pois.every(p => p.name && p.give && p.act && / · /.test(p.label)));
+    for (const ph of ['briefing', 'explore', 'plan', 'secret', 'resolve', 'summary']) { Story.setPhase(ms, ph); const m = Story.mission(ms, 'ing', { slot: 2 }); assert(m.title && m.steps.length && m.now.text && m.now.short, 'misión ' + ph); assert(Story.readyLabel(ph).label); }
+    Story.setPhase(ms, 'explore'); let m = Story.mission(ms, 'ing'); assert(m.now.target, 'explore sin target'); const seenT = [];
+    for (let i = 0; i < 3; i++) { m = Story.mission(ms, 'ing'); assert(m.now.target && !seenT.includes(m.now.target)); seenT.push(m.now.target); assert(Story.poiInteract(ms, 'ing', m.now.target).ok); }
+    assert(/Ya has usado tus 3 acciones/.test(Story.mission(ms, 'ing').now.text)); Story.setPhase(ms, 'plan'); assert(/vota/i.test(Story.mission(ms, 'ing').now.text)); Story.tally(ms); Story.setPhase(ms, 'secret'); Story.resolve(ms); if (Story.isOver(ms)) break; Story.advance(ms); }
+  assert(Story.TIMES.briefing === 20 && Story.difficulty('everest').explore === 110 && Story.difficulty('facil').explore === 200 && Story.difficulty('normal').explore === 150);
   console.log('OK');
 })().catch(e => { console.error(e); process.exit(1); });

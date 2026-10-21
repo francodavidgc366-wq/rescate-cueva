@@ -23,7 +23,7 @@ const ROLES = {
   guia: { id: 'guia', name: 'Nico, el guía', short: 'Nico', hat: '#e0a030', body: '#c0392b', color: '#e0a030', portrait: 'portrait_guia', stat: 'confianza', min: 55, points: 250,
     goal: 'Que la confianza del equipo acabe en 55 o más.',
     secret: 'Ayer te saliste de la ruta marcada para ahorrar tiempo, y por eso Lía cayó al pozo. Nadie lo sabe. Confesarlo te costará el orgullo; que lo descubran, el equipo.',
-    persona: 'Orgulloso y culpable: da órdenes para no pensar en su error.', traits: { honesty: .55, coop: .7, risk: .6 } },
+    persona: 'Orgulloso y decidido: da órdenes con seguridad.', traits: { honesty: .55, coop: .7, risk: .6 } },
   medica: { id: 'medica', name: 'Dra. Ona', short: 'Ona', hat: '#e8e8f0', body: '#2e9e6b', color: '#46c28a', portrait: 'portrait_medica', stat: 'salud', min: 55, points: 250,
     goal: 'Que la salud de Lía acabe en 55 o más.',
     secret: 'Por radio oíste a Lía respirar con un silbido y toser sangre: sospechas una lesión interna. Decirlo frena el rescate y puede ser un error; callarlo puede matarla.',
@@ -35,10 +35,13 @@ const ROLES = {
 };
 
 // ================= DIFICULTAD =================
+// Tiempos (s). summary: 600 = manual (el jugador pulsa Continuar). OLDX = duración de explore de v3 (el agua total por fase se mantiene, solo sube más despacio).
+const TIMES = { briefing: 20, explore: { facil: 200, normal: 150, everest: 110 }, plan: 90, secret: 30, resolve: 25, summary: 600, summaryManual: true };
+const OLDX = { facil: 120, normal: 90, everest: 70 };
 const DIF = {
-  facil: { name: 'facil', label: 'Fácil', briefing: 20, explore: 120, plan: 60, secret: 25, resolve: 10, summary: 15, rate: .8, risk: .8, rel: 6, goal: -5, start: { agua: 8, salud: 75, material: 65, confianza: 65 } },
-  normal: { name: 'normal', label: 'Normal', briefing: 15, explore: 90, plan: 45, secret: 20, resolve: 8, summary: 12, rate: 1, risk: 1, rel: 0, goal: 0, start: { agua: 10, salud: 70, material: 60, confianza: 60 } },
-  everest: { name: 'everest', label: 'Everest', briefing: 12, explore: 70, plan: 35, secret: 15, resolve: 8, summary: 10, rate: 1.3, risk: 1.2, rel: -9, goal: 6, start: { agua: 12, salud: 66, material: 55, confianza: 55 } }
+  facil: { name: 'facil', label: 'Fácil', briefing: TIMES.briefing, explore: TIMES.explore.facil, plan: TIMES.plan, secret: TIMES.secret, resolve: TIMES.resolve, summary: TIMES.summary, rate: .8, risk: .8, rel: 6, goal: -5, start: { agua: 8, salud: 75, material: 65, confianza: 65 } },
+  normal: { name: 'normal', label: 'Normal', briefing: TIMES.briefing, explore: TIMES.explore.normal, plan: TIMES.plan, secret: TIMES.secret, resolve: TIMES.resolve, summary: TIMES.summary, rate: 1, risk: 1, rel: 0, goal: 0, start: { agua: 10, salud: 70, material: 60, confianza: 60 } },
+  everest: { name: 'everest', label: 'Everest', briefing: TIMES.briefing, explore: TIMES.explore.everest, plan: TIMES.plan, secret: TIMES.secret, resolve: TIMES.resolve, summary: TIMES.summary, rate: 1.3, risk: 1.2, rel: -9, goal: 6, start: { agua: 12, salud: 66, material: 55, confianza: 55 } }
 };
 const dname = n => { n = NORM(n || 'normal'); return n === 'easy' || n === 'facil' ? 'facil' : n === 'hard' || n === 'everest' ? 'everest' : 'normal'; };
 const difficulty = n => Object.assign({}, DIF[dname(n)], { start: Object.assign({}, DIF[dname(n)].start) });
@@ -191,7 +194,7 @@ function newGame(o) {
   const st = { v: 3, phase: 'menu', round: 1, tleft: 0, difficulty: df.name, seed, demo: o.demo != null ? !!o.demo : !KEY,
     s: Object.assign({}, df.start), score: { total: 0, equipo: 0, info: 0, honestidad: 0, riesgo: 0 }, event: null, pois: [],
     plan: { options: [], votes: {}, chosen: null }, players: {}, chat: [], log: [], achievements: [], hallazgos: 0, verdict: null, saved: null };
-  const priv = {}, hid = { struct: [], cards: {}, truth: {}, poiMeta: {}, secrets: {}, pTrust: {}, shares: [], lies: [], pts: {}, said: [], resolved: {}, botMem: {}, stat: { asIs: {}, team: {}, apFull: {}, riskWins: 0, trapAvoid: 0, unan: 0, conf: 0, lieCount: 0, lieCaught: 0, detective: {}, plata: {}, hall: [] }, water: { warned: {} }, chatN: 0 };
+  const priv = {}, hid = { struct: [], cards: {}, truth: {}, poiMeta: {}, secrets: {}, pTrust: {}, shares: [], lies: [], pts: {}, said: [], resolved: {}, botMem: {}, stat: { asIs: {}, team: {}, apFull: {}, riskWins: 0, trapAvoid: 0, unan: 0, conf: 0, lieCount: 0, lieCaught: 0, detective: {}, plata: {}, hall: [] }, water: { warned: {} }, chatN: 0, cad: { lastSpont: -1e12, gap: 7000, streak: 0, mem: {} }, spoke: {} };
   RK.forEach(r => {
     st.players[r] = { owner: null, name: ROLES[r].short, ready: false, ap: 3, connected: true, ai: !humans.includes(r), style: normStyle(o.style, r) };
     priv[r] = { role: r, goal: { text: ROLES[r].goal, stat: ROLES[r].stat, min: ROLES[r].min + df.goal, points: ROLES[r].points }, secret: { text: ROLES[r].secret, revealed: false }, intel: [], secretOptions: [], secretPick: null, ap: 3 };
@@ -212,6 +215,7 @@ const sc_ = st => st.hid.struct[st.round - 1];
 const optT = (st, p) => ROUND_D[st.round - 1].opts[sc_(st).perm[p]];
 function say(st, from, text, kind, extra) {
   const m = Object.assign({ id: 'm' + (++st.hid.chatN), t: now(), from, kind: kind || 'chat', text: String(text) }, extra || {});
+  if (RK.includes(from) && (m.kind === 'chat' || m.kind === 'share')) { st.hid.spoke[from] = st.round; if (!st.players[from].ai) st.hid.cad.streak = 0; }
   st.chat.push(m); if (st.chat.length > 250) st.chat.splice(0, st.chat.length - 250); return m;
 }
 function addScore(st, role, cat, n) { if (!n) return; st.score[cat] += n; st.score.total += n; if (role) st.hid.pts[role] += n; }
@@ -237,17 +241,26 @@ function buildSecretOptions(st, role) {
   if (!sec.revealed && r <= 4) { const c = CONFESS[role]; out.push(mk({ text: c.text, e: c.e }, 'confess')); } else out.push(mk(base[0], 'team'));
   out.push(mk(base[1], 'goal'), mk(base[2], 'risky')); return out;
 }
+// Evento -> [índice de POI a mirar, rótulo corto]. La cámara va al slot de ese POI.
+const EVX = { tormenta: [1, 'Llueve a cántaros: el arroyo desborda hacia las galerías.'], inundacion: [1, 'El río sube y baña la entrada.'], derrumbe: [1, 'Se cae el techo: la galería queda cortada.'], grieta: [1, 'Una grieta recorre el techo y gotea.'],
+  gas: [0, 'Hay gas en la sala: cuesta respirar.'], murcielagos: [0, 'Una nube de murciélagos dispersa al grupo.'], hipotermia: [0, 'El agua helada os deja sin fuerzas.'], linterna: [1, 'Las linternas se apagan una a una.'],
+  eco: [0, 'Se oye a Lía: está cerca.'], };
+const POIX = { info: ['pista', 'Pista privada sobre qué ruta es peligrosa o segura (puede ser dudosa)', 'investigar: pista privada, fiable o dudosa'], secreto: ['hallazgo', 'Un hallazgo: historia y pequeño bonus para el equipo', 'mirar de cerca: hallazgo'] };
 function setRoundContent(st, ev, optsTxt, poiLabels) {
   const r = st.round, S = sc_(st), D = ROUND_D[r - 1], evT = D.ev[S.ev];
   const x = ctxSentence(st);
-  st.event = { id: evT.id, title: (ev && ev.title) || evT.title, text: ((ev && ev.text) || evT.text) + (x ? ' ' + x : ''), art: evT.art, radio: (ev && ev.radio) || evT.radio, cat: evT.cat };
+  const xv = EVX[evT.id] || [0, evT.title], cap = xv[1], radio = (ev && ev.radio) || evT.radio;
+  st.event = { id: evT.id, title: (ev && ev.title) || evT.title, text: ((ev && ev.text) || evT.text) + (x ? ' ' + x : ''), art: evT.art, radio, cat: evT.cat, caption: cap,
+    focus: { poi: 'r' + r + '_' + xv[0], slot: S.slots[xv[0]], x: null }, lines: [(((ev && ev.title) || evT.title) + ': ' + cap), radio] };
   st.plan = { options: [0, 1, 2].map(p => { const T = D.opts[S.perm[p]], ov = optsTxt && optsTxt[p]; return { id: 'ABC'[p], n: ov ? ov.n : T.n, title: ov ? ov.title : T.t, text: ov ? ov.text : T.x, known: ov ? ov.known : T.k, req: T.req ? { material: T.req } : undefined }; }), votes: {}, chosen: null };
   const lab = [D.poi[0].label, D.poi[1].label, D.rec.label, D.sec.label];
   if (poiLabels) for (let i = 0; i < 4; i++) if (poiLabels[i]) lab[i] = poiLabels[i];
   const meta = st.hid.poiMeta; st.pois = [];
   const types = [{ kind: 'info', idx: 0, icon: D.poi[0].icon }, { kind: 'info', idx: 1, icon: D.poi[1].icon }, { kind: 'recurso', icon: D.rec.icon }, { kind: 'secreto', icon: D.sec.icon }];
   types.forEach((t, i) => { const id = 'r' + r + '_' + i, slot = S.slots[i]; meta[id] = { type: t.kind, idx: t.idx, i, seen: [], used: false };
-    st.pois.push({ id, slot, label: i === 3 && !lab[3] ? '???' : lab[i], icon: t.icon, kind: t.kind, used: false, by: null, seen: [] }); });
+    const nm = i === 3 && !lab[3] ? '???' : lab[i], rec = V(D.rec.e), best = SK.filter(k => rec[k] > 0).sort((a, b) => rec[b] - rec[a])[0] || 'material';
+    const px = t.kind === 'recurso' ? [STATS[best][0].split(' ')[0].toLowerCase(), 'Da ' + effTxt(rec) + ' a todo el equipo (solo el primero que llega)', 'recoger: ' + effTxt(rec) + ' para todos'] : POIX[t.kind];
+    st.pois.push({ id, slot, name: nm, label: nm + ' · ' + px[0], give: px[1], act: 'Pulsa E para ' + px[2], icon: t.icon, kind: t.kind, used: false, by: null, seen: [] }); });
   st.pois.sort((a, b) => a.slot - b.slot);
 }
 const jsonSafe = x => JSON.parse(JSON.stringify(x));
@@ -263,7 +276,7 @@ async function roundStart(st) {
     }
     if (!ai) { fallback = true; err = e2; }
   }
-  const msgs = [say(st, 'director', st.event.title + '. ' + st.event.text, 'event', { art: st.event.art })];
+  const msgs = [say(st, 'director', st.event.lines[0], 'event', { art: st.event.art, focus: st.event.focus })];
   msgs.push(say(st, 'lia', st.event.radio, 'radio'));
   st.phase = 'briefing'; st.tleft = dif(st).briefing; hd.lastWater = st.s.agua; hd.water.warned = hd.water.warned || {};
   return { event: st.event, pois: st.pois, plan: st.plan, msgs, ai, fallback, error: err };
@@ -278,7 +291,7 @@ function setPhase(st, phase) {
 function waterRate(st) {
   const S = st.hid.secrets.ing, d = dif(st); let m = d.rate;
   m *= S.revealed ? .95 : 1.15;
-  return RISE[clamp(st.round, 1, ROUNDS) - 1] / 90 * m;
+  return RISE[clamp(st.round, 1, ROUNDS) - 1] / 90 * m * OLDX[d.name] / d.explore;
 }
 function tickWater(st, dt) {
   const before = st.s.agua; st.s.agua = clamp(Math.round((before + waterRate(st) * Math.max(0, dt || 0)) * 10) / 10, 0, 100);
@@ -356,15 +369,15 @@ function share(st, role, cardId, o) {
   if (rec.lie) { hd.lies.push(rec); hd.stat.lieCount++; } else if (asIs) { hd.stat.asIs[role]++; addScore(st, role, 'info', rec.truthfulClaim ? 14 : 5); if (rec.truthfulClaim) hd.pTrust[role] = clamp(hd.pTrust[role] + 2, 0, 100); }
   const out = { ok: true, lie: rec.lie, edited: !asIs, msg: m, msgs: [m], react: { trigger: 'share', ctx: { from: role, cardId, opt: claim.opt, pol: claim.pol } } };
   if (cd.leak && (asIs || NORM(text).match(/gps|libreta|analgesic|abdomin|caudal|track/))) { const t = cd.leak, S = hd.secrets[t]; if (!S.revealed) { S.revealed = true; S.how = 'exposed'; S.round = st.round; S.exposedBy = role; st.priv[t].secret.revealed = true;
-      out.msgs.push(say(st, 'sys', 'Se ha filtrado algo sobre ' + NAMES[t] + '… ' + ({ guia: 'el track de Nico no sigue la ruta oficial.', medica: 'Ona lleva analgésicos para dolor abdominal.', ing: 'Iván anotó un caudal mayor del que dijo.' })[t], 'sys')); out.exposed = t; hd.pTrust[t] = clamp(hd.pTrust[t] - 22, 0, 100); } }
+      out.msgs.push(say(st, 'sys', 'Se filtra algo de ' + NAMES[t] + ': ' + ({ guia: 'su track se sale de la ruta.', medica: 'lleva analgésicos abdominales.', ing: 'anotó más caudal del que dijo.' })[t], 'sys')); out.exposed = t; hd.pTrust[t] = clamp(hd.pTrust[t] - 22, 0, 100); } }
   return out;
 }
 function accuse(st, role, target) {
   if (!RK.includes(target) || target === role) return { ok: false, reason: 'objetivo' };
   const hd = st.hid, L = hd.lies.filter(l => l.from === target && l.round === st.round && !l.caught && !l.accused);
-  if (L.length) { L[0].accused = true; L[0].accuser = role; const m = say(st, 'sys', ROLES[role].short + ' acusa a ' + NAMES[target] + ': esa tarjeta no era cierta. Se aclarará en la resolución.', 'sys'); return { ok: true, hit: true, msgs: [m] }; }
+  if (L.length) { L[0].accused = true; L[0].accuser = role; const m = say(st, 'sys', ROLES[role].short + ' acusa a ' + NAMES[target] + '. Se aclara al final.', 'sys'); return { ok: true, hit: true, msgs: [m] }; }
   st.s.confianza = clamp(st.s.confianza - 3, 0, 100); hd.pTrust[role] = clamp(hd.pTrust[role] - 8, 0, 100); addScore(st, role, 'honestidad', -10);
-  const m = say(st, 'sys', ROLES[role].short + ' acusa a ' + NAMES[target] + ' sin pruebas. La confianza se resiente.', 'sys'); return { ok: true, hit: false, msgs: [m] };
+  const m = say(st, 'sys', ROLES[role].short + ' acusa a ' + NAMES[target] + ' sin pruebas. Baja la confianza.', 'sys'); return { ok: true, hit: false, msgs: [m] };
 }
 
 // ================= Votos =================
@@ -440,12 +453,13 @@ function resolve(st) {
   for (const c in sc) addScore(st, null, c, sc[c]);
   // lengua de plata: mentira no descubierta y plan exitoso
   hd.lies.filter(l => l.round === r && !l.caught).forEach(l => { if (ok) hd.stat.plata[l.from]++; });
-  const narrative = [ok ? 'El plan «' + st.plan.options[pos].title + '» sale bien.' : 'El plan «' + st.plan.options[pos].title + '» se tuerce.', ev.cat === 'agua' ? 'El agua sigue ganando terreno.' : '', applied.salud <= -8 ? 'Lía lo paga: su salud cae ' + Math.abs(applied.salud) + '.' : applied.salud >= 6 ? 'Lía respira mejor.' : '', applied.confianza <= -8 ? 'La confianza del grupo se resquebraja.' : '', reveals.filter(x => x.type === 'lie' || x.type === 'secret').map(x => x.text).join(' ')].filter(Boolean).join(' ');
+  const short = [ok ? 'Plan «' + st.plan.options[pos].n + '»: sale bien.' : 'Plan «' + st.plan.options[pos].n + '»: se tuerce.', applied.salud <= -8 ? 'Salud de Lía ' + applied.salud + '.' : applied.salud >= 6 ? 'Lía respira mejor.' : '', applied.confianza <= -8 ? 'Baja la confianza.' : '', applied.agua >= 12 ? 'El agua sube mucho.' : ''].filter(Boolean).join(' ');
+  const narrative = [short, reveals.filter(x => x.type === 'lie' || x.type === 'secret').map(x => x.text).join(' ')].filter(Boolean).join(' ');
   const scoreDelta = { total: st.score.total - before.total, equipo: st.score.equipo - before.equipo, info: st.score.info - before.info, honestidad: st.score.honestidad - before.honestidad, riesgo: st.score.riesgo - before.riesgo };
   const have = new Set(st.achievements); const newA = checkAchievements(st, false).filter(a => !have.has(a.id));
   const res = { round: r, planId: st.plan.chosen, plan: st.plan.options[pos], ok, delta: applied, rolls, reveals, scoreDelta, achievements: newA, narrative, blame: Object.fromEntries(Object.keys(blame).map(k => [k, blame[k].role])), picks, votes: Object.assign({}, st.plan.votes), msgs: [] };
   msgs.forEach(m => res.msgs.push(m));
-  res.msgs.push(say(st, 'sys', narrative, 'sys'));
+  res.msgs.push(say(st, 'sys', short, 'sys'));
   const pd = {}; RK.forEach(k => pd[k] = hd.pts[k] - ptsB[k]); res.pointsByRole = pd;
   st.log.push({ round: r, planId: st.plan.chosen, delta: applied, reveals, rolls, scoreDelta, picks: RK.map(k => ({ role: k, tag: picks[k].tag, text: picks[k].text })) });
   hd.resolved[r] = res; return res;
@@ -525,14 +539,14 @@ function outro(st) {
 const intro = [
   'Atardece sobre el Valle de Sorrosal. Un teleférico viejo sube a tres rescatadores hacia la boca de una cueva.',
   'Lía, espeleóloga y amiga de todos, no ha vuelto de su ruta. Su última señal de radio llegó hace dos horas.',
-  'Nico, el guía, conoce cada galería. Esta mañana se salió de la ruta marcada, y no se lo ha contado a nadie.',
-  'Ona, la médica, ha oído la última transmisión de Lía: esa respiración no es normal. Teme algo que aún no puede probar.',
-  'Iván, el ingeniero, midió el caudal del río subterráneo. El agua sube más rápido de lo que ha dicho. El equipo es suyo, y es caro.',
-  'Cae la lluvia y la cueva empieza a llenarse. Cada uno sabe algo que los demás ignoran, y cada uno querrá salir bien parado.',
-  'Cinco tramos. Una sola salida. Sacadla con vida... y que cada uno pueda mirarse al espejo después.'
+  'Nico es el guía: conoce las galerías y dirige al grupo.',
+  'Ona es la médica: cuida de Lía por radio y vigila su salud.',
+  'Iván es el ingeniero: lleva el material y mide el agua.',
+  'Empieza a llover y la cueva se llena. Objetivo de los tres: sacar a Lía con vida en 5 tramos.',
+  'Cómo se juega, en 3 pasos: 1) Explora y busca pistas. 2) Habla en el chat y vota la ruta. 3) Elige en secreto qué haces. Cada uno tiene su objetivo y su secreto, y solo los verá en su pantalla.'
 ];
-const introShots = [{ still: 'still_valle', text: intro[0], mood: 'calma' }, { still: 'still_cabina', text: intro[1], mood: 'tension' }, { still: 'still_radio', text: intro[2], mood: 'secreto' }, { still: 'still_mapa', text: intro[3], mood: 'secreto' },
-  { still: 'still_entrada', text: intro[4], mood: 'secreto' }, { still: 'still_tormenta', text: intro[5], mood: 'tension' }, { still: 'still_inundada', text: intro[6], mood: 'tension' }];
+const introShots = [{ still: 'still_valle', text: intro[0], mood: 'calma' }, { still: 'still_cabina', text: intro[1], mood: 'tension' }, { still: 'still_radio', text: intro[2], mood: 'calma' }, { still: 'still_mapa', text: intro[3], mood: 'calma' },
+  { still: 'still_entrada', text: intro[4], mood: 'calma' }, { still: 'still_tormenta', text: intro[5], mood: 'tension' }, { still: 'still_inundada', text: intro[6], mood: 'tension' }];
 const DLG = [['Aquí Lía... la pierna no responde. Oigo agua, mucha agua.'], ['Tengo frío. Mucho frío. ¿Seguís ahí?'], ['...perdona, me he ido un momento. ¿Qué ha sido ese ruido?'], ['Me llega el agua al pecho. Ya casi no siento los dedos.'], ['Veo luz. Creo que veo luz. Por favor, no me dejéis.']];
 function dialogue(r, st) {
   const lines = [{ who: 'Lía', text: st && st.event && st.event.radio && st.round === r ? st.event.radio : DLG[clamp(r | 0, 1, ROUNDS) - 1][0] }];
@@ -541,9 +555,50 @@ function dialogue(r, st) {
 }
 function roleBrief(st, role) {
   const R = ROLES[role], pv = st && st.priv ? st.priv[role] : null;
-  return { role, name: R.name, short: R.short, portrait: R.portrait, persona: R.persona, mission: 'Sacad a Lía de la cueva antes de que el agua llegue a 100 o su salud a 0, en 5 tramos.', goal: pv ? pv.goal.text.replace(/\d+/, pv.goal.min) : R.goal, goalPoints: R.points, secret: R.secret,
+  return { role, name: R.name, short: R.short, portrait: R.portrait, persona: R.persona, mission: 'Sacad a Lía de la cueva antes de que el agua llegue a 100 o su salud a 0, en 5 tramos.', goal: pv ? pv.goal.text.replace(/\d+/, pv.goal.min) : R.goal, goalPoints: R.points, secret: 'Tienes un secreto. Solo lo verás tú, en tu pantalla privada.',
+    steps: ['1) Explora: usa tus 3 acciones en los puntos del mapa.', '2) Habla en el chat y vota A, B o C.', '3) Elige en secreto tu acción y mira el resultado.'],
     tip: ({ guia: 'Sabes cosas de rutas. Tu secreto puede hundirte... o redimirte.', medica: 'Tus datos sobre Lía valen oro, pero tu sospecha divide al equipo.', ing: 'Controlas el material y el agua. Cuidado: cada pieza que gastas es un voto en tu contra.' })[role],
     companions: RK.filter(k => k !== role).map(k => ({ role: k, name: ROLES[k].name, persona: ROLES[k].persona })) };
+}
+
+
+// ================= MISIONES (guía "para tontos") =================
+const MGOAL = ['Encuentra la ruta segura hacia la galería', 'Encuentra cómo pasar el derrumbe', 'Descubre dónde está el gas y cómo cruzar', 'Encuentra cómo cruzar el agua helada', 'Decide cómo llegar hasta Lía'];
+const READY = { briefing: ['Empezar', 'Pasa a explorar ya, sin esperar al reloj.'], explore: ['Terminar exploración → ir al plan', 'Di que ya has explorado. Cuando todos terminen se pasa al plan.'], plan: ['Confirmar mi voto', 'Di que tu voto es firme. Cuando todos confirmen se pasa a la acción secreta.'], secret: ['Confirmar acción', 'Confirma tu acción secreta. Cuando todos confirmen se resuelve el tramo.'], resolve: ['Continuar', 'Salta la animación del resultado.'], summary: ['Continuar', 'Pasa al siguiente tramo.'] };
+const readyLabel = phase => { const r = READY[phase] || ['Listo', 'Pasa a la siguiente fase.']; return { label: r[0], tip: r[1] }; };
+// mission(st, role, opts?) -> {title, desc, steps:[{id,text,done,target?,kind}], now:{text,short,target?,hint}}. opts.slot = slot del POI más cercano al jugador (para recomendar).
+function mission(st, role, o) {
+  o = o || {}; const r = clamp(st.round, 1, ROUNDS), ph = st.phase, hd = st.hid, pv = st.priv[role], P = st.players[role], title = MGOAL[r - 1];
+  const mk = (desc, steps, now) => ({ title, desc, steps, now: Object.assign({ target: null, hint: '' }, now) });
+  const spoke = hd.spoke[role] === r || hd.shares.some(x => x.from === role && x.round === r);
+  const pm = p => hd.poiMeta[p.id], avail = p => !pm(p).seen.includes(role) && !pm(p).used;
+  const give = p => p.kind === 'info' ? 'pista de ruta, puede fallar' : p.kind === 'recurso' ? p.label.split(' · ')[1] + ' para el equipo' : 'hallazgo';
+  const step = p => ({ id: 'poi_' + p.id, text: 'Ve a «' + p.name + '» y pulsa E: ' + give(p), done: !avail(p), target: p.id, kind: 'poi' });
+  if (ph === 'explore') {
+    const info = st.pois.filter(p => p.kind === 'info'), extra = st.pois.find(p => p.kind === (role === 'guia' ? 'secreto' : 'recurso'));
+    const ps = info.concat(extra ? [extra] : []), steps = ps.map(step); steps.push({ id: 'chat', text: 'Cuenta en el chat lo que sepas', done: !!spoke, kind: 'chat' }, { id: 'ready', text: readyLabel('explore').label, done: !!P.ready, kind: 'ready' });
+    const desc = MGOAL[r - 1] + ': inspecciona «' + info.map(p => p.name).join('» y «') + '». Tienes 3 acciones: gástalas en lo que creas más útil.';
+    const hint = 'Te quedan ' + pv.ap + ' de 3 acciones';
+    if (P.ready) return mk(desc, steps, { text: 'Esperando al equipo…', short: 'Espera', hint });
+    if (pv.ap <= 0) return mk(desc, steps, { text: 'Ya has usado tus 3 acciones: pulsa «Terminar exploración» o habla con el equipo', short: 'Habla o termina', hint: 'Comparte tus tarjetas en el chat si quieres que el equipo las vea' });
+    let c = ps.filter(avail); if (!c.length) c = st.pois.filter(avail);
+    if (!c.length) return mk(desc, steps, { text: 'No queda nada por mirar: habla con el equipo o pulsa «Terminar exploración»', short: 'Habla o termina', hint });
+    if (o.slot != null) c = c.map((p, i) => [Math.abs(p.slot - o.slot), i, p]).sort((a, b) => a[0] - b[0] || a[1] - b[1]).map(x => x[2]);
+    const t = c[0]; return mk(desc, steps, { text: 'Ve a «' + t.name + '» y pulsa E: ' + give(t), short: 'Ve a ' + t.name, target: t.id, hint });
+  }
+  if (ph === 'plan') {
+    const v = st.plan.votes[role], steps = [{ id: 'chat', text: 'Habla en el chat con el equipo', done: !!spoke, kind: 'chat' }, { id: 'vote', text: 'Vota A, B o C (teclas 1, 2, 3)', done: !!v, kind: 'vote' }, { id: 'ready', text: readyLabel('plan').label, done: !!P.ready, kind: 'ready' }];
+    const desc = 'Elegid la ruta: ' + st.plan.options.map(x => x.id + ' = ' + x.n).join(', ') + '.';
+    return mk(desc, steps, P.ready ? { text: 'Esperando al equipo…', short: 'Espera' } : v ? { text: 'Has votado ' + v + '. Pulsa «Confirmar mi voto» o sigue hablando', short: 'Confirma', hint: 'Aún puedes cambiar el voto' } : { text: 'Habla en el chat y vota A, B o C: 1/2/3', short: 'Vota 1, 2 o 3', hint: 'Usa las pistas que has leído' });
+  }
+  if (ph === 'secret') {
+    const pk = Number.isInteger(pv.secretPick), steps = [{ id: 'secret', text: 'Elige tu acción secreta', done: pk, kind: 'secret' }, { id: 'ready', text: readyLabel('secret').label, done: !!P.ready, kind: 'ready' }];
+    return mk('Cada uno elige una acción en secreto. Nadie la ve hasta el resultado.', steps, P.ready ? { text: 'Esperando al equipo…', short: 'Espera' } : pk ? { text: 'Pulsa «Confirmar acción»', short: 'Confirma' } : { text: 'Elige tu acción secreta', short: 'Elige acción', hint: 'Equipo, tu objetivo o arriesgada' });
+  }
+  if (ph === 'briefing') return mk('Lee qué ha pasado en este tramo.', [{ id: 'info', text: 'Lee la situación', done: false, kind: 'info' }, { id: 'ready', text: 'Empezar', done: !!P.ready, kind: 'ready' }], { text: 'Lee la situación y pulsa «Empezar»', short: 'Lee', hint: 'Tras leer, tendrás ' + dif(st).explore + ' s para explorar' });
+  if (ph === 'resolve') return mk('Mira qué ha pasado.', [{ id: 'info', text: 'Mira el resultado del tramo', done: false, kind: 'info' }], { text: 'Mira el resultado del tramo', short: 'Mira' });
+  if (ph === 'summary') return mk('Revisa cómo va la partida.', [{ id: 'info', text: 'Revisa los puntos', done: false, kind: 'info' }], { text: 'Revisa el resultado y pulsa «Continuar»', short: 'Continuar' });
+  return mk('Saca a Lía con vida.', [{ id: 'info', text: 'Saca a Lía con vida', done: false, kind: 'info' }], { text: 'Saca a Lía con vida', short: 'Rescata a Lía' });
 }
 
 // ================= DIÁLOGO DEMO (compañeros y Lía) =================
@@ -615,6 +670,11 @@ const LN = {
     r_vote: ['Votemos y que salgan las cuentas.', 'Vale, votemos. Rápido.'], r_trust: ['Mis cuentas están a la vista. Mirad lo que queráis.', 'No tengo por qué justificarme... pero lo haré si hace falta.'], r_material: ['Material: lo justo. Lo llevo yo.', 'Pregunta concreta, respuesta concreta: queda lo que ves en el panel.'], r_lia: ['Ona sabrá. Yo cuido el equipo.'], r_water: ['El agua sube. Más no puedo decir sin medir otra vez.', 'Caudal: ahí lo tenéis, en la barra.'], r_route: ['Nico, ¿qué ruta nos conviene?'], r_gen: ['Entendido.', 'Apuntado. Sigo con lo mío.']
   }
 };
+// Plantillas extra genéricas (más variedad, menos repetición) para cualquier rol.
+const XL = { poi: ['Miro en {poi}.', 'Me acerco a {poi}.', 'Ahora toca {poi}.', 'Voy hacia {poi}.'], found: ['He sacado algo de {poi}.', 'Hay algo en {poi}: os lo paso.', 'Algo útil en {poi}. Lo miro.'], found_hide: ['En {poi} no había nada útil.', '{poi}: nada que contar.'],
+  explore: ['El reloj corre. Aprovechad las acciones.', 'Mirad bien antes de gastar acciones.', 'Contadlo todo en el chat.'], idle_lo: ['Todo tranquilo, de momento.', 'Seguid, vamos bien.'], idle_mid: ['El agua ya pesa. No os durmáis.', 'Hay que ir cerrando cosas.'], idle_hi: ['Casi sin margen. Decidid.', 'El agua nos come. Ya.'],
+  agree: ['De acuerdo, {who}.', 'Tomo nota, {who}.'], doubt: ['{who}, ¿seguro? Yo no lo veo igual.'], r_gen: ['Vale.', 'Te leo.', 'Sigo en ello.'], water: ['Ojo, el agua pasa de {n}.'] };
+RK.forEach(k => Object.keys(XL).forEach(q => { LN[k][q] = (LN[k][q] || []).concat(XL[q]); }));
 const LIA = {
   good: ['Os oigo más cerca. Gracias... no os paréis.', 'Sigo aquí. Tengo miedo, pero sigo aquí.', 'Eso ha sonado a buena señal. Seguid.', 'He rezado por vosotros. A mi manera.'],
   bad: ['Ese ruido... ¿estáis bien? Yo estoy bien. Estoy... bien.', 'No os preocupéis por mí. Bueno... un poquito sí.', 'Si esto sale mal, quiero que sepáis... no, mejor lo digo cuando salga.', 'Cuento mis respiraciones. Voy por doscientas y pico.'],
@@ -625,9 +685,11 @@ const LIA = {
 };
 const DEFAULT_TOK = { who: 'equipo', opt: 'esa opción', poi: 'allí', n: '' };
 function fmt(s, c) { return s.replace(/\{(\w+)\}/g, (m, k) => c[k] != null ? c[k] : DEFAULT_TOK[k] || ''); }
-function chooseLine(st, arr, c, salt) {
-  const said = st.hid.said, f = arr.map(x => fmt(x, c)), fresh = f.filter(x => !said.includes(x)), pool = fresh.length ? fresh : f;
-  const t = pool[hi(pool.length, st.seed, 'line', st.hid.chatN, salt || '')]; said.push(t); if (said.length > 24) said.shift(); return t;
+// Anti-repetición: no repite las últimas CAD.memory frases del mismo emisor ni las últimas 6 de cualquiera; devuelve null si no hay frase nueva.
+function chooseLine(st, arr, c, salt, role) {
+  const cad = st.hid.cad, mem = cad.mem[role || '?'] = cad.mem[role || '?'] || [], said = st.hid.said, f = arr.map(x => fmt(x, c));
+  let pool = []; for (const n of [6, 3, 1]) { pool = f.filter(x => !mem.includes(x) && !said.slice(-n).includes(x)); if (pool.length) break; } if (!pool.length) return null;
+  const t = pool[hi(pool.length, st.seed, 'line', st.hid.chatN, salt || '')]; said.push(t); if (said.length > 24) said.shift(); mem.push(t); if (mem.length > CAD.memory) mem.shift(); return t;
 }
 const tier = st => st.s.agua >= 65 ? 'hi' : st.s.agua >= 35 ? 'mid' : 'lo';
 function playerNames(st, role) { return RK.filter(k => k !== role); }
@@ -640,12 +702,12 @@ function demoLine(st, role, trig, c) {
   c = Object.assign({}, c || {}); const B = LN[role];
   if (role === 'lia') {
     const L = trig === 'resolve' ? (st.s.salud < 35 ? LIA.low : c.ok === false ? LIA.bad : c.ok ? LIA.good : LIA.idle) : trig === 'reveal' ? LIA.secret : trig === 'water' || (trig === 'idle' && st.s.agua >= 60) ? LIA.water : st.s.salud < 35 ? LIA.low : LIA.idle;
-    return chooseLine(st, L, c, role + trig);
+    return chooseLine(st, L, c, role + trig, role);
   }
   if (c.who && NAMES[c.who]) c.who = NAMES[c.who]; if (c.fromRole) c.who = NAMES[c.fromRole];
-  const pick = (k, extra) => chooseLine(st, B[k], Object.assign(c, extra || {}), role + k);
+  const pick = (k, extra) => chooseLine(st, B[k], Object.assign(c, extra || {}), role + k, role);
   switch (trig) {
-    case 'brief': return chooseLine(st, BR[role][st.event ? st.event.cat : 'agua'] || BR[role].agua, c, role + 'br');
+    case 'brief': return chooseLine(st, BR[role][st.event ? st.event.cat : 'agua'] || BR[role].agua, c, role + 'br', role);
     case 'explore': return pick('explore');
     case 'poi': return pick('poi');
     case 'found': return pick(c.hide ? 'found_hide' : 'found');
@@ -689,7 +751,7 @@ function demoAct(st, role, phase) {
   if (phase === 'explore') {
     if (pv.ap > 0) {
       const free = st.pois.filter(p => !hd.poiMeta[p.id].seen.includes(role) && !hd.poiMeta[p.id].used);
-      if (free.length) { const w = free.map(p => (sy.poi[p.kind] || 1) * (p.kind === 'recurso' && st.s.material > 60 && st.players[role].style !== 'ego' ? .5 : 1)); const p = free[wpick(st, w, role, 'poi', pv.ap)]; return { type: 'poi', poiId: p.id, label: p.label }; }
+      if (free.length) { const w = free.map(p => (sy.poi[p.kind] || 1) * (p.kind === 'recurso' && st.s.material > 60 && st.players[role].style !== 'ego' ? .5 : 1)); const p = free[wpick(st, w, role, 'poi', pv.ap)]; return { type: 'poi', poiId: p.id, label: p.name || p.label }; }
     }
     for (const c of pv.intel) {
       if (c.shared || c.item) continue; const k = c.id; if (mem[k]) continue; mem[k] = 1;
@@ -701,7 +763,7 @@ function demoAct(st, role, phase) {
         }
         return { type: 'share', cardId: k, asIs: true };
       }
-      return { type: 'hide', cardId: k, label: (st.pois.find(p => p.id === c.poi) || {}).label };
+      return { type: 'hide', cardId: k, label: (st.pois.find(p => p.id === c.poi) || {}).name };
     }
     if (!P.ready) return { type: 'ready' };
     return null;
@@ -722,9 +784,10 @@ function egoPref(st, role, cd) { // opción que más conviene al propio objetivo
 }
 async function botAct(st, role, phase) {
   phase = phase || st.phase;
-  if (!st.demo && KEY && aiUp() && st.players[role].ai) { try { const j = await callAI(PROMPTS.bot, buildBotPrompt(st, role, 'act', { phase }), 400); const a = validAct(st, role, phase, j); aiOk(); if (a) return a; } catch (e) { aiBad(); } }
-  return demoAct(st, role, phase);
+  if (!st.demo && KEY && aiUp() && st.players[role].ai) { try { const j = await callAI(PROMPTS.bot, buildBotPrompt(st, role, 'act', { phase }), 400); const a = validAct(st, role, phase, j); aiOk(); if (a) return withDelay(st, role, a); } catch (e) { aiBad(); } }
+  return withDelay(st, role, demoAct(st, role, phase));
 }
+const withDelay = (st, role, a) => { if (a) a.delay = a.type === 'share' ? 2500 + hi(2500, st.seed, 'ad', role, st.hid.chatN) : a.type === 'poi' ? hi(2500, st.seed, 'ad', role, st.hid.chatN) : 0; return a; };
 function exec(st, role, a) {
   if (!a) return { ok: false };
   switch (a.type) {
@@ -740,12 +803,18 @@ function exec(st, role, a) {
 
 // ================= Chat de bots =================
 function makeMsg(st, from, text, extra) { const m = say(st, from, text, from === 'lia' ? 'radio' : 'chat', extra); m.rnd = st.round; return m; }
+const CAD = { minGapMs: 6000, maxGapMs: 9000, maxReplies: 2, memory: 12, replyDelayMs: [900, 2200], spontDelayMs: [300, 1200], idleAfterMs: 25000 };
+const SPONT = ['brief', 'explore', 'poi', 'found', 'idle', 'water', 'secret', 'plan'], REPLY = ['chat', 'share', 'vote'];
+// Devuelve msg (con msg.delay en ms) o null si el limitador lo frena. Espontáneos: 1 cada 6-9 s en total; respuestas: máx. 2 seguidas hasta que el jugador vuelva a hablar.
 async function botChat(st, role, trig, c) {
   c = c || {}; if (!st.hid) return null;
+  const cad = st.hid.cad, T = now(), spont = SPONT.includes(trig), rep = REPLY.includes(trig);
+  if (spont && T - cad.lastSpont < cad.gap) return null; if (rep && cad.streak >= CAD.maxReplies) return null;
   let text = null;
-  if (!st.demo && KEY && aiUp()) { try { const j = await callAI(PROMPTS.bot, buildBotPrompt(st, role, trig, c), 300); const t = validChat(st, role, j); aiOk(); if (t) text = t; } catch (e) { aiBad(); } }
+  if (!st.demo && KEY && aiUp()) { try { const j = await callAI(PROMPTS.bot, buildBotPrompt(st, role, trig, c), 300); const t = validChat(st, role, j); aiOk(); if (t && !(cad.mem[role] || []).includes(t)) { text = t; (cad.mem[role] = cad.mem[role] || []).push(t); if (cad.mem[role].length > CAD.memory) cad.mem[role].shift(); } } catch (e) { aiBad(); } }
   if (!text) text = demoLine(st, role, trig, c); if (!text) return null;
-  return makeMsg(st, role, text);
+  if (spont) { cad.lastSpont = T; cad.gap = CAD.minGapMs + hi(CAD.maxGapMs - CAD.minGapMs, st.seed, 'gap', st.hid.chatN); } if (rep) cad.streak++;
+  const d = spont ? CAD.spontDelayMs : CAD.replyDelayMs, m = makeMsg(st, role, text); m.delay = d[0] + hi(d[1] - d[0], st.seed, 'dl', st.hid.chatN); return m;
 }
 function mkReactors(st, exclude) { return RK.filter(k => st.players[k].ai && !exclude.includes(k)); }
 // Reacciones agrupadas: devuelve mensajes (ya añadidos al chat) con `delay` (ms) sugerido para mostrarlos escalonados.
@@ -773,7 +842,7 @@ async function botsReact(st, trig, c) {
     res.reveals.filter(x => x.type === 'lie').forEach(x => { const acc = ais.find(k => k !== x.from); if (acc) { botChat(st, acc, 'lie_acc', { fromRole: x.from }).then(m => m && push(m, d)); } });
     for (const x of res.reveals.filter(x => x.type === 'secret')) { if (x.how === 'exposed' && st.players[x.role].ai) { push(await botChat(st, x.role, 'exposed', {}), d); d += 1800; } else { const o = ais.find(k => k !== x.role); if (o) { push(await botChat(st, o, x.how === 'exposed' ? 'other_exposed' : 'other_secret', { fromRole: x.role }), d); d += 1800; } } }
     if (rnd('lia') < .75) push(await botChat(st, 'lia', 'resolve', { ok: res.ok }), d);
-  } else if (trig === 'chat') { if (ais.length && rnd('c') < .9) { const w = ais.slice().sort((a, b) => rnd(a) - rnd(b))[0]; push(await botChat(st, w, 'chat', { text: c.text, fromRole: c.from }), 900); } }
+  } else if (trig === 'chat') { if (ais.length && rnd('c') < .9) { const w = ais.slice().sort((a, b) => rnd(a) - rnd(b))[0]; const m = await botChat(st, w, 'chat', { text: c.text, fromRole: c.from }); push(m, m && m.delay); } }
   else if (trig === 'water') { if (ais.length) push(await botChat(st, ais[hi(ais.length, st.seed, 'w', c.level)], 'water', { n: c.level }), 400); if (rnd('l') < .7) push(await botChat(st, 'lia', 'water', {}), 2200); }
   else if (trig === 'idle') { if (ais.length && rnd('i') < .7) push(await botChat(st, ais[hi(ais.length, st.seed, 'i', hd.chatN)], 'idle', c), 500); }
   return out;
@@ -856,7 +925,7 @@ function buildJudgePrompt(st, win, ob, mvp) {
 function validateIntelTemplates() { // usado por el test: cada plantilla debe parsear a su polaridad
   const bad = []; ROUND_D.forEach((D, r) => D.poi.forEach((p, pi) => RK.forEach(k => { const c = p.cards[k], st = { plan: { options: D.opts.map((o, i) => ({ id: 'ABC'[i], n: o.n })) } }; const cl = parseClaim(st, c[2].replace('{o}', D.opts[0].n)); if (cl.opt !== 0 || cl.pol !== (c[0] === 'trap' ? -1 : 1)) bad.push('R' + (r + 1) + ' p' + pi + ' ' + k + ' ' + JSON.stringify(cl)); }))); return bad;
 }
-const Story = { ROLES, STATS, ROUNDS, LIM, RK, SK, NAMES, PROMPTS, intro, introShots, now: () => Date.now(),
+const Story = { TIMES, chatCadence: CAD, mission, readyLabel, ROLES, STATS, ROUNDS, LIM, RK, SK, NAMES, PROMPTS, intro, introShots, now: () => Date.now(),
   newGame, privOf, publicState, roundStart, setPhase, poiInteract, share, accuse, vote, tally, secretPick, ready, allReady, tickWater, waterRate, resolve, advance, isOver, saved, objectives, finish, verdict: async st => st.verdict || buildVerdict(st, saved(st), objectives(st), 'guia'),
   achievementsList: () => ACH.map(a => Object.assign({}, a)), loadAchievements: loadAch, difficulty, botAct, exec, botChat, botsReact, liaLine, say, roleBrief, dialogue, outro, parseClaim: (st, t) => parseClaim(st, t),
   buildDirectorPrompt, validDirector, buildBotPrompt, buildJudgePrompt, validateIntelTemplates, _D: { ROUND_D, SA, CONFESS, ACH, BR, LN, LIA },

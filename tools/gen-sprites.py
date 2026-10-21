@@ -471,7 +471,8 @@ def gen_ui():
 if __name__ == '__main__':
     gen_tiles(); gen_players(); gen_lia(); gen_water(); gen_props(); gen_cablecar(); gen_sky(); gen_ui()
     import artlib, art_stills, art_portraits, art_icons, art_events, art_ui  # v3: ilustraciones, retratos, iconos (numpy)
-    art_stills.gen_stills(); art_portraits.gen_portraits(); art_icons.gen_icons(); art_events.gen_events(); art_ui.gen_trophies(); art_ui.gen_poi(); art_ui.gen_ui()
-    META.update(artlib.META)
+    import art_icons4, art_portraits4; art_icons4.patch()
+    art_stills.gen_stills(); art_portraits.gen_portraits(); art_portraits4.gen_portraits4(); art_icons.gen_icons(); art_events.gen_events(); art_ui.gen_trophies(); art_ui.gen_poi(); art_ui.gen_ui(); art_icons4.gen_icons4()
+    META.update(artlib.META); art_icons4.props_baselines(META)
     json.dump(META, open(os.path.join(OUT, 'meta.json'), 'w'), indent=1)
     print('ok', {k: (v['w'], v['h']) for k, v in META.items()})

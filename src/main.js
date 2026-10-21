@@ -28,6 +28,21 @@
     if (eng) return;
     eng = Engine.create(cv, { assets: window.ASSETS, getState: () => st, authority, localRole: myRole, water: 10, onInteract, onSfx: n => snd(n) });
     eng.start(); eng.fit(innerWidth, innerHeight);
+    const ins = () => { try { eng.setViewInsets(Hud.getInsets()); } catch (e) { } }; ins(); Hud.onInsets && Hud.onInsets(ins);
+  }
+  // Misión: banner «qué hacer», pasos, etiqueta del botón y flecha guía (la IA no recomienda nada al cliente sin priv: try/catch)
+  let gKey = '';
+  function guide() {
+    if (!st || !eng || !started || !myPriv || st.phase === 'intro' || st.phase === 'final') return;
+    let m; try { m = Story.mission(st, myRole); } catch (e) { return; } if (!m || !m.now) return;
+    const ex = st.phase === 'explore', rl = Story.readyLabel(st.phase) || {}, ap = myPriv.ap, k = JSON.stringify([m.now.text, m.steps.map(x => x.done), st.round, ex && ap]);
+    if (k !== gKey) {
+      gKey = k;
+      Hud.setNow({ text: m.now.text, sub: m.now.hint || '', kind: ex ? (m.now.target ? 'go' : 'explore') : st.phase === 'plan' ? 'plan' : st.phase === 'secret' ? 'secret' : 'info' });
+      Hud.setMission({ title: m.title, steps: m.steps.map(x => ({ text: x.text, done: x.done })) });
+      Hud.setReady({ label: rl.label, tip: rl.tip, pulse: ex && ap === 0 });
+    }
+    const tgt = ex && m.now.target ? m.now.target : null; if (tgt !== guide.t) { guide.t = tgt; eng.setGuide(tgt, tgt ? { label: m.now.short ? m.now.short.replace(/^Ve a /, '') : '' } : undefined); }
   }
   function setupBots() { RK.forEach(r => eng.setBot(r, r !== myRole && (!isClient() ? st.players[r].ai : true))); eng.setLocal(myRole); }
   function showGame() { gameEl.style.display = 'flex'; Hud.show && Hud.show(); eng.fit(innerWidth, innerHeight); }
@@ -67,7 +82,7 @@
       Hud.showResolve(Object.assign({}, res, { reveals: (res.reveals || []).map(r => Object.assign({}, r, { kind: revKind(r.type) })), achievements: achs(res) }));
     }
     if (st.phase === 'summary' && shownSum !== st.round) {
-      shownSum = st.round; Hud.showSummary({ round: st.round, score: res ? res.scoreDelta : {}, total: st.score.total, achievements: achs(res) });
+      shownSum = st.round; Hud.showSummary({ round: st.round, score: res ? res.scoreDelta : {}, total: st.score.total, achievements: achs(res) }).then(() => { if (mode !== 'client' && st && st.phase === 'summary') advance(); });
     }
     if (st.phase === 'final' && st.final && !shownFinal) {
       shownFinal = true; Hud.hide && Hud.hide(); gameEl.style.display = 'none'; S.music && S.music(st.final.saved ? 'win' : 'lose');
@@ -108,7 +123,8 @@
     busyRound = true; earlyN = 0;
     await Story.roundStart(st);
     eng.setPois(st.round, st.pois); eng.gather(st.round); eng.pan(st.round); eng.setWaterRate(0); eng.setWater(st.s.agua);
-    busyRound = false; push(); react('brief');
+    busyRound = false; push(); react('brief'); gKey = ''; guide.t = undefined; guide();
+    const ev = st.event, fp = ev && ev.focus && ev.focus.poi && eng.getPoiPos(ev.focus.poi); if (fp) setTimeout(() => eng.focus(fp.x, fp.y, { ms: 2500 }), 1500);
   }
   async function react(trig, ctx) { try { await Story.botsReact(st, trig, ctx); } catch (e) { } push(); }
   const allVoted = () => RK.every(r => st.plan.votes && st.plan.votes[r]);
@@ -121,7 +137,7 @@
       const w = Story.tickWater(st, 0.25); eng.setWater(st.s.agua);
       if (w && w.warn) { snd('water_warn'); react('water', { level: w.warn }); }
     }
-    botLoop();
+    botLoop(); guide();
     if (st.phase === 'explore' && Date.now() - lastChatAt > 25000) { lastChatAt = Date.now(); react('idle'); }
     const early = (st.phase === 'explore' && Story.allReady(st)) || (st.phase === 'plan' && allVoted()) || (st.phase === 'secret' && allSecret());
     earlyN = early ? earlyN + 1 : 0;

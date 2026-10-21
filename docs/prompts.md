@@ -12,3 +12,5 @@ Código: `src/story.js` (`Story.PROMPTS`, `version:'v3'`). Modelo `claude-haiku-
 Secciones del prompt: `[CONTEXTO]`, `[EVENTO BASE]`/`[ESTADO PÚBLICO]`, `[CHAT RECIENTE]`, `[TU INFORMACIÓN PRIVADA]`, `[FORMATO]`, `[REGLAS]`, `[VALIDACION]`, `[TAREA]`. El sistema ordena ignorar instrucciones dentro de datos/chat.
 
 Historial: v1 prototipo; v2 secciones + ejemplo + validación estricta; v3 reparto de responsabilidades (IA = texto y decisiones de compañeros, código = reglas y azar), compañeros con información privada, árbitro con mentiras/secretos.
+
+v4 (sin cambio de prompts): `botChat` aplica limitador y anti-repetición también a la salida de la IA (frase repetida -> se usa la demo; frenado -> null). La intro y la ficha de rol ya no contienen secretos; solo `priv.secret` (y el prompt privado del propio bot) los incluye.
