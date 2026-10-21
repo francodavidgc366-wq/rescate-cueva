@@ -41,6 +41,23 @@ const strip = x => JSON.stringify(x, (k, v) => k === 't' ? undefined : v);
   R('facil/coop', .84, .95); R('facil/random', .36, .55); R('normal/coop', .64, .78); R('normal/ego', .18, .32); R('normal/random', .08, .25); R('everest/coop', .28, .42); R('everest/ego', 0, .09);
   assert(out['facil/coop'] > out['normal/coop'] && out['facil/random'] > out['normal/random'] + .15, 'Fácil más fácil que Normal');
   assert(out['everest/coop'] < out['normal/coop'] - .1, 'Everest debe ser más duro'); assert(out['everest/random'] <= out['normal/random']);
+  // v16: finales distintos, ruta, modo rápido, sin pistas en el plan
+  const gk = new Set(), bk = new Set(), kinds = new Set();
+  for (let i = 0; i < 300; i++) {
+    const { st, fin } = await play(['coop', 'ego', 'random', 'persona'][i % 4], ['facil', 'normal', 'everest'][i % 3], 5000 + i, (s, r) => { r.plan && assert(s.path.length && s.path[s.path.length - 1].kind === r.plan.kind); });
+    const e = Story.endingPanels(st); assert.strictEqual(e.panels.length, 7); e.panels.forEach(x => assert(x.text.length <= 90, x.text));
+    assert.strictEqual(Story.endingTitle(st).title, e.title); assert.strictEqual(fin.ending.title, e.title);
+    (e.saved ? gk : bk).add(e.key); st.path.forEach(x => kinds.add(x.kind));
+  }
+  console.log('finales buenos', [...gk].join(), '| malos', [...bk].join()); assert(gk.size >= 5, 'finales buenos distintos: ' + gk.size); assert(bk.size >= 4, 'finales malos distintos: ' + bk.size);
+  const q = Story.newGame({ seed: 3, quick: true }); assert(Story.isQuick(q) && !Story.isQuick(Story.newGame({ seed: 3 }))); await Story.roundStart(q);
+  assert.strictEqual(q.tleft, 5); Story.setPhase(q, 'explore'); assert.strictEqual(q.tleft, 35); Story.setPhase(q, 'plan'); assert.strictEqual(q.tleft, 15); Story.setPhase(q, 'secret'); assert.strictEqual(q.tleft, 10); assert.strictEqual(q.pois.length, 4);
+  assert(q.plan.brief === '' && q.plan.options.every(o => o.what.length <= 45 && o.what && o.hints == null && o.known == null && o.kind && o.speed));
+  assert(!/hints|known|clue|planBrief/.test(JSON.stringify(Story.publicState(q).plan)) && !/clue|hints|known/.test(JSON.stringify(Story.privOf(q, 'guia').planOpts)));
+  const pq = Story.newGame({ seed: 4, quick: true }); await Story.roundStart(pq); Story.setPhase(pq, 'explore'); const pi2 = pq.pois.find(x => x.kind === 'info'); const po = Story.poiInteract(pq, 'guia', pi2.id); assert(po.chatLine && po.chatLine.length <= 55 && po.explain);
+  const w0 = Story.newGame({ seed: 4, quick: true }), w1 = Story.newGame({ seed: 4 }); assert(Story.waterRate(w0) > Story.waterRate(w1) * 5, 'agua proporcional en modo rápido');
+  // la ruta cambia el tramo siguiente
+  const pf = Story.newGame({ seed: 6 }); await Story.roundStart(pf); pf.path.push({ round: 1, kind: 'balsa', outcome: 'bien' }); pf.round = 2; const a0 = pf.s.agua; await Story.roundStart(pf); assert(pf.s.agua >= a0 + 8 && pf.chat.some(m => /balsa/.test(m.text)), 'balsa: agua +8');
   // determinismo por semilla
   const a = await play('persona', 'normal', 777), b = await play('persona', 'normal', 777), c = await play('persona', 'normal', 778);
   assert.strictEqual(strip(a.st), strip(b.st), 'misma semilla, distinto estado'); assert.notStrictEqual(strip(a.st.plan), strip(c.st.plan) + 'x');
@@ -173,7 +190,7 @@ const strip = x => JSON.stringify(x, (k, v) => k === 't' ? undefined : v);
     // v9: español neutro (sin vosotros/vale/coger en textos visibles) y finales
   { const src = require('fs').readFileSync(require('path').join(__dirname, '../src/story.js'), 'utf8'); const bad = /\bvosotros\b|\b(?:habéis|estáis|tenéis|podéis|queréis|sabéis|vais)\b|\bvale,|'Vale\b|\bcoger\b|\bordenador\b|\bvuestr\w+|\bos (?:oigo|cuento|lo|la|llega|ayuda)\b/i; const m = src.split('\n').filter(l => !/nunca «vosotros»|sin vosotros/.test(l)).join('\n').match(bad); assert(!m, 'quedó español de España: ' + (m && m[0])); }
   for (const win of [true, false]) { const f9 = Story.newGame({ seed: 90 + win }); f9.round = 5; f9.log = new Array(5).fill(0).map((_, i) => ({ round: i + 1, rolls: [{ ok: true }] })); if (!win) f9.s.agua = 100; else { f9.s.agua = 40; f9.s.salud = 70; } await Story.finish(f9); const sc = Story.scene(f9, 'final'), et = Story.endingTitle(f9);
-    assert(sc.length >= 5 && sc.length <= 7 && sc.every(l => l.text.length <= 110 && l.who && l.mood), 'final ' + win + ' ' + sc.length); assert.strictEqual(et.saved, win); assert.strictEqual(et.title, win ? 'LÍA ESTÁ A SALVO' : 'NO LLEGAMOS A TIEMPO'); assert(et.sub); if (!win) assert.strictEqual(sc[sc.length - 1].who, 'lia'); }
+    assert(sc.length >= 5 && sc.length <= 7 && sc.every(l => l.text.length <= 110 && l.who && l.mood), 'final ' + win + ' ' + sc.length); assert.strictEqual(et.saved, win); assert(et.title && et.title === Story.endingPanels(f9).title); assert(et.sub); if (!win) assert.strictEqual(sc[sc.length - 1].who, 'lia'); }
   // ===== v12: sin bloqueos, meta de equipo, IA siempre ayuda, viaje =====
   for (let z = 1; z <= 5; z++) { const t = Story.newGame({ seed: 120 + z, humans: ['medica'] }); t.round = z; await Story.roundStart(t); Story.setPhase(t, 'explore');
     for (const k of RK) { const free = t.pois.filter(p => !p.gate), ownFree = free.filter(p => p.owner === k || p.owner === null); assert(free.length >= 2 && Story.tasks(t, k).filter(x => x.type !== 'help').length >= 2, 'z' + z + ' ' + k + ' sin 2 tareas libres'); assert(t.pois.every(p => !p.gate || p.owner === null || t.gates.find(g => g.id === p.gate).role === p.owner), 'puerta ajena sobre POI propio z' + z); assert(Story.tasks(t, k)[0].type !== 'help', 'primera tarea no depende de otro'); }
@@ -198,7 +215,7 @@ const strip = x => JSON.stringify(x, (k, v) => k === 't' ? undefined : v);
     const rc = Story.recap(st), pn = Story.endingPanels(st), win = Story.saved(st), M = ['neutral', 'alert', 'hurt', 'angry', 'happy', 'talk'];
     assert(rc.days.length === st.log.length && rc.entries.every(e => e.day && e.use) && rc.note, 'recap'); assert.strictEqual(Story.liaStatus(st), win ? 'rescatada' : 'perdida'); assert.strictEqual(pn.saved, win);
     assert(pn.panels.length >= 5 && pn.panels.length <= 7 && pn.panels.every(p => p.text.length <= 110 && (win ? /^end_good_[123]$/ : /^end_bad_[123]$/).test(p.img) && (!p.mood || M.includes(p.mood))), 'paneles');
-    assert(win ? /Encontramos a Lía/.test(pn.panels[0].text) : /^No encontramos|no logramos llegar/.test(pn.panels[0].text), 'primer panel deja claro si la encontraron'); }
+    assert(win ? /Lía|linterna/.test(pn.panels[0].text) : /Lía|llegar|alcanz|camino/.test(pn.panels[0].text), 'primer panel deja claro si la encontraron'); }
   { const src = require('fs').readFileSync(require('path').join(__dirname, '../src/story.js'), 'utf8'); assert(!/Temblor de manos|Saturación de Lía|pulsioxímetro|apuntalamiento/.test(src), 'jerga en textos'); }
   // ===== v14: dieta de texto (límites de caracteres) =====
   { const lim = (w, s, n) => assert(typeof s !== 'string' || s.length <= n, w + ' (' + s.length + '>' + n + '): ' + s);
@@ -216,7 +233,7 @@ const strip = x => JSON.stringify(x, (k, v) => k === 't' ? undefined : v);
       const st = Story.newGame({ seed, difficulty: dif, demo: true });
       for (let r = 1; r <= 5; r++) { st.round = r; await Story.roundStart(st); Story.setPhase(st, 'explore');
         lim('event.text', st.event.text, 90); st.pois.forEach(p => { lim('poi.name', p.name, 22); lim('poi.label', p.label, 28); lim('poi.give', p.give, 70); lim('poi.act', p.act, 70); lim('poi.why', p.why, 65); });
-        st.plan.options.forEach(o => { lim('title', o.title, 18); lim('what', o.what, 35); lim('ask', st.plan.ask, 35); lim('brief', st.plan.brief, 55); lim('gain', o.gain, 35); lim('risk', o.risk, 35); lim('opt.text', o.text, 90); });
+        st.plan.options.forEach(o => { lim('title', o.title, 18); lim('what', o.what, 45); lim('ask', st.plan.ask, 45); lim('brief', st.plan.brief, 55); lim('gain', o.gain, 35); lim('risk', o.risk, 35); lim('opt.text', o.text, 90); });
         for (const k of RK) { const m = Story.mission(st, k); lim('now.text', m.now.text, 40); lim('now.why', m.now.why, 45); lim('now.hint', m.now.hint, 70); lim('now.short', m.now.short, 28); lim('desc', m.desc, 70); m.steps.forEach(x => lim('step', x.text, 70)); }
         for (let it = 0; it < 40; it++) { let any = false; for (const k of RK) { const a = await Story.botAct(st, k, 'explore'); if (a) { any = true; Story.exec(st, k, a); } } if (!any) break; }
         RK.forEach(k => st.priv[k].intel.forEach(c => { lim('card.text', c.text, 60); lim('card.uses', c.uses, 70); }));

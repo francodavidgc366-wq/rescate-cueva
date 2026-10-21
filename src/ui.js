@@ -389,6 +389,7 @@ function showMenu() {
   $('div', 'sub rel', t, 'Cuatro cabezas, tres rescatadores, una cueva que se inunda. Habla, comparte lo que sabes... y decide en quién confías.');
   const dv = $('div', 'diff rel', s); $('span', 'lab', dv, 'DIFICULTAD'); const chips = {};
   [['facil', 'Fácil'], ['normal', 'Normal'], ['everest', 'Everest']].forEach(([k, n]) => { const c = chips[k] = $('button', 'chip' + (S.diff === k ? ' on' : ''), dv, n); c.onclick = () => setDiff(k); });
+  const qk = $('button', 'chip rel' + (S.quick ? ' on' : ''), s, 'Partida rápida (vídeo)'); qk.setAttribute('role', 'switch'); qk.setAttribute('aria-checked', !!S.quick); qk.onclick = () => { S.quick = !S.quick; try { saveS(); } catch (e) { } qk.classList.toggle('on', S.quick); qk.setAttribute('aria-checked', !!S.quick); sfx('select'); };
   function setDiff(k) { S.diff = k; saveS(); Object.keys(chips).forEach(x => chips[x].classList.toggle('on', x === k)); sfx('select'); }
   const L = $('div', 'mlist rel', s);
   const act = { solo: () => startFlow('solo'), host: () => startFlow('host'), join: () => joinDialog(), tut: () => showTutorial(), ach: () => showAchievements(), set: () => openSettings(), cred: () => showCredits() };
@@ -430,7 +431,7 @@ function showLobby(o) {
     else $('div', 'mut', p, 'Juegas con ' + esc(rinfo(U.role).n) + '. Los otros dos: IA.').style.marginTop = '.7em';
     if (U.mode !== 'join') { const dv = $('div', 'diff', s); $('span', 'lab', dv, 'DIFICULTAD'); [['facil', 'Fácil'], ['normal', 'Normal'], ['everest', 'Everest']].forEach(([k, n]) => { const c = $('button', 'chip' + (S.diff === k ? ' on' : ''), dv, n); c.onclick = () => { S.diff = k; saveS(); sfx('select'); render(); }; }); }
     const act = $('div', 'row', s); act.style.justifyContent = 'flex-end'; const go2 = $('button', 'btn go', act, U.mode === 'join' ? (U.ready ? 'No estoy listo' : 'Estoy listo') : 'Empezar'); go2.focus();
-    go2.onclick = () => { snd('unlock'); sfx('confirm'); if (U.mode === 'join') { U.ready = !U.ready; emit('ready', U.ready); try { Net.send('ready', { ready: U.ready }); } catch (e) { } render(); } else emit('start', { role: U.role, host: U.mode === 'host', solo: U.mode === 'idle', difficulty: S.diff }); };
+    go2.onclick = () => { snd('unlock'); sfx('confirm'); if (U.mode === 'join') { U.ready = !U.ready; emit('ready', U.ready); try { Net.send('ready', { ready: U.ready }); } catch (e) { } render(); } else emit('start', { role: U.role, host: U.mode === 'host', solo: U.mode === 'idle', difficulty: S.diff, quick: !!S.quick }); };
     if (U.mode === 'join') $('span', 'mut', act, 'Esperando al anfitrion...');
   }
 }

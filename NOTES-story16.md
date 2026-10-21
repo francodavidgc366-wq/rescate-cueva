@@ -1,0 +1,7 @@
+# NOTES-story16 (STORY v16). Test: `node tools/story-test.js [N]`.
+- Plan sin pistas: `plan.brief=''`; sin `hints/known/clue/risk_known`. `risk` = riesgo base fijo (no depende de pistas). `what` ≤45 por opción. `privOf().planOpts` es copia sin clue. Las pistas solo en tarjetas/chat (`planBrief` sigue existiendo aparte).
+- `st.path=[{round,kind,outcome}]` (se añade en resolve). Al empezar el tramo siguiente (roundStart) se aplica `PATHFX[kind]` + mensaje sys + línea de diario («La ruta»): balsa agua+8 (salud+4); pozo explore −20 %, material −4 (salud+3); galeria explore +10 %, confianza+2; cuerda salud+4; puente confianza+3; tunel agua−3; compuerta material+4. `hid.expMul` escala el tiempo de explore (setPhase, crisisReady).
+- Finales: `endingPanels(st)` → `{saved, panels(7, ≤90), title, key}`; `endingTitle` coherente (`key`). Buenos: g_perfecto (≥2 puertas perfect, sin mentiras ni heridos), g_costa (herido), g_mentira, g_pozo, g_balsa, g_galeria, g_alto (cuerda/puente), g_paso (túnel/compuerta). Malos: b_balsa, b_pozo, b_mentira, b_material, b_agua, b_salud. Ruta dominante = tipo más repetido.
+- Modo rápido: `newGame({quick:true})`, `Story.isQuick(st)`; `dif(st)` usa briefing 5/explore 35/plan 15/secret 10 (waterRate divide entre explore: el agua por fase se conserva). `Story.TIMES` no cambia (usar `difficulty()` no; usar dif(st) interno: HUD debe leer `st.tleft`).
+- `poiInteract` devuelve `out.chatLine` ≤55 («Sirve para: elegir la ruta segura»).
+- Test: 300 partidas → ≥5 buenos y ≥4 malos (salen 6 y 4); quick, path, chatLine, sin pistas.

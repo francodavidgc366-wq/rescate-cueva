@@ -69,12 +69,12 @@
   const sayOnce = (r, t) => { if (!st.chat.slice(-40).some(m => m.from === r && m.text === t)) Story.say(st, r, t, 'chat'); };
   // ---------- Minijuegos (examinar, habilidades) ----------
   const gateQ = {}, poiQ = {};
-  const POI_GAME = { pista: ['timing', 'Examinar', 'scan'], recurso: ['mash', 'Recoger', 'caja'], hallazgo: ['sequence', 'Con cuidado', 'lupa'], secreto: ['hold', 'Descubrir', 'ojo'] };
-  const GATE_GAME = { anclaje: ['timing', 'Clavar anclaje', 'cuerda'], puente: ['sequence', 'Montar puente', 'puente'], valvula: ['mash', 'Girar válvula', 'valvula'], reptadero: ['hold', 'Estabilizar paso', 'medica'], estabilizar: ['hold', 'Dar aire', 'medica'] };
+  const POI_GAME = { pista: ['timing', 'Examinar', 'scan', 'escaner'], info: ['timing', 'Examinar', 'scan', 'escaner'], recurso: ['mash', 'Recoger', 'caja', 'cavar'], hallazgo: ['timing', 'Con cuidado', 'lupa', 'escaner'], secreto: ['hold', 'Descubrir', 'ojo', 'reptadero'] };
+  const GATE_GAME = { anclaje: ['timing', 'Clavar anclaje', 'cuerda', 'anclaje'], puente: ['sequence', 'Montar puente', 'puente', 'puente'], valvula: ['mash', 'Girar válvula', 'valvula', 'valvula'], reptadero: ['hold', 'Estabilizar paso', 'medica', 'reptadero'], estabilizar: ['hold', 'Dar aire', 'medica', 'estabilizar'] };
   const freeKeys = () => { Object.keys(keys).forEach(k => keys[k] = 0); pushInput(); };
   async function play(g, level) {
     if (!Hud.minigame) return 'ok'; freeKeys();
-    try { const r = await Hud.minigame({ kind: g[0], title: g[1], icon: g[2], level: level || Math.min(3, 1 + (st.round >> 1)), role: myRole }); freeKeys(); return (r && r.result) || 'ok'; } catch (e) { freeKeys(); return 'ok'; }
+    try { const r = await Hud.minigame({ kind: g[0], theme: g[3], title: g[1], icon: g[2], level: level || Math.min(3, 1 + (st.round >> 1)), role: myRole }); freeKeys(); return (r && r.result) || 'ok'; } catch (e) { freeKeys(); return 'ok'; }
   }
   function showReward(rw, ref) {
     if (!rw) return; try { Hud.setStreak && Hud.setStreak(rw.streak || 0); (rw.bonus || []).forEach(b => Hud.floatReward && Hud.floatReward({ icon: b.icon, text: b.text }));
@@ -184,7 +184,7 @@
     const hostMode = o.host && !o.solo && window.Net && Net.role === 'host';
     mode = hostMode ? 'host' : 'solo'; myRole = o.role || 'ing'; myId = hostMode ? Net.localId : 'solo';
     const hs = hostMode ? Net.players.filter(p => !p.bot && RK.includes(p.role)).map(p => p.role) : [myRole];
-    st = Story.newGame({ seed: (Date.now() % 1000000) | 0, difficulty: Story.defaultDifficulty && Story.defaultDifficulty() === 'facil' ? 'facil' : (o.difficulty || (UI.settings && UI.settings().diff) || 'normal'), humans: hs, demo: !Story.hasKey() });
+    st = Story.newGame({ quick: !!(o.quick || /[?&]rapido=1/.test(location.search)), seed: (Date.now() % 1000000) | 0, difficulty: Story.defaultDifficulty && Story.defaultDifficulty() === 'facil' ? 'facil' : (o.difficulty || (UI.settings && UI.settings().diff) || 'normal'), humans: hs, demo: !Story.hasKey() });
     if (hostMode) { Net.lock(true); Net.players.forEach(p => { if (!p.bot && RK.includes(p.role)) { st.players[p.role].owner = p.id; st.players[p.role].connected = true; } }); }
     else st.players[myRole].owner = 'solo';
     started = true; ensureGame(); makeEngine(true); setupBots(); eng.resetGates(); eng.setWater(st.s.agua); eng.setWaterRate(0);
@@ -235,11 +235,11 @@
         case 'summary':
           if (Story.isOver(st)) { st.final = await Story.finish(st, { role: myRole }); break; }
           { let tr = null, jr = null; try { tr = Story.travelScene(st); } catch (e) { } try { jr = Story.journal(st); } catch (e) { }
-            if (jr && Hud.showJournal && mode !== 'client') { try { await Hud.showJournal(jr); } catch (e) { } }
+            if (jr && Hud.showJournal && mode !== 'client' && !st.quick) { try { await Hud.showJournal(jr); } catch (e) { } }
             Story.advance(st);
             if (tr && eng.playTravel) await new Promise(res => { let d = false; const fin = () => { if (!d) { d = true; res(); } };
               try { Hud.setNow({ text: tr.caption || 'Viajan a la siguiente zona', sub: '', kind: 'info' }); } catch (e) { }
-              const ok = eng.playTravel({ toZone: st.round, kind: tr.kind, outcome: tr.outcome, ms: 11500, onShot: (i) => { try { Hud.setNow({ text: [tr.caption || 'Salen de la zona', 'Recorren el camino', 'Llegan a la nueva zona'][i] || '', sub: '', kind: 'info' }); } catch (e) { } } }, fin); if (ok === false) return fin();
+              const ok = eng.playTravel({ toZone: st.round, kind: tr.kind, outcome: tr.outcome, ms: st.quick ? 6500 : 11500, onShot: (i) => { try { Hud.setNow({ text: [tr.caption || 'Salen de la zona', 'Recorren el camino', 'Llegan a la nueva zona'][i] || '', sub: '', kind: 'info' }); } catch (e) { } } }, fin); if (ok === false) return fin();
               if (Hud.dialogue && tr.lines && tr.lines.length) Hud.dialogue(tr.lines, { auto: 3400 }); setTimeout(fin, 20000); }); }
           await startRound(); return;
       }
@@ -278,7 +278,7 @@
     if (isClient() || !st || st.phase !== 'explore') return;
     const q = poiQ[poiId]; delete poiQ[poiId]; const out = Story.poiInteract(st, role, poiId, { quality: q });
     if (!out || !out.ok) { if (role === myRole) Hud.floatText(WHY[out && out.reason] || 'No se puede', 'bad'); return; }
-    syncPois(); fb(role, out); if (out.reward && role === myRole) showReward(out.reward, poiId); push();
+    syncPois(); fb(role, out); if (out.reward && role === myRole) showReward(out.reward, poiId); if (out.chatLine) { try { Story.say(st, 'sys', out.chatLine, 'sys'); } catch (e) { } } push();
   }
   function doChat(role, text) {
     text = String(text || '').slice(0, 300).trim(); if (!text) return; Story.say(st, role, text, 'chat');

@@ -45,7 +45,10 @@ const DIF = {
 };
 const dname = n => { n = NORM(n || 'normal'); return n === 'easy' || n === 'facil' ? 'facil' : n === 'hard' || n === 'everest' ? 'everest' : 'normal'; };
 const difficulty = n => Object.assign({}, DIF[dname(n)], { start: Object.assign({}, DIF[dname(n)].start) });
-const dif = st => DIF[dname(st.difficulty)];
+const QUICK = { briefing: 5, explore: 35, plan: 15, secret: 10 }; // modo rápido (vídeo de 1 min): el agua por fase se conserva porque waterRate divide entre explore
+const isQuick = st => !!(st && st.quick);
+const dif = st => isQuick(st) ? Object.assign({}, DIF[dname(st.difficulty)], QUICK) : DIF[dname(st.difficulty)];
+const expTime = st => Math.round(dif(st).explore * ((st.hid && st.hid.expMul) || 1));
 const K = { rm: 1.5, fs: 1.6 }; let ASC = .3; const PRESS = [11.3, 6, 14]; // ASC: factor de bajadas de agua por acciones secretas; PRESS: agua, salud y ruido por tramo (calibrado con tools/story-test.js)
 const RISE = [3, 4, 5, 6, 7]; // subida de agua en explore por tramo (a 90 s, Normal)
 
@@ -195,7 +198,7 @@ function normStyle(s, role) {
 function newGame(o) {
   o = o || {}; let seed = Number.isFinite(+o.seed) && +o.seed !== 0 ? (+o.seed | 0) : ((Date.now() % 1e9) | 0) || 1;
   const df = DIF[dname(o.difficulty)], humans = o.humans || [];
-  const st = { v: 3, phase: 'menu', round: 1, tleft: 0, difficulty: df.name, seed, demo: o.demo != null ? !!o.demo : !KEY,
+  const st = { v: 3, phase: 'menu', round: 1, tleft: 0, difficulty: df.name, quick: !!o.quick, path: [], seed, demo: o.demo != null ? !!o.demo : !KEY,
     s: Object.assign({}, df.start), score: { total: 0, equipo: 0, info: 0, honestidad: 0, riesgo: 0 }, event: null, pois: [],
     plan: { options: [], votes: {}, chosen: null }, players: {}, chat: [], log: [], achievements: [], hallazgos: 0, verdict: null, saved: null,
     gates: GATES.map(g => Object.assign({}, g)), gatesOpen: {} };
@@ -215,18 +218,11 @@ function newGame(o) {
   return st;
 }
 // Datos de iconos del plan. hints = tarjetas COMPARTIDAS favorables; con role se suman las pistas privadas (solo en privOf).
-function refreshPlan(st, role) {
-  const ops = st.plan.options; if (!ops.length) return [];
-  const f = [0, 0, 0], u = [0, 0, 0], pf = [0, 0, 0], clue = ['', '', ''], sc = [0, 0, 0], sh = {};
-  st.hid.shares.filter(x => x.round === st.round && x.claim && x.claim.opt >= 0 && x.claim.pol !== 0).forEach(x => { sh[x.id] = x; });
-  Object.keys(sh).forEach(id => { const x = sh[id], c = (st.priv[x.from].intel.find(i => i.id === id) || {}).reliability || .8; (x.claim.pol > 0 ? f : u)[x.claim.opt]++; sc[x.claim.opt] += x.claim.pol * (1 + c / 10); });
-  if (role) st.priv[role].intel.filter(c => !c.item && c.round === st.round).forEach(c => { const cl = parseClaim(st, c.text); if (cl.opt >= 0 && cl.pol) { (cl.pol > 0 ? pf : u)[cl.opt]++; if (!clue[cl.opt]) clue[cl.opt] = c.text.slice(0, 40); } });
-  ops.forEach((o, i) => { o.hints = f[i]; const n = f[i] + u[i] + pf[i]; o.risk_known = n > 0; o.risk = !n ? 2 : Math.max(1, Math.min(3, (optT(st, i).r < .2 ? 1 : optT(st, i).r < .35 ? 2 : 3) + (u[i] > f[i] + pf[i] ? 1 : f[i] + pf[i] > u[i] ? -1 : 0))); });
-  let b = 0; sc.forEach((x, i) => { if (x > sc[b]) b = i; }); const best = sc[b] > 0 && sc.filter(x => x === sc[b]).length === 1 ? ops[b].id : null, any = f.some(Boolean) || u.some(Boolean);
-  st.plan.brief = best ? 'Pista fuerte: ' + best + ' es más segura' : any ? 'Pistas mezcladas: hablen en el chat' : 'Sin pistas: pregunten qué vio cada uno';
-  return clue;
+function refreshPlan(st) {
+  st.plan.brief = ''; // sin pistas en la decisión: las pistas viven en las tarjetas y el chat
+  st.plan.options.forEach((o, i) => { delete o.hints; delete o.known; delete o.risk_known; const r = optT(st, i).r; o.risk = r < .2 ? 1 : r < .35 ? 2 : 3; });
 }
-const privOf = (st, role) => { const pv = st.priv[role], cl = refreshPlan(st, role); pv.planOpts = st.plan.options.map((o, i) => Object.assign({}, o, { clue: cl[i] })); refreshPlan(st); return pv; };
+const privOf = (st, role) => { const pv = st.priv[role]; refreshPlan(st); pv.planOpts = st.plan.options.map(o => Object.assign({}, o)); return pv; };
 const publicState = st => { refreshPlan(st); return JSON.parse(JSON.stringify(st)); };
 const sc_ = st => st.hid.struct[st.round - 1];
 const optT = (st, p) => ROUND_D[st.round - 1].opts[sc_(st).perm[p]];
@@ -276,7 +272,7 @@ function setRoundContent(st, ev, optsTxt, poiLabels) {
   const xv = EVX[evT.id] || [0, evT.title], cap = xv[1], radio = (ev && ev.radio) || evT.radio;
   st.event = { id: evT.id, title: (ev && ev.title) || evT.title, text: ((ev && ev.text) || evT.text) + (x ? ' ' + x : ''), art: evT.art, radio, cat: evT.cat, caption: cap,
     focus: { poi: 'r' + r + '_' + xv[0], slot: S.slots[xv[0]], x: null }, lines: [cap, radio] };
-  st.plan = { options: [0, 1, 2].map(p => { const T = D.opts[S.perm[p]], ov = optsTxt && optsTxt[p]; return { id: 'ABC'[p], n: ov ? ov.n : T.n, text: ov ? ov.text : T.x, known: ov ? ov.known : T.k, req: T.req ? { material: T.req } : undefined, ask: ZASK[r - 1], long: T.t, title: SHORT[T.n][0], what: SHORT[T.n][1], kind: TRAVEL[T.n].kind, speed: T.e[0] <= -5 ? 3 : T.e[0] < 0 ? 2 : 1, effects: fxList(T.e), hints: 0, risk: 2, risk_known: false, travel: TRAVEL[T.n], gain: optGain(T), riskTxt: optRisk(T) }; }), ask: ZASK[r - 1], brief: '', votes: {}, chosen: null };
+  st.plan = { options: [0, 1, 2].map(p => { const T = D.opts[S.perm[p]], ov = optsTxt && optsTxt[p]; return { id: 'ABC'[p], n: ov ? ov.n : T.n, text: ov ? ov.text : T.x, req: T.req ? { material: T.req } : undefined, ask: ZASK[r - 1], long: T.t, title: SHORT[T.n][0], what: SHORT[T.n][1], kind: TRAVEL[T.n].kind, speed: T.e[0] <= -5 ? 3 : T.e[0] < 0 ? 2 : 1, effects: fxList(T.e), risk: 2, travel: TRAVEL[T.n], gain: optGain(T), riskTxt: optRisk(T) }; }), ask: ZASK[r - 1], brief: '', votes: {}, chosen: null }; refreshPlan(st);
   const lab = [D.poi[0].label, D.poi[1].label, D.rec.label, D.sec.label]; // las etiquetas de la IA se ignoran: nombre, why y puertas deben casar con la zona
   const meta = st.hid.poiMeta; st.pois = [];
   const types = [{ kind: 'info', idx: 0, icon: D.poi[0].icon }, { kind: 'info', idx: 1, icon: D.poi[1].icon }, { kind: 'recurso', icon: D.rec.icon }, { kind: 'secreto', icon: D.sec.icon }];
@@ -286,6 +282,14 @@ function setRoundContent(st, ev, optsTxt, poiLabels) {
     st.pois.push({ id, slot, name: nm, label: nm + ' · ' + px[0], give: px[1], act: 'Pulsa E para ' + px[2], why: pv5.why, hintRole: ownerOf(r, i), owner: ownerOf(r, i), common: !ownerOf(r, i), todo: DO[r - 1][i], zone: r, gate: (GATES.find(g => g.zone === r && g.poi === i) || {}).id || null, icon: t.icon, kind: t.kind, used: false, by: null, seen: [] }); });
   st.pois.sort((a, b) => a.slot - b.slot);
 }
+// Consecuencia visible de la ruta elegida en el tramo siguiente: s = [agua, salud, material, confianza], t = factor del tiempo de explore.
+const PATHFX = { balsa: { s: [8, 4, 0, 0], t: 1, line: ['Por la balsa llegaron rápido, pero mojados.', 'La balsa vuelcó: llegaron empapados.'] },
+  pozo: { s: [0, 3, -4, 0], t: .8, line: ['Por el pozo ahorraron tiempo, pero gastaron cuerda.', 'El pozo fue duro: poco tiempo y cuerda gastada.'] },
+  galeria: { s: [0, 0, 0, 2], t: 1.1, line: ['Por la galería fueron seguros, pero lentos.', 'La galería fue lenta y cansó, pero se apoyaron.'] },
+  cuerda: { s: [0, 4, 0, 0], t: 1, line: ['Con la cuerda subieron a Lía con cuidado.', 'La cuerda rozó, pero Lía sigue firme.'] },
+  puente: { s: [0, 0, 0, 3], t: 1, line: ['Cruzaron el puente juntos y se animaron.', 'El puente crujió, pero cruzaron unidos.'] },
+  tunel: { s: [-3, 0, 0, 0], t: 1, line: ['Por el túnel se alejaron del agua, pero rasparon.', 'El túnel apretó: se alejaron del agua.'] },
+  compuerta: { s: [0, 0, 4, 0], t: 1, line: ['La compuerta dejó material, pero costó forzarla.', 'Forzar la compuerta fue tenso; sacaron material.'] } };
 const jsonSafe = x => JSON.parse(JSON.stringify(x));
 async function roundStart(st) {
   const r = st.round, hd = st.hid; let ai = false, fallback = false, err = '';
@@ -303,11 +307,13 @@ async function roundStart(st) {
   msgs.push(say(st, 'lia', st.event.radio, 'radio'));
   if (hd.respiroNext === r) { let bi = 0, bt = 9; st.plan.options.forEach((o, p) => { const T = optT(st, p), v = T.r + T.e[0] / 100; if (v < bt) { bt = v; bi = p; } }); const o = st.plan.options[bi]; o.respiro = true; o.gain = 'Respiro: baja el agua, cuida a Lía'; st.event.respiro = o.id;
     msgs.push(say(st, 'director', 'Van justos: la opción ' + o.id + ' da respiro.', 'event')); }
+  hd.expMul = 1; const pp = st.path.find(x => x.round === r - 1), PE = pp && PATHFX[pp.kind];
+  if (PE) { applyStat(st, PE.s); hd.expMul = PE.t; msgs.push(say(st, 'sys', PE.line[pp.outcome === 'bien' ? 0 : 1], 'sys')); }
   hd.expT = 0; st.phase = 'briefing'; st.tleft = dif(st).briefing; hd.lastWater = st.s.agua; hd.water.warned = hd.water.warned || {};
   return { event: st.event, pois: st.pois, plan: st.plan, msgs, ai, fallback, error: err };
 }
 function setPhase(st, phase) {
-  const d = dif(st); st.phase = phase; st.tleft = ({ briefing: d.briefing, explore: d.explore, plan: d.plan, secret: d.secret, resolve: d.resolve, summary: d.summary })[phase] || 0;
+  const d = dif(st); st.phase = phase; st.tleft = ({ briefing: d.briefing, explore: Math.round(d.explore * (st.hid.expMul || 1)), plan: d.plan, secret: d.secret, resolve: d.resolve, summary: d.summary })[phase] || 0;
   if (phase === 'plan') { RK.forEach(k => st.players[k].ready = false); const hd = st.hid; hd.briefed = hd.briefed || {}; if (!hd.briefed[st.round] && st.plan.options.length) { hd.briefed[st.round] = 1; const m = say(st, 'director', planBrief(st).lines.slice(-1)[0], 'sys'); m.rnd = st.round; } }
   return st.tleft;
 }
@@ -389,6 +395,7 @@ function poiInteract(st, role, poiId, o) {
     if (first) out.msgs.push(say(st, 'sys', 'Hallazgo ' + st.hallazgos + '/5: ' + h.title + '.', 'sys'));
   }
   meta.used = meta.used || (meta.type === 'info' || meta.type === 'secreto' ? meta.seen.length >= 3 : false); poi.used = meta.used;
+  out.chatLine = poi.kind === 'info' ? 'Sirve para: elegir la ruta segura' : poi.kind === 'recurso' ? 'Sirve para: aguantar el tramo' : 'Sirve para: sumar puntos al equipo';
   out.reward = minigame(st, role, o, poi.kind === 'recurso' ? 'salud' : 'material', poi.kind === 'recurso' ? 'salud' : 'material');
   if (pv.ap === 0) st.hid.stat.apFull[role] = (st.hid.stat.apFull[role] || 0) + 1;
   return out;
@@ -515,7 +522,7 @@ function resolve(st) {
   res.msgs.push(say(st, 'sys', short, 'sys'));
   const pd = {}; RK.forEach(k => pd[k] = hd.pts[k] - ptsB[k]); res.pointsByRole = pd;
   st.log.push({ round: r, planId: st.plan.chosen, delta: applied, reveals, rolls, scoreDelta, picks: RK.map(k => ({ role: k, tag: picks[k].tag, text: picks[k].text })) });
-  hd.resolved[r] = res; return res;
+  st.path.push({ round: r, kind: res.plan.kind, outcome: ok ? 'bien' : 'mal' }); hd.resolved[r] = res; return res;
 }
 function confessSecret(st, k, reveals, d, msgs, sc) {
   const S = st.hid.secrets[k]; if (S.revealed) return; S.revealed = true; S.how = 'confesion'; S.round = st.round; st.priv[k].secret.revealed = true; st.hid.stat.conf++;
@@ -673,7 +680,7 @@ function openGate(st, role, gateId, o) {
   st.gatesOpen[g.id] = true; g.open = true; const hd = st.hid; (hd.gateRound = hd.gateRound || {})[g.id] = st.round; (hd.gateBy = hd.gateBy || {})[g.id] = role; if (hd.busy) delete hd.busy[role];
   addScore(st, role, 'equipo', 6); hd.pTrust[role] = clamp(hd.pTrust[role] + 3, 0, 100);
   if (o.helpFor && o.helpFor !== role) applyStat(st, [0, 0, 0, 1]);
-  const reward = minigame(st, role, o); if (reward.quality === 'perfect') { addScore(st, role, 'equipo', 10); applyStat(st, [0, 0, 0, 1]); reward.bonus.push({ icon: 'confianza', text: 'Confianza +1' }); }
+  const reward = minigame(st, role, o); if (reward.quality === 'perfect') { hd.gatePerf = (hd.gatePerf || 0) + 1; addScore(st, role, 'equipo', 10); applyStat(st, [0, 0, 0, 1]); reward.bonus.push({ icon: 'confianza', text: 'Confianza +1' }); }
   else if (reward.quality === 'fail') { applyStat(st, [0, 0, -3, 0]); reward.bonus.push({ icon: 'material', text: 'Herramienta dañada: material -3' }); }
   const up = st.pois.find(p => p.id === gatePoi(g)); return { ok: true, reward, gateId: g.id, kind: g.kind, unlocks: gatePoi(g), use: 'puerta', explain: 'Has abierto «' + g.label + '» → sirve para que el equipo llegue a «' + (up ? up.name : 'un punto nuevo') + '» → úsalo en: ir allí a investigar y avisar al equipo.', msgs: [say(st, 'sys', ROLES[role].short + ' hizo: ' + KIND_VERB[g.kind] + '. Se abre «' + g.label + '».', 'sys')] };
 }
@@ -691,7 +698,7 @@ function teamInfo(st, role) {
   return { goal, roles, mine: roles[role] && { done: roles[role].done, text: roles[role].done ? 'Ya aportaste ' + roles[role].part : 'Falta tu aportación: ' + roles[role].part }, needs };
 }
 function crisisReady(st) {
-  const total = st.pois.length, done = st.pois.filter(p => p.seen && p.seen.length > 0).length, t = TIMES.explore[dname(st.difficulty)];
+  const total = st.pois.length, done = st.pois.filter(p => p.seen && p.seen.length > 0).length, t = expTime(st);
   const tm = teamInfo(st, null), progress = { done, total, need: MILESTONE, goal: tm.goal, roles: tm.roles, missing: RK.filter(k => !tm.roles[k].done) };
   if (st.phase !== 'explore') return { ready: false, reason: null, progress };
   const byTime = st.hid.expT >= t || (st.tleft <= 0 && st.hid.expT > 0), hito = done >= MILESTONE && !progress.missing.length;
@@ -823,6 +830,7 @@ function journalEntries(st, r, res) {
   GATES.filter(g => hd.gateRound && hd.gateRound[g.id] === r).forEach(g => out.push({ icon: 'llave', title: g.label, text: NAMES[hd.gateBy[g.id]] + ' abrió «' + g.label + '».', use: 'Nos dio un lugar nuevo para investigar.' }));
   res.reveals.filter(x => x.type === 'lie').forEach(x => out.push({ icon: 'alerta', title: 'Mentira descubierta', text: x.text, use: 'La confianza del equipo bajó.' }));
   res.reveals.filter(x => x.type === 'secret').forEach(x => out.push({ icon: 'secreto', title: 'Un secreto sale a la luz', text: x.text, use: x.how === 'confesion' ? 'Confesarlo a tiempo nos ayudó a seguir juntos.' : 'Salió tarde y nos costó confianza.' }));
+  const px = PATHFX[plan.kind]; if (px) out.unshift({ icon: 'ojo', title: 'La ruta', text: px.line[res.ok ? 0 : 1], use: 'Marcó el tramo siguiente.' });
   return out;
 }
 // Diario del tramo r (por defecto el actual): válido tras resolver, antes de avanzar. null si ese tramo aún no se resolvió.
@@ -842,35 +850,41 @@ function recap(st) {
   return { title: 'Resumen de la expedición', saved: isOver(st) ? saved(st) : null, liaStatus: liaStatus(st), days, entries,
     note: entries.filter(e => /nos sirvió|Nos sirvió|evitar/.test(e.use)).length + ' hallazgos nos ayudaron a decidir; ' + entries.filter(e => /No la compartimos|no le hicimos caso|despistó/.test(e.use)).length + ' nos costaron caro.' };
 }
-// Paneles cinematográficos del final (5-7): img end_good_1..3 / end_bad_1..3, texto <= 110.
+// Paneles cinematográficos del final (7): cada variante sale de la ruta (st.path) y del resultado. Texto <= 90.
+const DOM = { pozo: 'pozo', balsa: 'balsa', galeria: 'galeria', cuerda: 'alto', puente: 'alto', tunel: 'paso', compuerta: 'paso' };
+function endingKey(st) {
+  const win = saved(st), hd = st.hid, S = st.s, cnt = {}; st.path.forEach(x => { const d = DOM[x.kind]; cnt[d] = (cnt[d] || 0) + 1; });
+  const dom = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a] || (b === DOM[(st.path[st.path.length - 1] || {}).kind] ? 1 : -1))[0] || 'galeria';
+  const fs = st.fates || fates(st, win), hurt = fs.some(x => x.id !== 'lia' && x.status !== 'vivo'), lies = hd.stat.lieCount > 0;
+  const key = win ? (hd.gatePerf >= 2 && !lies && !hurt ? 'g_perfecto' : hurt ? 'g_costa' : lies ? 'g_mentira' : 'g_' + dom)
+    : (dom === 'balsa' && S.agua >= 100 ? 'b_balsa' : dom === 'pozo' && S.material < 25 ? 'b_pozo' : lies ? 'b_mentira' : S.material < 15 ? 'b_material' : S.agua >= 100 ? 'b_agua' : 'b_salud');
+  return ENDS[key].concat(key);
+}
+// [título, subtítulo, 7 paneles]. {h} = herido, {b} = quien más aportó.
+const ENDS = {
+  g_perfecto: ['RESCATE PERFECTO', 'Todo salió como lo soñaron.', ['Cada puerta se abrió a la primera. La cámara de Lía brilla al fondo.', 'Los esperaba. Sabía que con tantas manos no fallarían.', 'Salieron sin un rasguño y sin perder un minuto.', 'Eso es trabajo en equipo. Ni una puerta nos frenó.', 'Afuera, el sol. Los tres y Lía, enteros.', 'Qué equipo. Ni una queja, ni un susto.', 'Epílogo: sin heridos y sin mentiras. Un rescate de manual.']],
+  g_costa: ['RESCATE A COSTA', 'La salvaron, pero alguien pagó.', ['Una linterna se mueve al fondo. ¡Es Lía, y está viva!', 'Vinieron aunque estaban heridos. Gracias.', 'Avanzaron cojeando, sin soltar la camilla ni un instante.', 'Aguanten, ya falta poco. Yo cargo más.', 'La luz del día los recibió, magullados pero juntos.', 'Perdónenme por todo lo que les costé.', 'Epílogo: {h} se recuperará con reposo. Lía también.']],
+  g_mentira: ['VICTORIA CON SOMBRAS', 'Ganaron, pero hubo mentiras.', ['Encontraron a Lía, aunque el camino se torció por culpa de un engaño.', 'Me alegra verlos. ¿Por qué se oían tan enfadados?', 'La sacaron entre reproches. Lo importante: ella respiraba.', 'Hubo mentiras. Ahora toca hablar claro.', 'Salieron al sol, algo más callados de lo normal.', 'No importa cómo llegaron. Gracias por venir.', 'Epílogo: Lía vive, pero la confianza tardará en volver.']],
+  g_pozo: ['RESCATE POR EL POZO', 'Bajaron rápido y la sacaron.', ['Tras el último pozo, una luz: Lía los llama desde la sala.', 'Oí las cuerdas bajar. ¡Qué ruido más bonito!', 'Subieron a Lía por el pozo, con las cuerdas tensas.', 'Despacio, que el anclaje aguante. ¡Uno, dos, tres!', 'Emergieron del pozo con el cielo ya clareando.', 'Ese pozo daba miedo, pero valió la pena.', 'Epílogo: las cuerdas quedaron gastadas. Lía, sana.']],
+  g_balsa: ['RESCATE EN BALSA', 'El río los llevó hasta ella.', ['La corriente los dejó justo frente a la cámara de Lía.', 'Los vi llegar en la balsa. ¡Parecían piratas!', 'Volvieron remando con Lía al centro, calada pero a salvo.', 'Pesos al centro y a remar. ¡Vamos, vamos!', 'La balsa tocó orilla bajo un cielo gris y lluvioso.', 'Estoy empapada, pero feliz de verlos.', 'Epílogo: la balsa quedó para el museo. Lía, a secarse.']],
+  g_galeria: ['RESCATE POR LA GALERÍA', 'Lento, seguro y sin sobresaltos.', ['Al final de la galería seca, una voz débil. ¡Es Lía!', 'Tardaron, pero no oí ninguna caída. Gracias.', 'Cargaron a Lía por la galería, pisando roca firme.', 'Sin prisa pero sin pausa. Así se sale de una cueva.', 'La boca de la galería se abrió al aire fresco.', 'Qué calma. Casi no sentí los pasos.', 'Epílogo: el camino largo salvó a todos. Descanso general.']],
+  g_alto: ['RESCATE A LAS ALTURAS', 'Cuerdas y puentes los guiaron.', ['Cruzado el último puente, vieron la linterna de Lía.', 'Los oí pisar los maderos. ¡Qué valientes!', 'Subieron a Lía con cuerdas y la cruzaron sobre el vacío.', 'Mírame, Lía, no mires abajo. Ya casi.', 'Del último puente a la salida: puro cielo abierto.', 'Cruzar sobre el vacío... no lo olvidaré nunca.', 'Epílogo: el puente aguantó. Los nervios, no tanto.']],
+  g_paso: ['RESCATE POR EL TÚNEL', 'Se arrastraron y lo lograron.', ['Al final del túnel, una mano saluda. ¡Lía los esperaba!', 'Oí arañar la piedra. Supe que eran ustedes.', 'Sacaron a Lía a rastras por el paso estrecho.', 'Cabeza abajo, un poco más. Ya se ve la luz.', 'Salieron del túnel sucios de barro, pero sonrientes.', 'Qué sitio tan estrecho. Gracias por no rendirse.', 'Epílogo: raspones y barro. Nada que un baño no arregle.']],
+  b_balsa: ['LA BALSA NO ALCANZÓ', 'El agua subió más rápido.', ['Llegaron a la cámara de Lía, pero la balsa ya no flotaba.', '(radio) El agua llega a mis rodillas... y sube.', '(radio) Sigan en la balsa, pero no vengan. No cabe.', 'La corriente se llevó los remos. Lo intentamos.', 'La balsa se hundió despacio, sin hacer ruido.', 'Salieron nadando, empapados y sin Lía.', 'Volvieron los tres. Lía no. La balsa quedó en la oscuridad.']],
+  b_pozo: ['EL POZO CEDIÓ', 'Las cuerdas no aguantaron.', ['Bajaron por el pozo con las últimas cuerdas. No alcanzaron.', '(radio) Oigo las cuerdas... se han roto, ¿verdad?', '(radio) Gracias por bajar. Suban antes de que sea tarde.', 'Sin material no había forma de seguir bajando.', 'El pozo quedó en silencio. Arriba, la noche.', 'Subieron los tres, con las manos en carne viva.', 'Volvieron sin Lía. Las cuerdas fueron lo que faltó.']],
+  b_mentira: ['LA MENTIRA COSTÓ CARO', 'Un engaño los desvió del camino.', ['Un dato falso los llevó por el camino equivocado.', '(radio) ¿Por qué se alejan? Estoy por aquí...', '(radio) No fue culpa de nadie. Pero alguien mintió.', 'Si hubiéramos dicho la verdad a tiempo...', 'Su linterna se apagó mientras discutían qué camino tomar.', 'Salieron cada uno por su lado, sin hablarse.', 'Volvieron sin Lía. Una mentira pesó más que el agua.']],
+  b_material: ['SIN MATERIAL, SIN SALIDA', 'Se quedaron sin cuerdas ni luz.', ['Sin cuerdas ni luz, no lograron llegar hasta Lía.', '(radio) Se oyen cerca... pero no pueden pasar.', '(radio) Guarden lo que tengan. Yo aguanto un poco más.', 'No quedaba ni una cuerda. Lo sentimos mucho.', 'La última linterna parpadeó y se apagó.', 'Salieron a tientas, con las manos vacías.', 'Volvieron sin Lía. Sin material no hay rescate.']],
+  b_agua: ['EL AGUA CUBRIÓ TODO', 'La galería se inundó.', ['El agua cubrió la galería justo antes de llegar a Lía.', '(radio) Se oye cada vez más agua. Cada vez más lejos.', '(radio) Salgan ya. Les dije que no fue culpa de nadie.', 'Retrocedieron con el agua al cuello, sin soltarse.', 'La cueva se llenó. No quedó ni un hueco de aire.', 'Salieron tosiendo, agotados y en silencio.', 'Volvieron los tres. Lía no. El agua ganó esta vez.']],
+  b_salud: ['LLEGARON TARDE', 'Lía no pudo esperar más.', ['Supieron dónde estaba Lía, pero llegaron demasiado tarde.', '(radio, voz débil) Los oigo... pero cada vez más lejos.', '(radio) Cuídense entre ustedes, ¿sí? No tuvieron culpa.', 'Corrimos todo lo que pudimos. No fue suficiente.', 'Su linterna parpadeó una última vez y se apagó.', 'Salimos de la cueva en silencio. La lluvia no paraba.', 'Volvimos los tres. Lía no. Lo callado nos acompañará.']] };
+const END_WHO = { g: ['director', 'lia', 'director', 'B', 'director', 'lia', 'director'], b: ['director', 'lia', 'lia', 'director', 'director', 'B', 'director'] };
 function endingPanels(st) {
-  const win = saved(st), hd = st.hid, fs = st.fates || fates(st, win), hurtF = fs.filter(x => x.id !== 'lia' && x.status !== 'vivo'), P = [], add = (img, text, who, mood) => P.push({ img, text: shortT(text, 90), who, mood });
-  const best = RK.slice().sort((a, b) => (hd.pts[b] || 0) - (hd.pts[a] || 0))[0], lost = Math.min(st.log.length + (st.log.length < st.round ? 1 : 0), ROUNDS) || 1, tight = st.s.agua >= 85;
-  if (win) {
-    add('end_good_1', 'En el fondo de la cámara, una linterna se mueve. ¡Encontramos a Lía!', 'director', 'happy');
-    add('end_good_1', 'Sabía que vendrían. Tengo frío, pero sigo aquí.', 'lia', st.s.salud < 35 ? 'hurt' : 'happy');
-    add('end_good_2', tight ? 'La cargamos con el agua pisándonos los talones. Nadie se detuvo.' : 'La sacamos con cuidado, paso a paso, por el camino que ya conocíamos.', 'director', tight ? 'alert' : 'neutral');
-    add('end_good_2', 'Ya pasó, Lía. Mírame: ya pasó.', best, 'happy');
-    add('end_good_3', 'Luz del día en la boca de la cueva. Lía respira aire de verdad.', 'director', 'happy');
-    add('end_good_3', 'Gracias. Pensé que no volvería a ver el cielo.', 'lia', 'happy');
-    add('end_good_3', hurtF.length ? 'Epílogo: ' + hurtF.map(x => NAMES[x.id]).join(' y ') + ' herido, pero volvieron todos.' : st.s.salud < 35 ? 'Epílogo: Lía pasará semanas en el hospital. Vivirá.' : 'Epílogo: sin heridos graves. Hoy, descansar.', 'director', hurtF.length || st.s.salud < 35 ? 'neutral' : 'happy');
-  } else {
-    add('end_bad_1', hd.liaFound ? 'Supimos dónde estaba Lía, pero no logramos llegar hasta ella.' : 'No encontramos a Lía a tiempo: seguía lejos cuando todo se perdió.', 'director', 'hurt');
-    add('end_bad_1', st.s.agua >= 100 ? 'En el tramo ' + lost + ' el agua cubrió la galería y cortó el paso.' : 'En el tramo ' + lost + ' la salud de Lía llegó al límite y no pudimos hacer más.', 'director', 'hurt');
-    add('end_bad_2', '(radio, voz débil) Los oigo... pero cada vez más lejos.', 'lia', 'hurt');
-    add('end_bad_2', '(radio) No fue culpa de nadie. Cuídense entre ustedes, ¿sí?', 'lia', 'hurt');
-    add('end_bad_3', 'Su linterna parpadea una última vez y se apaga.', 'director', 'hurt');
-    add('end_bad_3', 'Salimos de la cueva en silencio. La lluvia no paraba.', best, 'hurt');
-    add('end_bad_3', 'Volvimos los tres. Lía no. Lo dicho y lo callado nos acompañará.', 'director', 'neutral');
-  }
-  return { saved: win, panels: P };
+  const win = saved(st), hd = st.hid, fs = st.fates || fates(st, win), hurtF = fs.filter(x => x.id !== 'lia' && x.status !== 'vivo');
+  const best = RK.slice().sort((a, b) => (hd.pts[b] || 0) - (hd.pts[a] || 0))[0], [title, sub, tx, key] = endingKey(st), who = END_WHO[key[0]];
+  const P = tx.map((t, i) => ({ img: (win ? 'end_good_' : 'end_bad_') + Math.min(3, Math.ceil((i + 1) / 2.4)), text: shortT(t.replace('{h}', hurtF.map(x => NAMES[x.id]).join(' y ') || NAMES[best]), 90), who: who[i] === 'B' ? best : who[i], mood: win ? (who[i] === 'lia' && st.s.salud < 35 ? 'hurt' : 'happy') : (who[i] === 'director' && i > 3 ? 'neutral' : 'hurt') }));
+  return { saved: win, panels: P, title, key };
 }
 // Título y subtítulo de la pantalla final
-function endingTitle(st) {
-  const win = saved(st), hurtF = (st.fates || []).some(x => x.id !== 'lia' && x.status !== 'vivo');
-  return win ? { title: 'LÍA ESTÁ A SALVO', sub: hurtF || st.s.salud < 35 ? 'La salida costó caro, pero volvieron todos.' : st.s.agua >= 85 ? 'Llegaron justo a tiempo.' : 'El equipo la sacó con vida.', saved: true }
-    : { title: 'NO LLEGAMOS A TIEMPO', sub: st.s.agua >= 100 ? 'El agua cubrió la galería.' : 'Su salud no resistió.', saved: false };
-}
+function endingTitle(st) { const e = endingKey(st); return { title: e[0], sub: e[1], saved: saved(st), key: e[3] }; }
 
 // ================= MISIONES v5: UN solo objetivo =================
 const MGOAL = ['Encuentra la ruta segura hacia la galería', 'Encuentra cómo pasar el derrumbe', 'Descubre dónde está el gas y cómo cruzar', 'Encuentra cómo cruzar el agua helada', 'Decide cómo llegar hasta Lía'];
@@ -1258,11 +1272,11 @@ const DO = [['buscar qué bajada está asegurada', 'medir cuánto sube el agua',
   ['medir hasta dónde llegó el agua', 'seguir las cruces blancas de Lía', 'recoger la manta contra el frío', 'leer las líneas pintadas'],
   ['revisar el pulso y la respiración de Lía', 'ver si se puede forzar la compuerta', 'agarrar la cuerda para el traslado', 'mirar qué hay en la rendija']];
 const ZASK = ['¿Cómo bajamos a la galería?', '¿Cómo pasamos el derrumbe?', '¿Cómo cruzamos la sala del gas?', '¿Cómo cruzamos el agua helada?', '¿Cómo llegamos a Lía?'];
-const SHORT = { 'la galería alta': ['Galería alta', 'Camino largo, seco y con cuerdas'], 'el pozo': ['El pozo', 'Directo, pero con cuerdas viejas'], 'la balsa': ['La balsa', 'El río los lleva; gasta material'],
-  'el desvío seco': ['Desvío seco', 'Más largo, pero la roca es firme'], 'el paso estrecho': ['Paso estrecho', 'Hueco angosto con agua fría'], 'el refuerzo con maderos': ['Maderos', 'Puntales para pasar la camilla'],
-  'el corredor de cristal': ['Corredor cristal', 'Buen aire, pero hay cristales'], 'la sima': ['La sima', 'Bajada vertical de 40 metros'], 'la ventilación': ['Ventilador', 'Limpian el aire y esperan'],
-  'el sifón': ['El sifón', 'Cuatro metros bajo agua helada'], 'la cornisa': ['La cornisa', 'Repisa estrecha sobre el agua'], 'el bombeo': ['Bombeo', 'Bombas vacían la galería'],
-  'la repisa': ['La repisa', 'Camino alto, seco y estrecho'], 'la cuerda doble': ['Cuerda doble', 'Dos anclajes para subir a Lía'], 'la compuerta': ['La compuerta', 'Forzar la puerta atascada'] };
+const SHORT = { 'la galería alta': ['Galería alta', 'Suben por una galería seca con cuerdas'], 'el pozo': ['El pozo', 'Bajan con cuerdas por el pozo'], 'la balsa': ['La balsa', 'Cruzan el río en una balsa'],
+  'el desvío seco': ['Desvío seco', 'Dan la vuelta por un desvío de roca'], 'el paso estrecho': ['Paso estrecho', 'Se arrastran por un hueco angosto'], 'el refuerzo con maderos': ['Maderos', 'Ponen maderos y pasan la camilla'],
+  'el corredor de cristal': ['Corredor cristal', 'Caminan por el corredor de cristales'], 'la sima': ['La sima', 'Bajan 40 metros por la sima'], 'la ventilación': ['Ventilador', 'Encienden el ventilador y esperan'],
+  'el sifón': ['El sifón', 'Nadan bajo el agua por el sifón'], 'la cornisa': ['La cornisa', 'Cruzan una repisa sobre el agua'], 'el bombeo': ['Bombeo', 'Usan bombas para vaciar la galería'],
+  'la repisa': ['La repisa', 'Van por la repisa alta y estrecha'], 'la cuerda doble': ['Cuerda doble', 'Suben a Lía con dos cuerdas'], 'la compuerta': ['La compuerta', 'Fuerzan la compuerta atascada'] };
 // Cómo viajan: kind (7 tipos) manda; caption y líneas salen de KT para que casen con lo que se ve. anim = escena antigua.
 const L = (who, mood, text) => ({ who, mood, text });
 const KT = {
@@ -1273,9 +1287,9 @@ const KT = {
   puente: ['Cruzan el puente', [L('guia', 'talk', 'De uno en uno.'), L('ing', 'talk', 'El puente aguanta.')], 'El puente se tambalea', [L('guia', 'alert', '¡Agárrense fuerte!'), L('ing', 'hurt', 'Casi caigo al agua.')]],
   tunel: ['Gatean por el túnel', [L('guia', 'talk', 'De lado y sin mochila.'), L('ing', 'alert', 'Está helado. Sigan.')], 'Se atascan en el túnel', [L('ing', 'alert', '¡Estoy atascado!'), L('medica', 'hurt', 'Me raspé al salir.')]],
   compuerta: ['Cruzan la compuerta', [L('ing', 'alert', 'Cede. ¡Pasen ya!'), L('guia', 'talk', 'Uno por uno.')], 'La compuerta suelta agua', [L('ing', 'alert', '¡No cede!'), L('medica', 'hurt', 'Lía está empapada.')]] };
-const K7 = { 'la galería alta': ['galeria', 'galeria'], 'el pozo': ['pozo', 'pozo'], 'la balsa': ['balsa', 'balsa'], 'el desvío seco': ['galeria', 'galeria'], 'el paso estrecho': ['tunel', 'paso'], 'el refuerzo con maderos': ['puente', 'puntales'],
-  'el corredor de cristal': ['galeria', 'corredor'], 'la sima': ['pozo', 'cuerda'], 'la ventilación': ['galeria', 'ventilador'], 'el sifón': ['tunel', 'sifon'], 'la cornisa': ['puente', 'cornisa'], 'el bombeo': ['galeria', 'bombeo'],
-  'la repisa': ['galeria', 'repisa'], 'la cuerda doble': ['cuerda', 'cuerda'], 'la compuerta': ['compuerta', 'compuerta'] };
+const K7 = { 'la galería alta': ['galeria', 'Suben por una galería seca con cuerdas'], 'el pozo': ['pozo', 'Bajan con cuerdas por el pozo'], 'la balsa': ['balsa', 'Cruzan el río en una balsa'], 'el desvío seco': ['galeria', 'Dan la vuelta por un desvío de roca'], 'el paso estrecho': ['tunel', 'Se arrastran por un hueco angosto'], 'el refuerzo con maderos': ['puente', 'Ponen maderos y pasan la camilla'],
+  'el corredor de cristal': ['galeria', 'Caminan por el corredor de cristales'], 'la sima': ['pozo', 'Bajan 40 metros por la sima'], 'la ventilación': ['galeria', 'Encienden el ventilador y esperan'], 'el sifón': ['tunel', 'Nadan bajo el agua por el sifón'], 'la cornisa': ['puente', 'Cruzan una repisa sobre el agua'], 'el bombeo': ['galeria', 'Usan bombas para vaciar la galería'],
+  'la repisa': ['galeria', 'Van por la repisa alta y estrecha'], 'la cuerda doble': ['cuerda', 'Suben a Lía con dos cuerdas'], 'la compuerta': ['compuerta', 'Fuerzan la compuerta atascada'] };
 const TRAVEL = Object.fromEntries(Object.keys(K7).map(n => { const [k, anim] = K7[n], c = KT[k]; return [n, { kind: k, anim, caption: c[0], lines: c[1], bad: { caption: c[2], lines: c[3] } }]; }));
 // Cinemática de viaje: opción elegida + resultado real del tramo.
 function travelScene(st) {
@@ -1413,7 +1427,7 @@ function fates(st, win) {
   return out;
 }
 
-const Story = { streak, journal, recap, endingPanels, liaStatus, travelScene, teamInfo, planBrief, tasks, taskLine, parseRequest, answerChat, botStuck, defaultDifficulty, explainResult, coach, SURVIVORS, ownerOf, TIMES, chatCadence: CAD, mission, readyLabel, ROLES, STATS, ROUNDS, LIM, RK, SK, NAMES, PROMPTS, intro, introShots, now: () => Date.now(),
+const Story = { isQuick, streak, journal, recap, endingPanels, liaStatus, travelScene, teamInfo, planBrief, tasks, taskLine, parseRequest, answerChat, botStuck, defaultDifficulty, explainResult, coach, SURVIVORS, ownerOf, TIMES, chatCadence: CAD, mission, readyLabel, ROLES, STATS, ROUNDS, LIM, RK, SK, NAMES, PROMPTS, intro, introShots, now: () => Date.now(),
   newGame, privOf, publicState, roundStart, setPhase, poiInteract, share, accuse, vote, tally, secretPick, ready, allReady, tickWater, waterRate, resolve, advance, isOver, saved, objectives, finish, verdict: async st => st.verdict || buildVerdict(st, saved(st), objectives(st), 'guia'),
   achievementsList: () => ACH.map(a => Object.assign({}, a)), loadAchievements: loadAch, difficulty, botAct, exec, botChat, botsReact, liaLine, say, roleBrief, dialogue, outro, parseClaim: (st, t) => parseClaim(st, t),
   request, botRequest, scene, endingTitle, chatSuggest, statusLabels, crisisReady, convene, allConvened, openGate, poiHints, ZONES, GATES: GATES.map(g => Object.assign({}, g)),
