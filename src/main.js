@@ -22,7 +22,8 @@
     Hud.mount(gameEl);
     Hud.onChat(onChat); Hud.onShare(onShare); Hud.onVote(onVote); Hud.onSecret(onSecret); Hud.onReady(onReady);
     Hud.onAsk && Hud.onAsk(onAsk); Hud.onAbility && Hud.onAbility(() => { if (!isClient() && eng) { const o = eng.useAbility(myRole); if (o && !o.ok) Hud.floatText(o.reason === 'rol' ? 'Esa puerta la abre otro compañero: pídeselo por radio' : 'Aquí no puedes usar tu habilidad', 'bad'); } });
-    Hud.onDialogue && Hud.onDialogue(o => { if (o && eng) Object.keys(keys).forEach(k => keys[k] = 0), pushInput(); });
+    { const st_ = document.createElement('style'); st_.textContent = 'body.rc-dlg #rcgame .h-mini,body.rc-dlg #rcgame div.h-big{display:none!important}'; document.head.appendChild(st_); }
+    Hud.onDialogue && Hud.onDialogue(o => { document.body.classList.toggle('rc-dlg', !!o); if (o && eng) Object.keys(keys).forEach(k => keys[k] = 0), pushInput(); });
     Hud.onExit(() => location.reload()); Hud.onSettings(() => UI.openSettings());
     Hud.onFx && Hud.onFx((t, i) => eng && eng.camShake(i || 2)); Hud.onChatFocus && Hud.onChatFocus(b => { typing = b; pushInput(); });
   }
@@ -129,8 +130,11 @@
       shownSum = st.round; Hud.showSummary({ round: st.round, score: res ? res.scoreDelta : {}, total: st.score.total, achievements: achs(res) }).then(() => { if (mode !== 'client' && st && st.phase === 'summary') advance(); });
     }
     if (st.phase === 'final' && st.final && !shownFinal) {
-      shownFinal = true; try { localStorage.setItem('rcv3_games', String((+localStorage.getItem('rcv3_games') || 0) + 1)); } catch (e) { } Hud.hide && Hud.hide(); gameEl.style.display = 'none'; S.music && S.music(st.final.saved ? 'win' : 'lose');
-      UI.showFinal(st.final, st);
+      shownFinal = true; try { localStorage.setItem('rcv3_games', String((+localStorage.getItem('rcv3_games') || 0) + 1)); } catch (e) { }
+      S.music && S.music(st.final.saved ? 'win' : 'lose');
+      const showFin = () => { Hud.hide && Hud.hide(); gameEl.style.display = 'none'; UI.showFinal(st.final, st); };
+      let ls = []; try { ls = Story.scene(st, 'final') || []; } catch (e) { }
+      if (ls.length && Hud.dialogue) Hud.dialogue(ls).then(showFin); else showFin();
     }
   }
 

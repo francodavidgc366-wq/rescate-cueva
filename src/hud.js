@@ -22,25 +22,25 @@
   ];
   var PHASES = {
     briefing: { n: 'BRIEFING', i: 'Lee el evento del tramo', c: '#ff8a5c', e: '📜' },
-    explore: { n: 'EXPLORA', i: 'Camina por la cueva y pulsa E junto a los iconos brillantes', c: '#3fd0c0', e: '🔍' },
-    plan: { n: 'PLAN', i: 'Debatid en el chat y votad el plan (1 · 2 · 3)', c: '#b58cff', e: '🗳️' },
+    explore: { n: 'EXPLORA', i: 'Camina por la cueva y presiona E junto a los iconos brillantes', c: '#3fd0c0', e: '🔍' },
+    plan: { n: 'PLAN', i: 'Debatan en el chat y voten el plan (1 · 2 · 3)', c: '#b58cff', e: '🗳️' },
     secret: { n: 'ACCIÓN SECRETA', i: 'Elige en privado. Se revela al final del tramo', c: '#f2a93b', e: '🔒' },
-    resolve: { n: 'RESOLUCIÓN', i: 'Mira qué ha pasado', c: '#ff6b6b', e: '🎲' },
+    resolve: { n: 'RESOLUCIÓN', i: 'Mira qué pasó', c: '#ff6b6b', e: '🎲' },
     summary: { n: 'RESUMEN', i: 'Tus notas del tramo', c: '#5fe39a', e: '📊' },
     final: { n: 'FINAL', i: '', c: '#f2a93b', e: '🏁' }
   };
   var HELP = {
     briefing: ['Nuevo tramo', 'Lee el evento: marca el ambiente del tramo. Lía te habla por radio. En unos segundos empieza la exploración.'],
-    explore: ['Explora y recoge información', 'Camina con WASD o flechas y pulsa E junto a un icono brillante: te da una tarjeta de información PRIVADA. Tus compañeros no la ven si no se la cuentas. Habla en el chat (T) y comparte lo que sepas desde el cuaderno (J). Cuando estés listo, pulsa «Hablar con el equipo y decidir» (R). CONTROLES: A D / flechas = mover · Espacio = saltar · Shift = correr · E = examinar · Q = habilidad · T = chat · M = mapa.'],
+    explore: ['Explora y recoge información', 'Camina con WASD o flechas y presiona E junto a un icono brillante: te da una tarjeta de información PRIVADA. Tus compañeros no la ven si no se la cuentas. Habla en el chat (T) y comparte lo que sepas desde el cuaderno (J). Cuando estés listo, presiona «Hablar con el equipo y decidir» (R). CONTROLES: A D / flechas = mover · Espacio = saltar · Shift = correr · E = examinar · Q = habilidad · T = chat · M = mapa.'],
     plan: ['Elegid el plan del equipo', 'Cada opción tiene información parcial. Lo que tú sabes en privado está resaltado. Convence a los demás en el chat y vota con 1, 2 o 3. Gana la mayoría.'],
-    secret: ['Tu acción secreta', 'Elige una de las 3: una ayuda al equipo, otra a tu objetivo secreto y otra es arriesgada. Nadie ve tu elección hasta la resolución. Pulsa la misma tecla otra vez, o SELLAR, para confirmar.'],
+    secret: ['Tu acción secreta', 'Elige una de las 3: una ayuda al equipo, otra a tu objetivo secreto y otra es arriesgada. Nadie ve tu elección hasta la resolución. Presiona la misma tecla otra vez, o SELLAR, para confirmar.'],
     resolve: ['Resolución', 'Se tiran los dados del riesgo según el plan, la información compartida y las acciones secretas. Los secretos y las mentiras salen a la luz.'],
     summary: ['Resumen del tramo', 'Aquí sí se cuentan los puntos: por trabajo en equipo, información compartida, honestidad y riesgo bien calculado.']
   };
   var CHIPS = {
-    explore: ['Os cuento lo que he visto', '¿Qué habéis encontrado?', 'No me fío de eso', 'Necesito material'],
+    explore: ['Les cuento lo que vi', '¿Qué encontraron?', 'No me fío de eso', 'Necesito material'],
     plan: ['Propongo la ruta {A}', 'Necesito material', 'No me fío de eso', 'Votemos'],
-    _: ['Os cuento lo que he visto', 'Propongo la ruta B', 'No me fío de eso', 'Necesito material', 'Votemos']
+    _: ['Les cuento lo que vi', 'Propongo la ruta B', 'No me fío de eso', 'Necesito material', 'Votemos']
   };
   var EMOJI = { agua: '💧', salud: '❤️', material: '🧰', confianza: '🤝', cuerda: '🪢', bateria: '🔋', radio: '📻', mapa: '🗺️', botiquin: '🩹', llave: '🔑', ojo: '👁️', candado: '🔒', trofeo: '🏆', estrella: '⭐', reloj: '⏱️', chat: '💬', voto: '🗳️', alerta: '⚠️', secreto: '🕵️', ap: '◆', info: '📄', recurso: '📦' };
   var ICON_ORDER = ['agua', 'salud', 'material', 'confianza', 'cuerda', 'bateria', 'radio', 'mapa', 'botiquin', 'llave', 'ojo', 'candado', 'trofeo', 'estrella', 'reloj', 'chat', 'voto', 'alerta', 'secreto', 'ap'];
@@ -198,7 +198,7 @@
   var customChips = null, dossierTab = 'intel', editing = null, paused = false;
   var toastQ = [], toastBusy = false, resolving = false, rafOn = false;
   var airV = null, airWarned = false, abilO = null, helpO = null, quickO = null, dlgQ = null, dlgOpen = false;
-  var coachO = null, coachPrev = null, miniUser = false, sayQ = [], shareWait = null, nowOv = null, misOv = null, readyOv = null, nowKey = '', miniFn = null, miniTimer = 0, ro = null;
+  var coachO = null, coachPrev = null, miniUser = true, sayQ = [], shareWait = null, nowOv = null, misOv = null, readyOv = null, nowKey = '', miniFn = null, miniTimer = 0, ro = null;
 
   /* ---------- CSS ---------- */
   var CSS = [
@@ -446,7 +446,8 @@
     ".h-pn .h-opts,.h-pn .h-sopts{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}",
     ".h-dos{position:absolute;left:0;top:0;bottom:0;width:min(420px,100%);z-index:6}",
     ".h-help{position:absolute;left:0;right:0;bottom:76px;top:auto;display:flex;justify-content:center}.h-hb{max-width:min(560px,100%)}",
-    ".h-mini{position:absolute;left:0;bottom:6px;width:160px;height:64px;border:2px solid var(--h-line);border-radius:6px;background:#0a0716cc;image-rendering:pixelated;pointer-events:none;z-index:0;display:none}.h-mini.on{display:block}",
+    ".h-big{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:30;background:#0a0716f2;border:3px solid var(--h-line);box-shadow:0 0 0 2px #07040f,0 8px 0 #07040f;padding:6px;pointer-events:auto}.h-big canvas{display:block;image-rendering:pixelated}.h-big .bt{display:flex;justify-content:space-between;align-items:center;font:bold 10px 'Press Start 2P',monospace;margin-bottom:6px;color:var(--h-line)}.h-big button{cursor:pointer}",
+    ".h-mini{position:absolute;left:0;bottom:6px;width:240px;height:110px;border:3px solid var(--h-line);border-radius:0;box-shadow:0 0 0 2px #07040f;cursor:pointer;background:#0a0716cc;image-rendering:pixelated;pointer-events:auto;z-index:0;display:none}.h-mini.on{display:block}",
     ".h-act{grid-area:bar;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px 12px;margin:0 8px 8px;min-height:44px;pointer-events:none}",
     ".h-bot{position:relative;inset:auto;flex:1 1 auto;display:flex;justify-content:center;align-items:center;gap:12px}",
     ".h-dock{position:relative;inset:auto;flex:none;display:flex;gap:6px}.h-dock .h-btn{pointer-events:auto}",
@@ -614,10 +615,10 @@
   ].join('\n');
 
   var STAT_TIPS = {
-    agua: 'Nivel del agua en la cueva. Sube con el tiempo. Si llega a 100, la cueva se inunda y perdéis.',
+    agua: 'Nivel del agua en la cueva. Sube con el tiempo. Si llega a 100, la cueva se inunda y pierden.',
     salud: 'Salud de Lía y del equipo. Si llega a 0, el rescate fracasa. Ahogarse o equivocarse la baja.',
-    material: 'Cuerdas, baterías y botiquín del equipo. Cada plan gasta algo. Con 0 no podéis hacer nada que lo necesite.',
-    confianza: 'Lo que os fiáis unos de otros. Mentir y callar la bajan; compartir bien la sube. A 0 nadie colabora.'
+    material: 'Cuerdas, baterías y botiquín del equipo. Cada plan gasta algo. Con 0 no pueden hacer nada que lo necesite.',
+    confianza: 'La confianza que se tienen entre ustedes. Mentir y callar la bajan; compartir bien la sube. A 0 nadie colabora.'
   };
   function statTip(s) {
     var L = null; try { L = W.Story && W.Story.statusLabels && W.Story.statusLabels[s.k]; } catch (e) { }
@@ -647,10 +648,10 @@
       '<div class="h-sts">' + stats + '</div></div>' +
       '<div class="h-left gone"><div class="h-lh" data-act="leftmin">' + icon('mapa', 14) + ' TÚ<span class="x">▾</span></div><div class="h-lb"></div></div>' +
       '<div class="h-mid"><div class="h-gd"><div class="h-coach"></div><div class="h-now"></div><div class="h-air"></div></div><div class="h-tst"></div><div class="h-stage"></div>' +
-        '<div class="h-help"></div><div class="h-sy"></div><div class="h-dos"></div><canvas class="h-mini" width="160" height="64"></canvas></div>' +
+        '<div class="h-help"></div><div class="h-sy"></div><div class="h-dos"></div><canvas class="h-mini" width="240" height="110" data-act="bigmap" title="Mapa (M)"></canvas></div>' +
       '<div class="h-act"><div class="h-abil"></div><div class="h-bot"></div><div class="h-dock">' +
         '<button class="h-btn alt" data-act="dossier" title="Cuaderno de Intel (J)">' + icon('ojo', 14) + ' CUADERNO <kbd>J</kbd><span class="h-badge" style="display:none"></span></button>' +
-        '<button class="h-btn alt ic" data-act="help" title="Ayuda (H)">?</button>' +
+        '<button class="h-btn alt ic" data-act="mini" title="Mapa (M)">M</button><button class="h-btn alt ic" data-act="help" title="Ayuda (H)">?</button>' +
         '<button class="h-btn alt ic" data-act="pause" title="Pausa (Esc)">II</button></div></div>' +
       '<div class="h-chat"><div class="h-ch" data-act="chatmin">' + icon('chat', 14) + '<span class="ttl"> CHAT DEL EQUIPO</span><span class="tg"><kbd>T</kbd><span class="cv"></span><span class="h-badge" style="display:none;position:static"></span></span></div>' +
         '<div class="h-logw"><div class="h-log" role="log" aria-live="polite"></div><button type="button" class="h-newmsg" data-act="newmsg">Mensajes nuevos ↓</button></div><div class="h-typ"></div><div class="h-chips"></div>' +
@@ -786,8 +787,8 @@
     el.phn.innerHTML = '<span class="t" style="color:' + info.c + '"><span>' + info.e + ' ' + esc(info.n) + '</span></span>';
     var me = P.players && P.players[R], ap = V && V.ap != null ? V.ap : me && me.ap;
     var instr = info.i;
-    if (ph === 'explore') instr = 'Explora y habla con el equipo; decidid cuando estés listo';
-    if (ph === 'plan' && localVote) instr = 'Has votado ' + optLetter(localVote) + '. Puedes cambiar hasta que acabe el tiempo';
+    if (ph === 'explore') instr = 'Explora y habla con el equipo; decidan cuando estés listo';
+    if (ph === 'plan' && localVote) instr = 'Votaste ' + optLetter(localVote) + '. Puedes cambiar hasta que acabe el tiempo';
     if (ph === 'secret' && secretSealed) instr = 'Decisión sellada. Espera a la resolución';
     el.phi.textContent = instr; el.phi.title = instr;
     el.evt.textContent = P.event && P.event.title && ph !== 'briefing' ? '📍 ' + P.event.title : '';
@@ -817,7 +818,7 @@
       '<div class="h-me">' + portrait(R, P.s && P.s.salud < 30 ? 'hurt' : 'neutral', 56) + '<div class="nm"><div class="n" style="color:' + b.color + '">' + esc(b.name) + '</div><div class="r">' + esc(b.title) + '</div></div>' + (ap != null ? '<div class="h-ap">ACCIONES<div title="Acciones restantes">' + apH + '</div></div>' : '') + '</div>' +
       (gh ? '<div>' + gh + '</div>' : '') +
       '<div class="h-more">' + gbar +
-      '<div><div class="h-sec">' + icon('estrella', 12) + ' MISIÓN DEL EQUIPO</div><div class="h-txt">' + esc(P.mission || 'Sacad a Lía con vida antes de que el agua llegue a 100.') + '</div></div>' +
+      '<div><div class="h-sec">' + icon('estrella', 12) + ' MISIÓN DEL EQUIPO</div><div class="h-txt">' + esc(P.mission || 'Saquen a Lía con vida antes de que el agua llegue a 100.') + '</div></div>' +
       '<div><div class="h-sec">EQUIPO</div><div class="h-team">' + team + '</div></div></div>';
   }
   function curAp() { var me = P && P.players && P.players[R]; return V && V.ap != null ? V.ap : me && me.ap; }
@@ -841,8 +842,8 @@
   function nowAuto(ph) {
     var o = {
       briefing: ['Escucha lo que pasa', 'Marca el ambiente; enseguida sigues explorando.', 'info'],
-      explore: ['Explora la cueva', 'Camina hasta un icono brillante y pulsa E.', 'explore'],
-      plan: ['Votad el plan', 'Debate en el chat y vota con 1 · 2 · 3. Gana la mayoría.', 'plan'],
+      explore: ['Explora la cueva', 'Camina hasta un icono brillante y presiona E.', 'explore'],
+      plan: ['Voten el plan', 'Debate en el chat y vota con 1 · 2 · 3. Gana la mayoría.', 'plan'],
       secret: ['Elige tu acción secreta', 'Nadie la ve hasta la resolución. 1-3 elige, otra vez sella.', 'secret'],
       summary: ['Revisa tus puntos', 'Cuando quieras, sigue adelante.', 'done']
     }[ph];
@@ -911,8 +912,19 @@
     if (!(miniUser != null ? miniUser : zn >= 2)) { el.mini.classList.remove('on'); return; }
     var fn = miniFn; if (!fn) { var e = W.RC && W.RC.eng && W.RC.eng(); if (e && e.drawMinimap) fn = function (c, w, h) { return e.drawMinimap(c, w, h); }; }
     var ok = false;
-    if (fn) { try { var c = el.mini.getContext('2d'); c.clearRect(0, 0, 160, 64); ok = fn(c, 160, 64) !== false; } catch (e2) { ok = false; } }
+    if (fn) { try { var c = el.mini.getContext('2d'); c.clearRect(0, 0, 240, 110); ok = fn(c, 240, 110) !== false; if (ok) { c.font = 'bold 9px monospace'; c.fillStyle = '#0a0716cc'; c.fillRect(2, 2, 34, 12); c.fillStyle = '#ffd24a'; c.fillText('MAPA', 5, 11); } } catch (e2) { ok = false; } }
     el.mini.classList.toggle('on', ok);
+    if (big) { if (!ok) closeBig(); else { try { var bc = big.querySelector('canvas'), bg = bc.getContext('2d'); bg.clearRect(0, 0, bc.width, bc.height); if (fn(bg, bc.width, bc.height) === false) closeBig(); } catch (e3) { closeBig(); } } }
+  }
+  var big = null;
+  function closeBig() { if (big) { big.remove(); big = null; } }
+  function toggleBig() { // mapa grande superpuesto, no pausa el juego ni bloquea teclas de movimiento
+    if (big) return closeBig();
+    if (!el.mini.classList.contains('on')) return;
+    var w = Math.max(240, Math.min(640, Math.floor(root.clientWidth * .6))), h = Math.round(w * 300 / 640);
+    big = D.createElement('div'); big.className = 'h-big';
+    big.innerHTML = '<div class="bt"><span>MAPA</span><button class="h-btn alt sm" data-act="bigmap" title="Cerrar (M / Esc)">✕</button></div><canvas width="' + w + '" height="' + h + '" style="width:' + w + 'px;height:' + h + 'px"></canvas>';
+    root.appendChild(big); drawMini();
   }
 
   /* ---------- fases ---------- */
@@ -968,7 +980,7 @@
     var key = String(ev.id || ev.art || '').replace(/^event_/, ''), em = EVENT_EMOJI[key] || '⚠️';
     var art = '<div class="h-art"><span class="tag">⚠ EVENTO · TRAMO ' + (P.round || 1) + '</span>' + (src ? '<img alt="" src="' + src + '">' : '<span class="em">' + em + '</span>') + '</div>';
     var rad = ev.radio ? '<div class="h-radio">' + portrait('lia', 'preocupado', 44) + '<div><div class="w">📻 LÍA · RADIO</div><div class="q" data-type="' + esc('«' + ev.radio + '»') + '"></div></div></div>' : '';
-    var exp = (data && data.expect) || ev.expect || 'Explora, reúne información y compártela. Después votaréis el plan.';
+    var exp = (data && data.expect) || ev.expect || 'Explora, reúne información y compártela. Después votarán el plan.';
     var p = openPanel('event', art + '<div class="h-pb"><h3 class="h-evt1">' + esc(ev.title || 'Nuevo tramo') + '</h3><div class="h-evtx">' + esc(ev.text || '') + '</div>' + rad +
       '<div class="h-expect"><b>QUÉ SE ESPERA:</b> ' + esc(exp) + '</div><div class="h-cdown"><i style="width:100%"></i></div></div>' +
       '<div class="h-foot"><span class="l">Empieza la exploración en unos segundos…</span><button class="h-btn" data-act="closeevt">ENTENDIDO ▶</button></div>');
@@ -1011,7 +1023,7 @@
         '<div class="h-votes"><span class="c"></span></div></button>';
     }).join('');
     openPanel('plan', '<div class="h-ph1"><div class="q">' + esc(plan.ask || '¿Qué hacemos ahora?') + '</div><div class="hv">Vota con <b>1</b>, <b>2</b> o <b>3</b>. Gana la mayoría.</div></div>' +
-      (plan.brief ? '<div class="h-brief"><b>Lo que sabéis / lo que no</b>' + esc(Array.isArray(plan.brief) ? plan.brief.join(' ') : plan.brief) + '</div>' : '') +
+      (plan.brief ? '<div class="h-brief"><b>Lo que saben / lo que no</b>' + esc(Array.isArray(plan.brief) ? plan.brief.join(' ') : plan.brief) + '</div>' : '') +
       '<div class="h-pb"><div class="h-opts">' + cards + '</div></div><div class="h-foot"><span class="l h-pstat"></span><button class="h-btn alt" data-act="chatfocus">💬 HABLAR EN EL CHAT <kbd>T</kbd></button></div>');
     updatePlan(); clockTick(); if (P.plan && P.plan.chosen) showChosen();
   }
@@ -1029,7 +1041,7 @@
       if (plan.chosen) { n.classList.toggle('win', plan.chosen === id); n.classList.toggle('lose', plan.chosen !== id); }
     });
     var falta = PLAYER_ROLES.filter(function (r) { return !votes[r]; }).map(function (r) { return roleInfo(r).name; });
-    var st = panel.querySelector('.h-pstat'); if (st) st.innerHTML = falta.length ? 'Faltan por votar: <b style="color:var(--h-amber2)">' + esc(falta.join(', ')) + '</b>' : '<b style="color:var(--h-green)">Todos han votado</b>';
+    var st = panel.querySelector('.h-pstat'); if (st) st.innerHTML = falta.length ? 'Faltan por votar: <b style="color:var(--h-amber2)">' + esc(falta.join(', ')) + '</b>' : '<b style="color:var(--h-green)">Todos votaron</b>';
   }
   function showChosen() {
     if (!panel || panelName !== 'plan') return;
@@ -1059,7 +1071,7 @@
         '<div class="h-risk">RIESGO <span class="p r' + risk + '">' + pips + '</span>' + (o.reward ? '<span style="margin-left:auto;color:var(--h-green)">' + esc(o.reward) + '</span>' : '') + '</div></button>';
     }).join('') || '<div class="h-empty">Esperando tus opciones…</div>';
     openPanel('secret', '<div class="h-ph1"><div class="q">Ahora decide en secreto qué haces tú.</div><div class="hv">Nadie lo verá hasta el final.</div></div>' +
-      '<div class="h-pb"><div class="h-sopts">' + cards + '</div></div><div class="h-foot"><span class="l h-sstat">Elige con 1, 2 o 3 y pulsa SELLAR.</span><button class="h-btn red" data-act="seal" disabled>🔒 SELLAR DECISIÓN</button></div>');
+      '<div class="h-pb"><div class="h-sopts">' + cards + '</div></div><div class="h-foot"><span class="l h-sstat">Elige con 1, 2 o 3 y presiona SELLAR.</span><button class="h-btn red" data-act="seal" disabled>🔒 SELLAR DECISIÓN</button></div>');
     updateSecret(); clockTick();
   }
   function updateSecret() {
@@ -1233,8 +1245,8 @@
     var mood = m.mood || (kind === 'radio' ? 'alert' : 'talk');
     if (grouped) {
       var card = m.card || (kind === 'share' && tx ? { title: 'Información compartida', text: tx } : null), same = card && (tx === card.text || tx.indexOf(card.text) >= 0 || card.text.indexOf(tx) >= 0);
-      var pre = card ? (tx && !same ? '<div class="pre">' + esc(tx) + '</div>' : '') : esc(tx || '📎 ha compartido una tarjeta');
-      var inner = card ? pre + '<div class="h-card"><div class="t">' + icon('ojo', 12) + ' ' + (me ? 'HAS COMPARTIDO' : 'COMPARTE') + ' · ' + esc(card.title || 'Intel') + (card.reliability != null ? relTag(card.reliability) : '') + '</div><div class="x">' + esc(card.text || '') + '</div></div>' : pre;
+      var pre = card ? (tx && !same ? '<div class="pre">' + esc(tx) + '</div>' : '') : esc(tx || '📎 compartió una tarjeta');
+      var inner = card ? pre + '<div class="h-card"><div class="t">' + icon('ojo', 12) + ' ' + (me ? 'COMPARTISTE' : 'COMPARTE') + ' · ' + esc(card.title || 'Intel') + (card.reliability != null ? relTag(card.reliability) : '') + '</div><div class="x">' + esc(card.text || '') + '</div></div>' : pre;
       inner += m.altered && me ? '<div style="font-size:11px;color:#ffb0a8;margin-top:5px">✏️ Alterada: solo tú lo sabes</div>' : '';
       var last = el.log.lastElementChild, g;
       if (last && last.classList.contains('h-g') && last.dataset.from === from && last.dataset.mood === mood && (!m.t || !lastChatT || m.t - lastChatT < 90000)) g = last;
@@ -1308,7 +1320,7 @@
     var intel = (V && V.intel) || [], tabs = [['intel', 'INTEL'], ['secreto', 'SECRETO'], ['objetivo', 'OBJETIVO'], ['hallazgos', 'HALLAZGOS']];
     var body = '';
     if (dossierTab === 'intel') {
-      if (!intel.length) body = '<div class="h-empty">Todavía no tienes tarjetas.<br>Pulsa <kbd>E</kbd> junto a un icono brillante para conseguir información.</div>';
+      if (!intel.length) body = '<div class="h-empty">Todavía no tienes tarjetas.<br>Presiona <kbd>E</kbd> junto a un icono brillante para conseguir información.</div>';
       else {
         var rounds = {}; intel.forEach(function (c) { (rounds[c.round] = rounds[c.round] || []).push(c); });
         Object.keys(rounds).sort(function (a, b) { return b - a; }).forEach(function (r) {
@@ -1323,7 +1335,7 @@
       }
     } else if (dossierTab === 'secreto') {
       var sc = V && V.secret;
-      body = sc ? '<div class="h-sc1"><div class="lock">🔒</div><div class="t">' + esc(sc.text) + '</div><div class="n">' + (sc.revealed ? '⚠ Este secreto ya se ha revelado.' : 'Nadie más lo sabe. Decide si lo confiesas o lo ocultas: puede salir a la luz en la resolución.') + '</div></div>' : '<div class="h-empty">Sin secreto.</div>';
+      body = sc ? '<div class="h-sc1"><div class="lock">🔒</div><div class="t">' + esc(sc.text) + '</div><div class="n">' + (sc.revealed ? '⚠ Este secreto ya se reveló.' : 'Nadie más lo sabe. Decide si lo confiesas o lo ocultas: puede salir a la luz en la resolución.') + '</div></div>' : '<div class="h-empty">Sin secreto.</div>';
     } else if (dossierTab === 'objetivo') {
       var mh = '';
       if (misOv && misOv.steps && misOv.steps.length) mh = '<div class="h-gh">' + esc(misOv.title || 'MISIÓN') + '</div><ul class="h-mlist">' + misOv.steps.map(function (x) { return '<li class="' + (x.done ? 'done' : '') + '"><i>' + (x.done ? '✔' : '') + '</i><span>' + esc(x.text) + '</span></li>'; }).join('') + '</ul>';
@@ -1340,7 +1352,7 @@
     c.shared = true; editing = null; snd(asIs ? 'share' : 'lie');
     setChat(true); pinned = true;
     if (cb.share) cb.share(id, asIs ? { asIs: true } : { asIs: false, text: text });
-    renderDossier(); toastNote(asIs ? 'Compartida: mira el chat' : 'Has compartido una versión alterada: mira el chat');
+    renderDossier(); toastNote(asIs ? 'Compartida: mira el chat' : 'Compartiste una versión alterada: mira el chat');
     // si main no ha devuelto el mensaje de chat, lo mostramos nosotros (misma clave -> sin duplicar)
     var sh = asIs ? c.text : text; setTimeout(function () { chatAdd({ from: R, kind: 'share', text: sh, mood: 'happy', t: Date.now(), card: { title: c.title, text: sh, reliability: c.reliability } }); if (el.log) { el.log.scrollTop = el.log.scrollHeight; } }, 450);
   }
@@ -1443,6 +1455,7 @@
   function onKey(e) {
     if (!mounted || hidden || e.ctrlKey || e.altKey || e.metaKey) return;
     var k = e.key;
+    if (big && (k === 'Escape' || k.toLowerCase() === 'm') && !typingNow()) { e.preventDefault(); closeBig(); return; }
     if (typingNow()) { if (k === 'Escape') D.activeElement.blur(); return; }
     if (k === 'Escape') {
       if (paused) return closePause();
@@ -1456,7 +1469,7 @@
     else if (lk === 'j') { el.dos.classList.contains('open') ? closeDossier() : openDossier(); }
     else if (lk === 'h') toggleHelp();
     else if (lk === 'o') toggleGoals();
-    else if (lk === 'm') { var on0 = el.mini.classList.contains('on'); miniUser = !on0; drawMini(); }
+    else if (lk === 'm') { if (!miniUser) { miniUser = true; drawMini(); } else toggleBig(); }
     else if (lk === 'r' && P && P.phase === 'explore') doReady();
     else if (k === '1' || k === '2' || k === '3') {
       var i = +k - 1;
@@ -1498,6 +1511,8 @@
       case 'chatmin': setChat(!chatOpen()); break;
       case 'chatfocus': setChat(true); el.input.focus(); break;
       case 'help': toggleHelp(); break;
+      case 'mini': miniUser = !el.mini.classList.contains('on'); if (!miniUser) closeBig(); drawMini(); break;
+      case 'bigmap': toggleBig(); break;
       case 'closehelp': t.closest('.h-hb').remove(); break;
       case 'pause': openPause(); break;
       case 'resume': closePause(); break;
@@ -1563,7 +1578,7 @@
     if (!mounted || !o || !(o.title || o.text)) return;
     var old = root.querySelector('.h-fcard'); if (old) old.remove();
     var c = D.createElement('div'); c.className = 'h-fcard';
-    c.innerHTML = '<div class="k">Has encontrado</div><div class="t">' + esc(o.title || o.text) + '</div>' + (o.title && o.text ? '<div class="x">' + esc(o.text) + '</div>' : '') + (o.uses ? '<div class="u"><b>Sirve para:</b> ' + esc(o.uses) + '</div>' : '');
+    c.innerHTML = '<div class="k">Encontraste</div><div class="t">' + esc(o.title || o.text) + '</div>' + (o.title && o.text ? '<div class="x">' + esc(o.text) + '</div>' : '') + (o.uses ? '<div class="u"><b>Sirve para:</b> ' + esc(o.uses) + '</div>' : '');
     root.appendChild(c); snd('toast'); setTimeout(function () { c.classList.add('out'); setTimeout(function () { c.remove(); }, 400); }, 5000);
   }
   function note(txt) { var n = D.createElement('div'); n.className = 'h-note'; n.textContent = '⚠ ' + txt; el.tst.appendChild(n); setTimeout(function () { n.style.opacity = 0; n.style.transition = 'opacity .4s'; setTimeout(function () { n.remove(); }, 450); }, 3200); }
@@ -1596,7 +1611,7 @@
     openDossier: openDossier, closeDossier: closeDossier, help: function () { helpFor(cur.phase, false); }, shake: shake, flash: flash, floatCard: floatCard, sparks: sparks, note: note,
     openPause: function () { if (!paused) openPause(); }, closePause: closePause,
     closePanel: function () { closePanel(true); }, isTyping: typingNow, resetHelp: function () { helpSeen = {}; lsSet('rcv3_hudhelp', helpSeen); },
-    reset: function () { this.chat.clear(); closePanel(true); closeDossier(); cur = { phase: null, round: 0 }; dispInit = false; waterLevelHit = 0; lastIntelLen = 0; intelSeen = 0; localReady = false; localVote = null; secretSel = null; secretSealed = false; P = null; V = null; nowOv = misOv = readyOv = null; nowKey = ''; airV = null; abilO = helpO = quickO = null; if (this.skipDialogue) this.skipDialogue(); setAir(null); paintAbil(); coachO = null; miniUser = false; sayQ = []; if (el.sy) el.sy.innerHTML = ''; paintCoach(); },
+    reset: function () { this.chat.clear(); closePanel(true); closeDossier(); cur = { phase: null, round: 0 }; dispInit = false; waterLevelHit = 0; lastIntelLen = 0; intelSeen = 0; localReady = false; localVote = null; secretSel = null; secretSealed = false; P = null; V = null; nowOv = misOv = readyOv = null; nowKey = ''; airV = null; abilO = helpO = quickO = null; if (this.skipDialogue) this.skipDialogue(); setAir(null); paintAbil(); coachO = null; miniUser = true; sayQ = []; if (el.sy) el.sy.innerHTML = ''; paintCoach(); },
     say: say, setCoach: setCoach,
     onChat: function (f) { cb.chat = f; }, onShare: function (f) { cb.share = f; }, onVote: function (f) { cb.vote = f; }, onSecret: function (f) { cb.secret = f; },
     onReady: function (f) { cb.ready = f; }, onExit: function (f) { cb.exit = f; }, onSettings: function (f) { cb.settings = f; }, onPause: function (f) { cb.pause = f; },

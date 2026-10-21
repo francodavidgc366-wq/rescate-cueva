@@ -1366,7 +1366,7 @@ function create(canvas, opts) {
 
   /* ---------- tick global ---------- */
   function doTick() {
-    tick++;
+    tick++; if (tick % 6 === 0) mmExplore();
     wSlopeT = zoneSlope(); wSlope += clamp(wSlopeT - wSlope, -0.004, 0.004);
     if (authority) { syncBodies(); gateTick(); Object.keys(bodies).forEach(function (id) { tickBody(bodies[id]); }); separate(); writeBack(); }
     else {
@@ -2076,25 +2076,136 @@ function create(canvas, opts) {
     if (garg === null || snap) garg = ang; else { var d = ang - garg; d = ((d + Math.PI) % TAU + TAU) % TAU - Math.PI; garg += d * 0.22; }
     drawArrow(x, y, garg, t, col);
   }
-  var mmC = {};
-  function mmSil(sec) {
-    if (mmC[sec]) return mmC[sec];
-    var c = canvasOf(SECW, LH), x = c.getContext('2d'), img = x.createImageData(SECW, LH), d = img.data;
-    for (var r = 0; r < LH; r++) for (var cc = 0; cc < SECW; cc++) { var v = wd.g[r * LW + sec * SECW + cc], o = (r * SECW + cc) * 4; if (v === 1) { d[o] = 70; d[o + 1] = 62; d[o + 2] = 96; d[o + 3] = 255; } else if (v === 2) { d[o] = 200; d[o + 1] = 150; d[o + 2] = 90; d[o + 3] = 255; } else { d[o] = 14; d[o + 1] = 10; d[o + 2] = 26; d[o + 3] = 255; } }
-    x.putImageData(img, 0, 0); return (mmC[sec] = c);
+  /* v9: minimapa. Fondo estatico cacheado (offscreen, por tamano/zonas), niebla por celdas, agua y capa dinamica aparte. */
+  var mmX = new Uint8Array(LW * LH), mmS = { key: '', bg: null, air: null, fog: null, fogDirty: true, wt: null, wk: '', cnt: 0 };
+  var MM_NAMES = ['Entrada', 'Mina', 'Gruta', 'Lago', 'Santuario'];
+  function mmExplore() {
+    var ch = false;
+    ROLES.forEach(function (r) {
+      var bb = bodies[r]; if (!bb) return; var cx = (bb.x / T) | 0, cy = ((bb.y - 8) / T) | 0;
+      for (var dy = -8; dy <= 8; dy++) for (var dx = -8; dx <= 8; dx++) {
+        var x = cx + dx, y = cy + dy; if (x < 0 || y < 0 || x >= LW || y >= LH || dx * dx + dy * dy > 64 || mmX[y * LW + x]) continue; mmX[y * LW + x] = 1; ch = true;
+      }
+    });
+    if (ch) mmS.fogDirty = true;
+  }
+  function mmBuild(n, sc, dw, dh) {   // roca en degradado + galerias claras con borde + tablones + bolsas de aire; filtro de caja si sc<1
+    var c = canvasOf(dw, dh), x = c.getContext('2d'), img = x.createImageData(dw, dh), d = img.data, fa = new Float32Array(dw * dh), px, py, i, j;
+    var tint = [[0, 0, 0], [8, 0, -6], [-4, 6, 4], [-6, 2, 12], [12, -4, 4]];
+    for (py = 0; py < dh; py++) for (px = 0; px < dw; px++) {
+      var t0 = Math.floor(px / sc), t1 = Math.max(t0 + 1, Math.ceil((px + 1) / sc)), r0 = Math.floor(py / sc), r1 = Math.max(r0 + 1, Math.ceil((py + 1) / sc)), na = 0, np = 0, nt = 0;
+      for (j = r0; j < r1; j++) for (i = t0; i < t1; i++) { var v = (i < n * SECW && j < LH) ? wd.g[j * LW + i] : 1; nt++; if (v === 0) na++; else if (v === 2) np++; }
+      var A = na / nt, P = np / nt, R = 1 - A - P, tn = tint[Math.min(4, (t0 / SECW) | 0)], gy = py / dh, hs = ((t0 * 7 + r0 * 13) & 3) * (sc >= 2 ? 2 : 0);
+      var rk = [44 - 26 * gy + tn[0] + hs, 36 - 24 * gy + tn[1] + hs, 66 - 34 * gy + tn[2] + hs], ga = [124 - 22 * gy, 108 - 20 * gy, 156 - 20 * gy], pl = [236, 178, 96], pw = Math.min(1, P * 1.8), o = (py * dw + px) * 4;
+      fa[py * dw + px] = A + P;
+      for (i = 0; i < 3; i++) d[o + i] = (rk[i] * R + ga[i] * A) / Math.max(0.001, R + A) * (1 - pw) + pl[i] * pw;
+      d[o + 3] = 255;
+    }
+    for (py = 0; py < dh; py++) for (px = 0; px < dw; px++) {   // borde claro en la roca pegada a la galeria
+      if (fa[py * dw + px] >= 0.35) continue;
+      if ((px > 0 && fa[py * dw + px - 1] >= 0.5) || (px < dw - 1 && fa[py * dw + px + 1] >= 0.5) || (py > 0 && fa[(py - 1) * dw + px] >= 0.5) || (py < dh - 1 && fa[(py + 1) * dw + px] >= 0.5)) { var o2 = (py * dw + px) * 4; d[o2] = 190; d[o2 + 1] = 170; d[o2 + 2] = 232; }
+    }
+    x.putImageData(img, 0, 0);
+    var am = canvasOf(dw, dh), ax = am.getContext('2d'), ai = ax.createImageData(dw, dh);   // mascara de aire (para el agua)
+    for (i = 0; i < dw * dh; i++) { ai.data[i * 4] = ai.data[i * 4 + 1] = ai.data[i * 4 + 2] = 255; ai.data[i * 4 + 3] = fa[i] >= 0.4 ? 255 : 0; }
+    ax.putImageData(ai, 0, 0);
+    wd.pockets.forEach(function (pk) {
+      if (pk.s >= n) return; var qx = Math.floor(pk.x / T * sc), qy = Math.floor(pk.y / T * sc);
+      x.fillStyle = '#e6ecf4'; x.fillRect(qx, qy, sc >= 2 ? 2 : 1, sc >= 2 ? 2 : 1); x.fillStyle = 'rgba(255,255,255,0.35)'; x.fillRect(qx - 1, qy, 1, 1);
+    });
+    mmS.bg = c; mmS.air = am;
+  }
+  function mmWater(dw, dh, sc, t) {
+    var wy = Math.round(waterY(wlCur) / T * sc), k = wy + '|' + (t >> 3) + '|' + dw;
+    if (mmS.wk === k && mmS.wt) return mmS.wt;
+    var c = mmS.wt && mmS.wt.width === dw && mmS.wt.height === dh ? mmS.wt : canvasOf(dw, dh), x = c.getContext('2d'), i; x.globalCompositeOperation = 'source-over'; x.clearRect(0, 0, dw, dh);
+    if (wy < dh) {
+      x.fillStyle = 'rgba(50,130,230,0.55)'; x.fillRect(0, Math.max(0, wy), dw, dh);
+      x.fillStyle = 'rgba(150,210,255,0.22)'; for (var yy = wy + 3; yy < dh; yy += 3) for (i = 0; i < dw; i += 2) if (Math.sin(i * 0.5 + yy + t * 0.12) > 0.4) x.fillRect(i, yy, 2, 1);
+      x.fillStyle = 'rgba(190,235,255,0.9)'; for (i = 0; i < dw; i += 2) x.fillRect(i, wy + Math.round(Math.sin(i * 0.45 + t * 0.14) * 0.7), 2, 1);
+    }
+    x.globalCompositeOperation = 'destination-in'; x.drawImage(mmS.air, 0, 0); x.globalCompositeOperation = 'source-over';
+    mmS.wk = k; mmS.wt = c; return c;
+  }
+  function mmFog(n) {   // 1 px por tile; lo no explorado oscuro. Zonas ya superadas (< ultima desbloqueada): visibles
+    var tw = n * SECW, c = mmS.fog && mmS.fog.width === tw ? mmS.fog : canvasOf(tw, LH), x = c.getContext('2d'), img = x.createImageData(tw, LH), i;
+    for (i = 0; i < tw * LH; i++) { var tx = i % tw; img.data[i * 4] = 6; img.data[i * 4 + 1] = 4; img.data[i * 4 + 2] = 14; img.data[i * 4 + 3] = (tx / SECW | 0) < n - 1 || mmX[((i / tw) | 0) * LW + tx] ? 0 : 125; }
+    x.putImageData(img, 0, 0); mmS.fog = c; mmS.fogDirty = false; return c;
   }
   function drawMinimap(ctx, w, h) {
     if (!ctx || !w || !h) return false;
-    var b = bodies[active], sec = b ? secOfX(b.x) : clamp(poiRound - 1, 0, NS - 1), sc3 = Math.min(w / SECW, h / LH), dw = SECW * sc3, dh = LH * sc3, ox = (w - dw) / 2, oy = (h - dh) / 2, k;
-    ctx.save(); ctx.fillStyle = '#0a0712'; ctx.fillRect(0, 0, w, h); ctx.imageSmoothingEnabled = false; ctx.drawImage(mmSil(sec), ox, oy, dw, dh);
-    var wyT = (waterY(wlCur) / T) * sc3 + oy; if (wyT < oy + dh) { ctx.fillStyle = 'rgba(70,170,230,0.45)'; ctx.fillRect(ox, Math.max(oy, wyT), dw, oy + dh - Math.max(oy, wyT)); }
-    function pt(wx2, wy2) { return [ox + (wx2 / T - sec * SECW) * sc3, oy + (wy2 / T) * sc3]; }
-    function dot(wx2, wy2, rad, col, ring) { var q = pt(wx2, wy2); ctx.fillStyle = col; ctx.beginPath(); ctx.arc(q[0], q[1], rad, 0, TAU); ctx.fill(); if (ring) { ctx.strokeStyle = ring; ctx.lineWidth = 1; ctx.stroke(); } }
-    for (k in pois) { var p = pois[k]; if (secOfX(p.x) !== sec || (p.kind === 'secreto' && !p.disc && !p.used)) continue; dot(p.x, p.y - 8, Math.max(1.5, sc3 * 0.9), p.used ? '#6a6880' : KEY_COL[p.kind] || '#ffd24a'); }
+    w = Math.round(w); h = Math.round(h); mmExplore();
+    var big = w >= 400, n = clamp(unlocked, 1, NS), m = big ? 5 : 3, aw = w - 2 * m, ah = h - 2 * m, sc = Math.min(aw / (n * SECW), ah / LH);
+    if (sc >= 1) sc = Math.floor(sc);
+    var dw = Math.max(1, Math.floor(n * SECW * sc)), dh = Math.max(1, Math.floor(LH * sc)), ox = Math.floor((w - dw) / 2), oy = Math.floor((h - dh) / 2), t = tick, k;
+    var key = [n, sc.toFixed(3), dw, dh].join();
+    if (mmS.key !== key) { mmBuild(n, sc, dw, dh); mmS.key = key; mmS.fogDirty = true; mmS.wk = ''; }
+    var r = big ? 4 : 3, ls = big ? 2 : 1, blink = (t % 40) < 24;
+    function pt(wx2, wy2) { return [Math.round(ox + wx2 / T * sc), Math.round(oy + wy2 / T * sc)]; }
+    function seen(wx2, wy2) { var cx = (wx2 / T) | 0, cy = (wy2 / T) | 0; return cx / SECW < n - 1 || (cx < n * SECW && cy >= 0 && cy < LH && mmX[cy * LW + cx] === 1); }
+    function rr2(x0, y0, w0, h0, rad) { ctx.beginPath(); ctx.moveTo(x0 + rad, y0); ctx.lineTo(x0 + w0 - rad, y0); ctx.quadraticCurveTo(x0 + w0, y0, x0 + w0, y0 + rad); ctx.lineTo(x0 + w0, y0 + h0 - rad); ctx.quadraticCurveTo(x0 + w0, y0 + h0, x0 + w0 - rad, y0 + h0); ctx.lineTo(x0 + rad, y0 + h0); ctx.quadraticCurveTo(x0, y0 + h0, x0, y0 + h0 - rad); ctx.lineTo(x0, y0 + rad); ctx.quadraticCurveTo(x0, y0, x0 + rad, y0); ctx.closePath(); }
+    function diamond(q, s, col, ol) { ctx.beginPath(); ctx.moveTo(q[0], q[1] - s); ctx.lineTo(q[0] + s, q[1]); ctx.lineTo(q[0], q[1] + s); ctx.lineTo(q[0] - s, q[1]); ctx.closePath(); ctx.fillStyle = col; ctx.fill(); ctx.strokeStyle = ol; ctx.lineWidth = 1; ctx.stroke(); }
+    function lock(q, col, open) {
+      var s = big ? 4 : 3; ctx.strokeStyle = open ? '#6bf08a' : '#e8e0f0'; ctx.lineWidth = 1; ctx.beginPath(); if (open) ctx.arc(q[0] + s - 1, q[1] - s + 1, s * 0.6, Math.PI, TAU * 0.95); else ctx.arc(q[0], q[1] - 1, s * 0.6, Math.PI, TAU); ctx.stroke();
+      ctx.fillStyle = '#10081c'; ctx.fillRect(q[0] - s, q[1] - 1, s * 2 + 1, s + 3); ctx.fillStyle = open ? '#4fd070' : col; ctx.fillRect(q[0] - s + 1, q[1], s * 2 - 1, s + 1);
+    }
+    ctx.save(); ctx.imageSmoothingEnabled = false;
+    ctx.fillStyle = '#0a0712'; ctx.fillRect(0, 0, w, h);
+    rr2(1, 1, w - 2, h - 2, 4); ctx.clip();
+    ctx.drawImage(mmS.bg, ox, oy); ctx.drawImage(mmWater(dw, dh, sc, t), ox, oy);
+    if (mmS.fogDirty || !mmS.fog || mmS.fog.width !== n * SECW) mmFog(n);
+    ctx.imageSmoothingEnabled = true; ctx.drawImage(mmS.fog, ox, oy, dw, dh); ctx.imageSmoothingEnabled = false;
+    // limites y rotulos de zona
+    var lh = 5 * ls + 2, ly = oy - lh - 1 >= 2 ? oy - lh - 1 : oy + 2;
+    for (k = 0; k < n; k++) {
+      var zx = ox + Math.round(k * SECW * sc);
+      if (k) { ctx.fillStyle = 'rgba(230,210,255,0.45)'; for (var yy = oy; yy < oy + dh; yy += 4) ctx.fillRect(zx, yy, 1, 2); }
+      var nm = (k + 1) + ' ' + MM_NAMES[k]; if (textW(nm) * ls > SECW * sc - 4) nm = String(k + 1);
+      drawText(ctx, nm, zx + 3, ly, k < n - 1 || mmX.length ? '#f0e4ff' : '#fff', '#10081c', ls);
+    }
+    // puntos de interes
+    var pu = 0.5 + 0.5 * Math.sin(t * 0.12);
+    for (k in pois) {
+      var p = pois[k]; if ((p.kind === 'secreto' && !p.disc && !p.used) || p.x / T >= n * SECW || !seen(p.x, p.y)) continue;
+      var q = pt(p.x, p.y - 8);
+      if (p.used) { diamond(q, r - 1, '#7a788a', '#3a384a'); ctx.strokeStyle = '#e8e8f0'; ctx.beginPath(); ctx.moveTo(q[0] - 1.5, q[1]); ctx.lineTo(q[0] - 0.5, q[1] + 1.5); ctx.lineTo(q[0] + 2, q[1] - 1.5); ctx.stroke(); }
+      else diamond(q, r - 0.5 + pu * 1.2, '#ffd24a', '#7a4a10');
+    }
+    // puertas de habilidad
+    GT.forEach(function (g0) { if (g0.zone > n || !seen(g0.x, g0.y)) return; lock(pt(g0.x, g0.y - 6), ROLE_COL[g0.role].coat, g0.open); });
+    // camara de Lia
+    if (n >= 5) { var ql = pt(wd.lia.x, wd.lia.y - 6); ctx.fillStyle = '#10081c'; ctx.fillRect(ql[0] - r - 1, ql[1] - r + 1, 2 * r + 3, 2 * r - 1); ctx.fillStyle = '#ff7ac8'; ctx.fillRect(ql[0] - r, ql[1] - r + 2, 2 * r + 1, 2 * r - 3); ctx.fillRect(ql[0] - 2, ql[1] - r, 3, 2); ctx.fillStyle = '#10081c'; ctx.beginPath(); ctx.arc(ql[0], ql[1] + 0.5, r * 0.45 + 0.5, 0, TAU); ctx.fill(); ctx.fillStyle = '#fff'; ctx.fillRect(ql[0], ql[1] - 1, 1, 1); }
+    // destino de la guia
     var gp = guideT === null ? null : targetPos(guideT);
-    if (gp && secOfX(gp.x) === sec) { var q2 = pt(gp.x, gp.y - 8), pu = 2 + Math.abs(Math.sin(tick * 0.1)) * 3; ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(q2[0], q2[1], Math.max(2.5, sc3) + pu, 0, TAU); ctx.stroke(); }
-    GT.forEach(function (g0) { if (g0.zone - 1 !== sec) return; var q3 = pt(g0.x, g0.y), cc2 = ROLE_COL[g0.role].coat; ctx.strokeStyle = cc2; ctx.fillStyle = g0.open ? cc2 : '#10081c'; ctx.lineWidth = 1; ctx.fillRect(q3[0] - 2, q3[1] - 2, 5, 5); ctx.strokeRect(q3[0] - 2.5, q3[1] - 2.5, 5, 5); });
-    ROLES.forEach(function (r) { var bb = bodies[r]; if (!bb || secOfX(bb.x) !== sec) return; dot(bb.x, bb.y - 6, Math.max(1.6, sc3 * 0.8) + (r === active ? 0.8 : 0), (ROLE_COL[r] || ROLE_COL.guia).coat, r === active ? '#fff' : '#10081c'); });
+    if (gp && gp.x / T < n * SECW) {
+      var qg = pt(gp.x, gp.y - 8), ph2 = (t * 0.04) % 1, bob2 = Math.round(Math.abs(Math.sin(t * 0.12)) * 2);
+      ctx.strokeStyle = 'rgba(255,255,255,' + (0.95 - ph2 * 0.7) + ')'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(qg[0], qg[1], r + 2 + ph2 * 5, 0, TAU); ctx.stroke();
+      ctx.strokeStyle = '#ffe070'; ctx.beginPath(); ctx.arc(qg[0], qg[1], r + 2, 0, TAU); ctx.stroke();
+      var ay = qg[1] - r - 6 - bob2; ctx.fillStyle = '#ffe070'; ctx.strokeStyle = '#10081c'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(qg[0], ay + 5); ctx.lineTo(qg[0] - 4, ay - 1); ctx.lineTo(qg[0] + 4, ay - 1); ctx.closePath(); ctx.fill(); ctx.stroke();
+    }
+    // companeros y tu
+    function who(role, me) {
+      var bb = bodies[role]; if (!bb || bb.x / T >= n * SECW) return; var q = pt(bb.x, bb.y - 6), col = (ROLE_COL[role] || ROLE_COL.guia).coat, rad = me ? r + 1 : r;
+      if (me) { ctx.strokeStyle = blink ? '#fff' : 'rgba(255,255,255,0.35)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(q[0], q[1], rad + 1.5, 0, TAU); ctx.stroke(); }
+      ctx.fillStyle = col; ctx.strokeStyle = '#10081c'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(q[0], q[1], rad, 0, TAU); ctx.fill(); if (!me) ctx.stroke();
+      if (me) { var fx = bb.face >= 0 ? 1 : -1; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(q[0] + fx * (rad + 4), q[1]); ctx.lineTo(q[0] + fx * (rad), q[1] - 3); ctx.lineTo(q[0] + fx * (rad), q[1] + 3); ctx.closePath(); ctx.fill(); }
+      else if (rad >= 3) drawText(ctx, (NAMES[role] || role)[0], q[0] - 1, q[1] - 2, '#fff', '#10081c', 1);
+    }
+    ROLES.forEach(function (rl) { if (rl !== active) who(rl, false); }); who(active, true);
+    // leyenda
+    if (big) {
+      var items = [['TU', 0], ['AMIGOS', 1], ['PUNTOS', 2], ['PUERTAS', 3]], lw = 0; items.forEach(function (it) { lw += 16 + textW(it[0]) * 2 + 10; });
+      var lx = 6, lyy = h - 18; ctx.fillStyle = 'rgba(10,7,18,0.8)'; ctx.fillRect(lx - 3, lyy - 4, lw + 2, 16);
+      items.forEach(function (it) {
+        var q = [lx + 6, lyy + 4]; if (it[1] === 0) { ctx.fillStyle = (ROLE_COL[active] || ROLE_COL.guia).coat; ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(q[0], q[1], 4, 0, TAU); ctx.fill(); ctx.stroke(); }
+        else if (it[1] === 1) { ctx.fillStyle = ROLE_COL.medica.coat; ctx.strokeStyle = '#10081c'; ctx.beginPath(); ctx.arc(q[0], q[1], 4, 0, TAU); ctx.fill(); ctx.stroke(); }
+        else if (it[1] === 2) diamond(q, 4, '#ffd24a', '#7a4a10'); else lock(q, ROLE_COL.ing.coat, false);
+        drawText(ctx, it[0], lx + 14, lyy, '#f0e4ff', '#10081c', 2); lx += 16 + textW(it[0]) * 2 + 10;
+      });
+    }
+    ctx.restore(); ctx.save();
+    ctx.strokeStyle = '#8a7aa0'; ctx.lineWidth = 1; rr2(1.5, 1.5, w - 3, h - 3, 4); ctx.stroke();
+    ctx.fillStyle = '#ffd24a'; [[0, 0], [w - 2, 0], [0, h - 2], [w - 2, h - 2]].forEach(function (c2) { ctx.fillRect(c2[0], c2[1], 2, 2); });
     ctx.restore(); return true;
   }
 
