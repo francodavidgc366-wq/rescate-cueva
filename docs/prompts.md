@@ -16,3 +16,5 @@ Historial: v1 prototipo; v2 secciones + ejemplo + validación estricta; v3 repar
 v4 (sin cambio de prompts): `botChat` aplica limitador y anti-repetición también a la salida de la IA (frase repetida -> se usa la demo; frenado -> null). La intro y la ficha de rol ya no contienen secretos; solo `priv.secret` (y el prompt privado del propio bot) los incluye.
 
 v5 (sin cambio de prompts de IA): las etiquetas de POI del director IA se ignoran (nombre/why/puertas salen de las tablas por zona); `Story.request` y `Story.scene` son 100 % código (demo), sin llamada a Claude.
+
+v6 (sin cambio de prompts de IA): `parseRequest`/`answerChat` (peticiones por texto), `explainResult`, `coach`, `botStuck` y los destinos (`fates`) son 100 % código; las frases de tarea de los bots salen de la tabla `DO` por POI.

@@ -8,3 +8,5 @@ Fuente (no incluida, referenciada por la UI): Press Start 2P, CodeMan38, SIL OFL
 
 
 V4 (retratos 64x64, marcos, iconos rehechos, lamp_hang/lantern_floor/lamp_chain): 100% procedural y propio (tools/art_portraits4.py, tools/art_icons4.py), sin material de terceros, CC0 1.0.
+
+V6 (reparto dibujado: pers_*, portrait_*_dead, retratos rehechos, dlg_frame, dlg_portrait_frame, npc_*): 100% procedural y propio (tools/art_portraits6.py), sin material de terceros, CC0 1.0. Hades/Hollow Knight solo como referencia de estilo, sin copiar nada.

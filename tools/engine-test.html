@@ -13,10 +13,10 @@
 <script>
 var state={round:1,players:{guia:{ap:99,name:'Nico'},medica:{ap:99,name:'Dra. Ona'},ing:{ap:99,name:'Ivan'}}};
 var log=[],ICON=['mapa','caja','radio','secreto','lampara','llave'],LAB=['Examinar mapa','Abrir caja','Escuchar radio','Hallazgo oculto','Lampara','Llave'];
-var T=window.T={state:state,log:log,sfx:[],drown:[],gates:[]};
+var T=window.T={state:state,log:log,sfx:[],drown:[],gates:[],unreach:[]};
 var inst=Engine.create(document.getElementById('c'),{assets:window.ASSETS,getState:function(){return state},localRole:'guia',
   onInteract:function(role,id){log.push(role+':'+id);if(/^p\d/.test(id)){inst.markPoi(id,{used:true,by:role})}},
-  onSfx:function(n,r){var b=n==='jump'&&inst.bodies[r];T.sfx.push({n:n,r:r,t:inst.tick,x:b?b.x:0,y:b?b.y:0})},onDrown:function(r){T.drown.push(r+'@'+inst.tick+' '+(inst.bodies[r].x/16|0)+','+(inst.bodies[r].y/16|0)+' w'+Math.round(inst.water))},onGate:function(r,id,k){T.gates.push(r+':'+id+':'+k)}});
+  onSfx:function(n,r){var b=n==='jump'&&inst.bodies[r];T.sfx.push({n:n,r:r,t:inst.tick,x:b?b.x:0,y:b?b.y:0})},onUnreachable:function(r,id){T.unreach.push(r+':'+id)},onDrown:function(r){T.drown.push(r+'@'+inst.tick+' '+(inst.bodies[r].x/16|0)+','+(inst.bodies[r].y/16|0)+' w'+Math.round(inst.water))},onGate:function(r,id,k){T.gates.push(r+':'+id+':'+k)}});
 T.inst=inst;
 // lista de POI de una zona: 6 slots; los de puerta llevan gate (su slot esta detras de la puerta)
 T.pois=function(z){var gs=inst.getGates().filter(function(g){return g.zone===z}),used={},l=[];gs.forEach(function(g){used[g.slot]=1;l.push({id:'p'+z+'g'+g.slot,gate:g.id,label:LAB[g.slot],icon:ICON[g.slot],kind:'info'})});
@@ -35,6 +35,22 @@ T.reach=function(maxSec,water){maxSec=maxSec||60;var res=[],fails=0,tot=0;inst.s
       for(var k=0;k<maxSec*60&&ok&&!done;k++){inst.step();for(var q=n0;q<log.length;q++)if(log[q]===role+':'+id)done=true}
       if(!done)fails++;var bb=inst.bodies[role];res.push((done?'OK ':'FAIL ')+role+' z'+z+' s'+p.slot+' '+id+' '+((inst.tick-t0)/60).toFixed(1)+'s'+(ok?'':' (sin ruta)')+(done?'':' @'+(bb.x/16|0)+','+(bb.y/16|0)))})})});
   inst.start();return{total:tot,fails:fails,warps:inst.stats.warps,max:Math.max.apply(null,res.map(function(r){return +(r.match(/ ([\d.]+)s/)||[0,0])[1]})),fail:res.filter(function(r){return r[0]==='F'}),res:res}};
+// v6: por rol, con solo las puertas de ESE rol abiertas y agua w (%): cada POI no tras puerta ajena (y 'lia' si hay puente) se alcanza desde el spawn; mide nado continuo max y aire minimo
+T.reachRole=function(w,maxSec){maxSec=maxSec||60;var res=[],fails=0,tot=0,maxSwim=0,minAir=100;inst.stop();inst.setUnlocked(5);inst.setWaterRate(0);
+  ['guia','medica','ing'].forEach(function(role){inst.resetGates();inst.getGates().forEach(function(g){if(g.role===role)inst.openGate(g.id,true)});inst.setLocal('guia');
+    [1,2,3,4,5].forEach(function(z){['guia','medica','ing'].forEach(function(x){inst.setBot(x,x===role)});state.round=z;inst.gather(z);inst.setPois(z,T.pois(z));inst.setWater(w);for(var k=0;k<900;k++)inst.step();
+      var targets=Object.keys(inst.pois).map(function(id){return{id:id,p:inst.pois[id]}}).filter(function(o){return !o.p.gate||inst.getGates().filter(function(g){return g.id===o.p.gate})[0].role===role});
+      if(z===5&&role==='ing')targets.push({id:'lia',p:{x:inst.world.lia.x,y:inst.world.lia.y}});
+      targets.forEach(function(o){inst.gather(z);var b=inst.bodies[role];b.air=100;o.p.disc=true;if(inst.pois[o.id])inst.markPoi(o.id,{used:false});var ok=o.id==='lia'?inst.botGoto(role,{x:o.p.x,y:o.p.y}):inst.botGoto(role,o.id),done=false,n0=log.length,sw=0,t0=inst.tick;tot++;
+        for(var k=0;k<maxSec*60&&ok&&!done;k++){inst.step();if(o.id==='lia'){if(Math.abs(b.x-o.p.x)<20&&Math.abs(b.y-o.p.y)<20)done=true}else for(var q=n0;q<log.length;q++)if(log[q]===role+':'+o.id)done=true;if(b.air<100&&b.swim){sw++;maxSwim=Math.max(maxSwim,sw)}else sw=0;minAir=Math.min(minAir,b.air)}
+        if(!done){fails++;res.push('FAIL '+role+' z'+z+' '+o.id+(ok?' @'+(b.x/16|0)+','+(b.y/16|0):' (sin ruta)'))}})})});
+  inst.resetGates();inst.start();return{w:w,total:tot,fails:fails,maxSwimSec:+(maxSwim/60).toFixed(1),minAir:Math.round(minAir),fail:res}};
+// v6: objetivo inalcanzable (puerta cerrada): tras 2 intentos fallidos avisa onUnreachable(role,poiId) y el bot no entra en bucle
+T.unreachTest=function(){inst.stop();inst.resetGates();inst.setUnlocked(5);T.round(5);inst.setWater(5);T.unreach.length=0;inst.setBot('ing',true);var pid=Object.keys(inst.pois).filter(function(id){return inst.pois[id].gate==='z5_puente'})[0];
+  var r1=inst.botGoto('ing',pid),r2=inst.botGoto('ing',pid);return new Promise(function(res){setTimeout(function(){var st=inst.stats.loops;inst.start();res({poi:pid,r1:r1,r2:r2,notified:T.unreach.slice()})},50)})};
+// v6: correr: x1.6 con run; polvo
+T.runTest=function(){inst.stop();T.round(1);['medica','ing'].forEach(function(x){inst.setBot(x,false)});inst.setLocal('guia');var b=inst.bodies.guia;b.x=300;b.y=35*16;b.vx=0;var o={};[false,true].forEach(function(run){b.x=300;b.vx=0;for(var k=0;k<20;k++){inst.setInput('guia',{right:true,run:run});inst.step()}var x0=b.x;for(var k=0;k<60;k++){inst.setInput('guia',{right:true,run:run});inst.step()}o[run?'run':'walk']=+(b.x-x0).toFixed(1)});
+  inst.setInput('guia',{});inst.start();return o};
 // puertas: cada puerta cerrada es alcanzable por el bot de su rol, el POI de detras NO lo es hasta abrir, y tras abrir si
 T.gatesTest=function(){var out=[],bad=0;inst.stop();inst.setWater(5);inst.setWaterRate(0);
   inst.getGates().forEach(function(g){inst.resetGates();inst.setUnlocked(5);var z=g.zone;state.round=z;inst.gather(z);inst.setPois(z,T.pois(z));['guia','medica','ing'].forEach(function(x){inst.setBot(x,true)});
@@ -61,11 +77,11 @@ T.soak=function(minutes){minutes=minutes||5;inst.stop();inst.resetGates();inst.s
   T.sfx.filter(function(e){return e.n==='jump'}).forEach(function(e){jumps[e.r].push(e)});
   var maxJ=0,jw='',loops=0,loopEv=[];['guia','medica','ing'].forEach(function(x){var a=jumps[x];for(var i=0;i<a.length;i++){var c=0,xa=1e9,xb=-1e9,ya=1e9,yb=-1e9;for(var j=i;j<a.length&&a[j].t-a[i].t<300;j++){c++;xa=Math.min(xa,a[j].x);xb=Math.max(xb,a[j].x);ya=Math.min(ya,a[j].y);yb=Math.max(yb,a[j].y)}var dd=Math.max(xb-xa,yb-ya);if(c>=7&&xb-xa<=40&&yb-ya<=32){loops++;if(loopEv.length<3)loopEv.push(x+' '+a.slice(i,j).map(function(q){return q.t+':'+(q.x/16).toFixed(1)+','+(q.y/16).toFixed(1)}).join(' '))}if(c>maxJ){maxJ=c;jw=x+' t='+a[i].t+' disp='+Math.round(dd)}}});
   inst.start();return{warps:inst.stats.warps-w0,loopsDetected:inst.stats.loops-l0,maxStillSec:maxStill/60,stillWho:stillWho,maxJumpsIn5s:maxJ,jumpWho:jw,jumpLoops:loops,loopEv:loopEv,interacts:inst.stats.interacts,lastLoop:inst.stats.lastLoop,drowns:T.drown.length,airMin:airMin}};
-T.airTest=function(){inst.stop();inst.setUnlocked(1);inst.gather(1);inst.setWater(100);inst.setWaterRate(0);for(var k=0;k<2000;k++)inst.step();var b=inst.bodies.guia;
-  ['guia','medica','ing'].forEach(function(x){inst.setBot(x,false)});b.x=40*16+8;b.y=35*16;b.vx=b.vy=0;b.air=100;T.drown.length=0;T.sfx.length=0;var a=[];
+T.airTest=function(){inst.stop();inst.setUnlocked(5);inst.gather(5);inst.setWater(100);inst.setWaterRate(0);for(var k=0;k<2000;k++)inst.step();var b=inst.bodies.guia;
+  ['guia','medica','ing'].forEach(function(x){inst.setBot(x,false)});b.x=440*16+8;b.y=35*16;b.vx=b.vy=0;b.air=100;T.drown.length=0;T.sfx.length=0;var a=[];
   for(var s=0;s<30;s++){for(var k=0;k<60;k++)inst.step();a.push(Math.round(b.air))}
   var sf={};T.sfx.forEach(function(e){sf[e.n]=(sf[e.n]||0)+1});var res={airPerSec:a.join(','),drowns:T.drown.length,sfx:sf};
-  b.x=50*16+8;b.y=33*16;b.air=10;for(var k=0;k<120;k++)inst.step();res.pocketAir=Math.round(b.air);inst.setWater(10);for(var k=0;k<600;k++)inst.step();res.airDry=Math.round(b.air);
+  b.x=430*16+8;b.air=10;for(var k=0;k<120;k++){b.y=514;b.vy=0;inst.step()}res.pocketAir=Math.round(b.air);inst.setWater(10);for(var k=0;k<600;k++)inst.step();res.airDry=Math.round(b.air);
   inst.setBot('medica',false);inst.setBot('ing',false);inst.start();return res};
 T.dump=function(z){var o=[],g=inst.world.g;for(var r=0;r<40;r++){var l='';for(var c=0;c<100;c++){var v=g[r*500+(z-1)*100+c];l+=v==1?'#':v==2?'=':'.'}o.push(l)}return o.join('\n')};
 T.rmap=function(z,role){var seen={},b=inst.bodies[role||'guia'],sp=inst.world.spawns[z-1];inst.setUnlocked(5);inst.gather(z);var st=Math.round(sp.y/16)*500+Math.floor(sp.x/16);var o=inst.nav.out;var q=[st];seen[st]=1;
@@ -74,7 +90,7 @@ T.rmap=function(z,role){var seen={},b=inst.bodies[role||'guia'],sp=inst.world.sp
 T.shot=function(z,role,col,row){T.round(z);inst.setLocal(role||'guia');var b=inst.bodies[inst.active];b.x=((z-1)*100+col)*16+8;b.y=row*16;b.vx=b.vy=0;inst.setBot('medica',false);inst.setBot('ing',false);inst.setBot('guia',false);for(var k=0;k<150;k++)inst.step();inst.render();return[b.x,b.y]};
 T.round(1);
 var keys={};
-function send(){inst.setInput(inst.active,{left:keys.ArrowLeft||keys.a,right:keys.ArrowRight||keys.d,jump:keys[' '],interact:keys.e,up:keys.ArrowUp||keys.w,down:keys.ArrowDown||keys.s,ability:keys.q});}
+function send(){inst.setInput(inst.active,{left:keys.ArrowLeft||keys.a,right:keys.ArrowRight||keys.d,jump:keys[' '],interact:keys.e,up:keys.ArrowUp||keys.w,down:keys.ArrowDown||keys.s,ability:keys.q,run:keys.Shift});}
 addEventListener('keydown',function(e){keys[e.key]=1;send();if(e.key.indexOf('Arrow')==0||e.key===' ')e.preventDefault()});
 addEventListener('keyup',function(e){keys[e.key]=0;send()});
 inst.fit(innerWidth,innerHeight-30);addEventListener('resize',function(){inst.fit(innerWidth,innerHeight-30)});

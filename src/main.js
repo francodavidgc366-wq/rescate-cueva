@@ -1,13 +1,13 @@
 // main.js v3: orquestador. El host es la autoridad (fases, temporizadores, bots, motor); los clientes reciben `state` público + su `priv`.
 (function () {
   'use strict';
-  const RK = ['guia', 'medica', 'ing'], ZERO = { left: 0, right: 0, jump: 0, interact: 0, up: 0, down: 0, ability: 0 };
+  const RK = ['guia', 'medica', 'ing'], ZERO = { left: 0, right: 0, jump: 0, interact: 0, up: 0, down: 0, ability: 0, run: 0 };
   const TRACK = { briefing: 'briefing', explore: 'explore', plan: 'plan', secret: 'secret', resolve: 'resolve', summary: 'summary' };
   const WHY = { sin_ap: 'Sin acciones: ya gastaste las 3', ya_visto: 'Ya has revisado esto', agotado: 'Otro compañero se lo ha llevado', fase: 'Ahora no se puede', poi: 'Eso no existe' };
   const S = window.Sound || {}, snd = (n) => { try { S.sfx && S.sfx(n); } catch (e) { } };
   let st = null, eng = null, cv = null, gameEl = null, myRole = 'ing', myId = 'solo', myPriv = null, mode = 'solo', started = false;
   let timer = null, snapT = null, busyRound = false, lastTrack = '', shownRes = -1, shownSum = -1, shownFinal = false, lastChatId = 0, lastChatAt = 0, lastStart = null;
-  let earlyN = 0, sec = 0, typing = false, lastScene = ''; const busy = {}, nextBot = {}, introReady = {}, keys = {};
+  let earlyN = 0, sec = 0, typing = false, lastScene = '', lastChatId0 = false; const busy = {}, nextBot = {}, introReady = {}, keys = {};
   const isClient = () => mode === 'client';
   const ownerRole = id => RK.find(r => st.players[r].owner === id);
 
@@ -28,7 +28,7 @@
   }
   function makeEngine(authority) {
     if (eng) return;
-    eng = Engine.create(cv, { assets: window.ASSETS, getState: () => st, authority, localRole: myRole, water: 10, onInteract, onSfx: n => snd(n), onGate, onDrown });
+    eng = Engine.create(cv, { assets: window.ASSETS, getState: () => st, authority, localRole: myRole, water: 10, onInteract, onSfx: n => snd(n), onGate, onDrown, onUnreachable });
     eng.start(); eng.fit(innerWidth, innerHeight);
     const ins = () => { try { eng.setViewInsets(Hud.getInsets()); } catch (e) { } }; ins(); Hud.onInsets && Hud.onInsets(ins);
   }
@@ -42,17 +42,18 @@
     let m; try { m = Story.mission(st, myRole); } catch (e) { return; } if (!m || !m.now) return;
     const cr = ex ? Story.crisisReady(st) : { ready: false }, g = ex ? eng.nearGate(myRole) : null;
     const gates = (st.gates || []).filter(x => !st.gatesOpen[x.id] && x.zone === st.round && x.role !== myRole);
-    const k = JSON.stringify([m.now.text, m.steps.map(x => x.done), st.round, ex && myPriv.ap, !!g, cr.ready, gates.length]);
+    const k = JSON.stringify([m.now.text, !!g, m.steps.map(x => x.done), st.round, ex && myPriv.ap, !!g, cr.ready, gates.length]);
     if (k !== gKey) {
       gKey = k; const rl = Story.readyLabel(st.phase) || {};
       Hud.setNow({ text: m.now.text, why: m.now.why || '', sub: m.now.hint || '', kind: ex ? (m.now.target ? 'go' : 'explore') : st.phase === 'plan' ? 'plan' : st.phase === 'secret' ? 'secret' : 'info' });
       Hud.setMission({ title: m.title, steps: m.steps.map(x => ({ text: x.text, done: x.done })) });
-      Hud.setReady({ label: rl.label, tip: rl.tip, pulse: !!cr.ready });
+      Hud.setReady({ label: 'Hablar con el equipo y decidir', tip: 'Cuando estés listo, el equipo se reúne para votar el plan', pulse: !!cr.ready });
       const ab = { guia: 'Clavar anclaje', medica: 'Estabilizar / reptadero', ing: 'Puente / válvula' }[myRole];
-      Hud.setAbilities && Hud.setAbilities(ex ? { key: 'Q', label: ab, hint: g ? g.text : 'Se usa en el cartel con tu nombre, o junto a un compañero sin aire (Ona)', ready: !!g || myRole === 'medica' } : null);
+      Hud.setAbilities && Hud.setAbilities(ex && g ? { key: 'Q', label: ab, hint: g.text, ready: true } : null);
       Hud.setHelp && Hud.setHelp(ex ? gates.map(x => ({ role: x.role, label: 'Pedir a ' + { guia: 'Nico', medica: 'Ona', ing: 'Iván' }[x.role] + ': ' + x.kind, enabled: true, hint: x.why, gateId: x.id })) : null);
       try { const q = Story.chatSuggest(st, myRole) || []; quickMap = {}; q.forEach(c => quickMap[c.text] = c); Hud.setQuick && Hud.setQuick(q.map(c => ({ label: c.label, text: c.text }))); } catch (e) { }
     }
+    try { const c = st.phase === 'explore' || st.phase === 'plan' ? Story.coach(st, myRole, coachFlags(m)) : null; Hud.setCoach && Hud.setCoach(c ? { step: c.step, total: c.total, text: c.text } : null); } catch (e) { }
     const tgt = ex && m.now.target ? m.now.target : null; if (tgt !== guide.t) { guide.t = tgt; eng.setGuide(tgt, tgt ? { label: m.now.short ? m.now.short.replace(/^Ve a /, '') : '' } : undefined); }
   }
   // Puertas de habilidad: el motor las abre (jugador o bot) y aquí se refleja en el estado de la historia
@@ -61,6 +62,13 @@
     if (isClient() || !st) return;
     const o = Story.openGate(st, role, gateId, { helpFor: helpFor[gateId] }); if (!o || !o.ok) return;
     syncPois(); snd('gate_open'); Hud.floatText('PUERTA ABIERTA: ' + (o.kind || ''), 'info'); gKey = ''; push();
+  }
+  const sayOnce = (r, t) => { if (!st.chat.slice(-40).some(m => m.from === r && m.text === t)) Story.say(st, r, t, 'chat'); };
+  function onUnreachable(role, poiId) { if (isClient() || !st) return; try { Story.botStuck(st, role, poiId); push(); } catch (e) { } }
+  let lastPos = null, movedAcc = 0;
+  function coachFlags(m) {
+    let near = false; try { const p = eng.snapshot()[myRole]; if (p) { if (lastPos) movedAcc += Math.abs(p[0] - lastPos[0]) + Math.abs(p[1] - lastPos[1]); lastPos = [p[0], p[1]]; const t = m && m.now && m.now.target, q = t && eng.getPoiPos(t); near = !!(q && Math.hypot(q.x - p[0], q.y - p[1]) < 40); } } catch (e) { }
+    return { moved: movedAcc > 60, near, notebook: coachFlags.nb };
   }
   function onDrown(role) { if (isClient() || !st || st.phase !== 'explore') return; st.s.salud = Math.max(0, st.s.salud - 5); if (role === myRole) Hud.floatText('¡Te ahogas! -5 salud', 'bad'); }
   function onAsk(toRole, gateId) {
@@ -75,11 +83,13 @@
   function showGame() { gameEl.style.display = 'flex'; Hud.show && Hud.show(); eng.fit(innerWidth, innerHeight); }
 
   // ---------- Teclado ----------
-  const KEYMAP = { ArrowLeft: 'left', a: 'left', ArrowRight: 'right', d: 'right', ArrowUp: 'up', w: 'up', ArrowDown: 'down', s: 'down', ' ': 'jump', e: 'interact', q: 'ability' };
+  const KEYMAP = { ArrowLeft: 'left', a: 'left', ArrowRight: 'right', d: 'right', ArrowUp: 'up', w: 'up', ArrowDown: 'down', s: 'down', ' ': 'jump', e: 'interact', q: 'ability', Shift: 'run' };
   const kmap = e => KEYMAP[e.key.length > 1 ? e.key : e.key.toLowerCase()];
   const cur = () => (st && st.phase === 'explore' && !typing && !(Hud.isDialogue && Hud.isDialogue())) ? Object.assign({}, ZERO, keys) : ZERO;
   function pushInput() { if (!st || !eng || !started) return; const i = cur(); if (isClient()) Net.send('input', i); else eng.setInput(myRole, i); }
   addEventListener('keydown', e => { if (/INPUT|TEXTAREA/.test(e.target.tagName) || e.ctrlKey || e.metaKey) return; const k = kmap(e); if (k) { keys[k] = 1; if (st && st.phase === 'explore') e.preventDefault(); pushInput(); } });
+  addEventListener('keydown', e => { if (!/INPUT|TEXTAREA/.test(e.target.tagName) && /^j$/i.test(e.key)) coachFlags.nb = true; });
+  addEventListener('keydown', e => { if (st && st.phase === 'summary' && (e.key === ' ' || e.key === 'Enter') && !/INPUT|TEXTAREA/.test(e.target.tagName)) { const b = document.querySelector('#rcgame button[data-act=cont]:not([disabled])'); if (b) { e.preventDefault(); b.click(); } } });
   addEventListener('keyup', e => { const k = kmap(e); if (k) { keys[k] = 0; pushInput(); } });
   addEventListener('blur', () => { Object.keys(keys).forEach(k => keys[k] = 0); pushInput(); });
 
@@ -102,7 +112,7 @@
     Hud.update(st, myPriv, myRole);
     const t = TRACK[st.phase]; if (t && t !== lastTrack) { lastTrack = t; S.music && S.music(t); }
     S.setIntensity && S.setIntensity(st.s.agua / 100);
-    (st.chat || []).forEach(m => { if (m.id > lastChatId) { lastChatId = m.id; lastChatAt = Date.now(); if (RK.includes(m.from) && (m.kind === 'chat' || m.kind === 'share') && eng) eng.say(m.from, String(m.text).slice(0, 70)); } });
+    (st.chat || []).forEach(m => { if (m.id > lastChatId) { lastChatId = m.id; lastChatAt = Date.now(); if (RK.includes(m.from) && (m.kind === 'chat' || m.kind === 'share') && eng) eng.say(m.from, String(m.text).slice(0, 70)); if (lastChatId0 && m.from !== myRole && (m.from === 'lia' || (RK.includes(m.from) && (m.kind === 'chat' || m.kind === 'share')))) Hud.say && Hud.say({ who: m.from, mood: m.mood || 'talk', text: String(m.text || (m.card && m.card.text) || '').slice(0, 110) }); } lastChatId0 = true; });
     const sk = st.round + ':' + st.phase;
     if (sk !== lastScene) {
       lastScene = sk; const kind = st.phase === 'briefing' ? 'event' : st.phase === 'plan' ? 'plan' : null;
@@ -112,13 +122,14 @@
     const res = st.lastRes;
     if (st.phase === 'resolve' && res && shownRes !== st.round) {
       shownRes = st.round;
-      Hud.showResolve(Object.assign({}, res, { reveals: (res.reveals || []).map(r => Object.assign({}, r, { kind: revKind(r.type) })), achievements: achs(res) }));
+      let ex = null; try { ex = Story.explainResult(st); } catch (e) { }
+      Hud.showResolve(Object.assign({}, res, { explain: ex, reveals: (res.reveals || []).map(r => Object.assign({}, r, { kind: revKind(r.type) })), achievements: achs(res) })).then(() => { if (mode !== 'client' && st && st.phase === 'resolve') advance(); });
     }
     if (st.phase === 'summary' && shownSum !== st.round) {
       shownSum = st.round; Hud.showSummary({ round: st.round, score: res ? res.scoreDelta : {}, total: st.score.total, achievements: achs(res) }).then(() => { if (mode !== 'client' && st && st.phase === 'summary') advance(); });
     }
     if (st.phase === 'final' && st.final && !shownFinal) {
-      shownFinal = true; Hud.hide && Hud.hide(); gameEl.style.display = 'none'; S.music && S.music(st.final.saved ? 'win' : 'lose');
+      shownFinal = true; try { localStorage.setItem('rcv3_games', String((+localStorage.getItem('rcv3_games') || 0) + 1)); } catch (e) { } Hud.hide && Hud.hide(); gameEl.style.display = 'none'; S.music && S.music(st.final.saved ? 'win' : 'lose');
       UI.showFinal(st.final, st);
     }
   }
@@ -137,11 +148,11 @@
 
   // ---------- Host: partida ----------
   async function startGame(o, noIntro) {
-    lastStart = o; shownRes = shownSum = -1; shownFinal = false; lastChatId = 0; lastTrack = ''; lastScene = ''; clearInterval(timer);
+    lastStart = o; shownRes = shownSum = -1; shownFinal = false; lastChatId = 0; lastTrack = ''; lastScene = ''; lastChatId0 = false; lastPos = null; movedAcc = 0; clearInterval(timer);
     const hostMode = o.host && !o.solo && window.Net && Net.role === 'host';
     mode = hostMode ? 'host' : 'solo'; myRole = o.role || 'ing'; myId = hostMode ? Net.localId : 'solo';
     const hs = hostMode ? Net.players.filter(p => !p.bot && RK.includes(p.role)).map(p => p.role) : [myRole];
-    st = Story.newGame({ seed: (Date.now() % 1000000) | 0, difficulty: o.difficulty || (UI.settings && UI.settings().diff) || 'normal', humans: hs, demo: !Story.hasKey() });
+    st = Story.newGame({ seed: (Date.now() % 1000000) | 0, difficulty: Story.defaultDifficulty && Story.defaultDifficulty() === 'facil' ? 'facil' : (o.difficulty || (UI.settings && UI.settings().diff) || 'normal'), humans: hs, demo: !Story.hasKey() });
     if (hostMode) { Net.lock(true); Net.players.forEach(p => { if (!p.bot && RK.includes(p.role)) { st.players[p.role].owner = p.id; st.players[p.role].connected = true; } }); }
     else st.players[myRole].owner = 'solo';
     started = true; ensureGame(); makeEngine(true); setupBots(); eng.resetGates(); eng.setWater(st.s.agua); eng.setWaterRate(0);
@@ -166,6 +177,7 @@
   function tick() {
     if (!st || busyRound || st.phase === 'intro' || st.phase === 'final') return;
     if (Hud.isDialogue && Hud.isDialogue()) return;
+    if (st.phase === 'resolve' || st.phase === 'summary') st.tleft = Math.max(st.tleft, 60); // avanzan con CONTINUAR
     st.tleft = Math.max(0, st.tleft - 0.25);
     if (st.phase === 'explore') {
       const w = Story.tickWater(st, 0.25); eng.setWater(st.s.agua);
@@ -207,12 +219,12 @@
   async function botStep(r) {
     const ph = st.phase, a = await Story.botAct(st, r, ph); if (!a || st.phase !== ph) return;
     if (a.type === 'poi') {
-      Story.botChat(st, r, 'poi', { poi: a.label }).then(push).catch(() => { });
+      if (a.say) sayOnce(r, a.say); else Story.botChat(st, r, 'poi', { poi: a.label }).then(push).catch(() => { });
       eng.botGoto(r, a.poiId, ok => {
         if (!ok || st.phase !== 'explore') return; Story.exec(st, r, a); syncPois();
         Story.botChat(st, r, 'found', { poi: a.label, hide: false }).catch(() => { }).then(push); push();
       });
-    } else if (a.type === 'gate') { eng.botOpenGate(r, a.gateId, () => { });
+    } else if (a.type === 'gate') { if (a.say) { sayOnce(r, a.say); push(); } eng.botOpenGate(r, a.gateId, () => { });
     } else { const out = Story.exec(st, r, a); if (out && out.react) react(out.react.trigger, out.react.ctx); push(); }
   }
 
@@ -229,7 +241,12 @@
     if (!out || !out.ok) { if (role === myRole) Hud.floatText(WHY[out && out.reason] || 'No se puede', 'bad'); return; }
     syncPois(); fb(role, out); push();
   }
-  function doChat(role, text) { text = String(text || '').slice(0, 300).trim(); if (!text) return; Story.say(st, role, text, 'chat'); react('chat', { from: role, text }); }
+  function doChat(role, text) {
+    text = String(text || '').slice(0, 300).trim(); if (!text) return; Story.say(st, role, text, 'chat');
+    let ans = null; try { ans = Story.answerChat(st, role, text); } catch (e) { }
+    if (!ans) return react('chat', { from: role, text });
+    push(); if (ans.accept && ans.gateId && !ans.human) { helpFor[ans.gateId] = role; setTimeout(() => { if (st && st.phase === 'explore') eng.botOpenGate(ans.to, ans.gateId, () => { }); }, ans.delay || 1500); }
+  }
   function doShare(role, d) { const out = Story.share(st, role, d.cardId, { asIs: d.asIs !== false, text: d.text }); if (out && out.ok) { if (out.lie && role === myRole) Hud.floatText('Has compartido información falsa', 'bad'); if (out.react) react(out.react.trigger, out.react.ctx); } push(); }
   function doVote(role, optId) { const out = Story.vote(st, role, optId); if (out && out.react) react(out.react.trigger, out.react.ctx); push(); }
   function onChat(text) {

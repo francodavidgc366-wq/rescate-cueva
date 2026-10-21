@@ -473,6 +473,7 @@ if __name__ == '__main__':
     import artlib, art_stills, art_portraits, art_icons, art_events, art_ui  # v3: ilustraciones, retratos, iconos (numpy)
     import art_icons4, art_portraits4; art_icons4.patch()
     art_stills.gen_stills(); art_portraits.gen_portraits(); art_portraits4.gen_portraits4(); art_icons.gen_icons(); art_events.gen_events(); art_ui.gen_trophies(); art_ui.gen_poi(); art_ui.gen_ui(); art_icons4.gen_icons4()
+    import art_portraits6; art_portraits6.gen6(); art_portraits6.preview6(os.path.join(OUT, '..', 'preview_cast6.png'))  # v6: reparto dibujado, marcos dlg, npc
     META.update(artlib.META); art_icons4.props_baselines(META)
     json.dump(META, open(os.path.join(OUT, 'meta.json'), 'w'), indent=1)
     print('ok', {k: (v['w'], v['h']) for k, v in META.items()})

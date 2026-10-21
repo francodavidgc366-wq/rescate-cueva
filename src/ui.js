@@ -226,6 +226,13 @@ const css = `
 #rcv3 .ach{display:flex;gap:.7em;align-items:center;padding:.5em;background:#2a2248;border:2px solid #ffd34d;border-radius:3px;animation:rpop .5s both}
 #rcv3 .ach.old{border-color:#3a2e60;background:#1c1636}
 /* logros */
+#rcv3 .fates{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:.7em;margin-top:.6em}
+#rcv3 .fate{display:flex;gap:.7em;align-items:flex-start;padding:.6em;background:rgba(20,14,40,.85);border:2px solid #3b2f66;border-radius:12px;animation:rrise .5s both}
+#rcv3 .fate .pt{flex:none;border-radius:12px;overflow:hidden;border:3px solid #7e62c8;background:radial-gradient(circle at 50% 100%,#4a3a8a,#150b30)}#rcv3 .fate .pt canvas{display:block;width:88px;height:88px;image-rendering:pixelated}
+#rcv3 .fate.vivo .pt{border-color:#5fe39a}#rcv3 .fate.herido .pt{border-color:#f2a93b}#rcv3 .fate.muerto{opacity:.9;border-color:#4a4658}#rcv3 .fate.muerto .pt{border-color:#6b6678;background:#1c1a24}#rcv3 .fate.muerto .pt canvas{filter:grayscale(1) brightness(.75)}
+#rcv3 .fate .st{display:inline-block;font-size:.72em;font-weight:800;letter-spacing:.5px;padding:2px 7px;border-radius:8px;margin:.2em 0}#rcv3 .fate.vivo .st{background:#1d4a30;color:#9affc0}#rcv3 .fate.herido .st{background:#4a3208;color:#ffd27a}#rcv3 .fate.muerto .st{background:#2c2a36;color:#b9b4c8}
+#rcv3 .fate .cdl{display:inline-block;width:6px;height:15px;background:#e8dcc0;position:relative;margin-left:.5em;vertical-align:middle;border-radius:1px}#rcv3 .fate .cdl:before{content:"";position:absolute;left:0;top:-8px;width:6px;height:8px;background:#ffb347;border-radius:50% 50% 40% 40%;animation:cflk .6s ease-in-out infinite alternate}@keyframes cflk{to{transform:scaleY(.8) translateY(1px);opacity:.8}}
+#rcv3 .fhead{font-size:clamp(26px,5vw,48px);font-weight:900;text-align:center;line-height:1.15;margin:.2em 0 .1em;text-shadow:0 4px 0 rgba(0,0,0,.6)}
 #rcv3 .agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:.7em}
 #rcv3 .acell{display:flex;gap:.7em;align-items:center;padding:.6em;background:#1c1636;border:2px solid #3a2e60;border-radius:3px}
 #rcv3 .acell.got{border-color:#ffd34d;background:#2a2248}
@@ -444,7 +451,7 @@ function tsparks(g, x, y, k, col) { for (let i = 0; i < 10; i++) { const a = i *
 function twrap(g, s, maxw) { const out = []; let cur = ''; s.split(' ').forEach(w => { if (cur && g.measureText(cur + ' ' + w).width > maxw) { out.push(cur); cur = w; } else cur = cur ? cur + ' ' + w : w; }); if (cur) out.push(cur); return out; }
 
 const TSTEPS = [
-  { t: 'Muévete por la cueva', p: 'Controlas <b>un solo personaje</b>. Corre con <span class="key">A</span> <span class="key">D</span> o las flechas y salta con <span class="key">Espacio</span>. La cueva es un mapa grande y continuo: puedes subir, bajar y volver atrás.', tip: 'Si caes al agua, nadas: pulsa saltar para sacar la cabeza y respirar.',
+  { t: 'Muévete por la cueva', p: 'Controlas <b>un solo personaje</b>. Corre con <span class="key">A</span> <span class="key">D</span> o las flechas y salta con <span class="key">Espacio</span> y mantén <span class="key">Shift</span> para correr más rápido. La cueva es un mapa grande y continuo: puedes subir, bajar y volver atrás.', tip: 'Si caes al agua, nadas: pulsa saltar para sacar la cabeza y respirar.',
     art(p) { canvasArt(p, (g, T, w, h) => { const u = T % 9; let x, y, an = 'idle', fl = false, k = {};
       if (u < .6) { x = 24; y = FLOOR; } else if (u < 2.6) { x = lerp(24, 96, frac(u, .6, 2.6)); y = FLOOR; an = 'run'; k.r = 1; } else if (u < 3.5) { const f = frac(u, 2.6, 3.5); x = lerp(96, 122, f); y = FLOOR - 24 * f - 18 * Math.sin(Math.PI * f); an = f < .5 ? 'jump' : 'fall'; k.s = 1; k.r = 1; }
       else if (u < 5.2) { x = lerp(122, 168, frac(u, 3.5, 5.2)); y = FLOOR - 24; an = 'run'; k.r = 1; } else if (u < 6) { const f = frac(u, 5.2, 6); x = lerp(168, 186, f); y = FLOOR - 24 + 24 * f * f; an = 'fall'; k.r = 1; } else if (u < 7.2) { x = 186; y = FLOOR; fl = false; } else { x = lerp(186, 60, frac(u, 7.2, 8.8)); y = FLOOR; an = 'run'; fl = true; k.l = 1; }
@@ -628,7 +635,14 @@ function showFinal(result, state) {
   go('final', { music: result.saved === false ? 'lose' : 'win', keys: e => { if (e.key === 'r' || e.key === 'R' || e.key === 'Enter') { b1.click(); return; } if (e.key === 'm' || e.key === 'M' || e.key === 'Escape') { b3.click(); return; } return false; } });
   bgc(s, result.saved === false ? 'derrota' : 'rescate', { dark: .8, kind: good ? 'ember' : 'snow', light: false, n: 60 });
   const c = $('div', 'rel', s), seq = []; let dly = 0; const step = (fn, wait) => { dly += wait; seq.push(setTimeout(fn, dly)); }; own(() => seq.forEach(clearTimeout));
-  $('div', 'lab', c, result.saved === false ? 'FIN DE LA PARTIDA' : 'LIA ESTA A SALVO').style.textAlign = 'center';
+  const fates = (state.final && state.final.fates) || result.fates || (result.final && result.final.fates) || [], lf = fates.find(f => f.id === 'lia'), saved = lf ? lf.status !== 'muerto' : result.saved !== false;
+  $('div', 'fhead', c, saved ? 'Lía está a salvo' : 'No habéis llegado a tiempo').style.color = saved ? '#9affc0' : '#ffb0a8';
+  if (fates.length) {
+    const ok = fates.filter(f => f.status !== 'muerto').length; $('div', 'lab', c, 'DESTINO DE LAS PERSONAS').style.textAlign = 'center'; $('div', '', c, 'Salvasteis a <b>' + ok + '</b> de ' + fates.length).style.cssText = 'text-align:center;font-size:1.25em;margin:.2em 0';
+    const fg = $('div', 'fates', c); fates.forEach(f => { const dead = f.status === 'muerto', e = $('div', 'fate ' + (f.status || 'vivo'), fg); e.style.opacity = 0; const pt = $('div', 'pt', e); pt.appendChild(fateFace(f));
+      $('div', '', e, '<b>' + esc(f.name || f.id) + '</b>' + (dead ? '<i class="cdl"></i>' : '') + '<br><span class="st">' + (dead ? 'NO SOBREVIVIÓ' : f.status === 'herido' ? 'HERIDO' : 'A SALVO') + '</span><br><span class="mut">' + esc(f.why || '') + '</span>');
+      step(() => { e.style.opacity = 1; e.style.animation = 'rrise .5s both'; sfx('tick'); }, 450); });
+  }
   const gh = $('div', 'grade', c, grade); gh.style.visibility = 'hidden'; $('div', 'lab', c, 'NOTA DEL EQUIPO').style.textAlign = 'center';
   step(() => { gh.style.visibility = 'visible'; sfx(good ? 'grade_s' : 'grade_low'); s.style.animation = 'rshake .4s'; flashEl(gc); if (good) { confetti(grade === 'S' ? 140 : 70); burst(innerWidth / 2, innerHeight * .25, ['#ffd34d', gc], 30, { v: 300 }); } }, 700);
   const g2 = $('div', 'grid2', c); g2.style.marginTop = '1em'; const sc = result.score || state.score || {}, L = $('div', 'panel', g2), R = $('div', 'panel', g2);
@@ -647,6 +661,13 @@ function showFinal(result, state) {
   const bt = $('div', 'row', c); bt.style.cssText = 'justify-content:center;margin-top:1.2em'; const b1 = $('button', 'btn go', bt, 'Otra partida<span class="k">R</span>'), b2 = $('button', 'btn', bt, 'Cambiar de rol'), b3 = $('button', 'btn sec', bt, 'Menu<span class="k">M</span>');
   b1.onclick = () => { sfx('confirm'); emit('restart', { changeRole: false }); }; b2.onclick = () => { sfx('click'); emit('restart', { changeRole: true }); showLobby({ mode: 'idle' }); }; b3.onclick = () => { sfx('back'); emit('menu', {}); showMenu(); };
   return s;
+}
+function fateFace(f) { // retrato segun estado: _dead / _hurt / hoja; si falta cae al generico o a un hueco
+  const c = mk(64, 64), A = (window.ASSETS && ASSETS.images) || {}, id = f.id, base = f.portrait || (['lia', 'guia', 'medica', 'ing'].includes(id) ? 'portrait_' + id : 'pers_' + id), root0 = base.replace(/_(dead|hurt)$/, '');
+  const suf = f.status === 'muerto' ? '_dead' : f.status === 'herido' ? '_hurt' : '', name = [root0 + suf, root0, 'portrait_' + id].find(n => A[n]);
+  const g = c.getContext('2d'); g.fillStyle = '#2a2240'; g.fillRect(0, 0, 64, 64); g.fillStyle = '#9a90b8'; g.font = 'bold 34px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText((f.name || '?').charAt(0), 32, 34);
+  if (name) withImg(name, im => { const fw = meta(name).fw || 64, cols = Math.max(1, Math.floor(im.width / fw)), i = name.endsWith('_dead') || name.endsWith('_hurt') || cols < 2 ? 0 : f.status === 'herido' ? 1 : f.status === 'muerto' ? 0 : Math.min(3, cols - 1); g.clearRect(0, 0, 64, 64); g.imageSmoothingEnabled = false; g.drawImage(im, i * fw, 0, fw, im.height >= fw ? Math.min(im.height, fw) : im.height, 0, 0, 64, 64); });
+  return c;
 }
 function flashEl(col) { if (S.flash) return; const f = $('div', '', root); f.style.cssText = 'position:absolute;inset:0;background:' + col + ';opacity:.55;z-index:45;pointer-events:none;transition:opacity .6s'; requestAnimationFrame(() => f.style.opacity = 0); setTimeout(() => f.remove(), 700); }
 function count(el, to, ms) { ms = ms || 700; let t0 = performance.now(); const f = () => { const p = clamp((performance.now() - t0) / ms, 0, 1); el.textContent = Math.round(to * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(f); }; f(); }

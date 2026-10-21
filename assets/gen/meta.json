@@ -337,7 +337,7 @@
    "enfadado",
    "feliz"
   ],
-  "note": "v4 64x64: hoja horizontal neutral, preocupado, enfadado, feliz (x=i*64). Fondo transparente"
+  "note": "v6 dibujado 64x64; fondo transparente; hoja horizontal neutral, preocupado, enfadado, feliz"
  },
  "portrait_medica": {
   "w": 256,
@@ -353,7 +353,7 @@
    "enfadado",
    "feliz"
   ],
-  "note": "v4 64x64: hoja horizontal neutral, preocupado, enfadado, feliz (x=i*64). Fondo transparente"
+  "note": "v6 dibujado 64x64; fondo transparente; hoja horizontal neutral, preocupado, enfadado, feliz"
  },
  "portrait_ing": {
   "w": 256,
@@ -369,7 +369,7 @@
    "enfadado",
    "feliz"
   ],
-  "note": "v4 64x64: hoja horizontal neutral, preocupado, enfadado, feliz (x=i*64). Fondo transparente"
+  "note": "v6 dibujado 64x64; fondo transparente; hoja horizontal neutral, preocupado, enfadado, feliz"
  },
  "portrait_lia": {
   "w": 256,
@@ -385,7 +385,7 @@
    "enfadado",
    "feliz"
   ],
-  "note": "v4 64x64: hoja horizontal neutral, preocupado, enfadado, feliz (x=i*64). Fondo transparente"
+  "note": "v6 dibujado 64x64; fondo transparente; hoja horizontal neutral, preocupado, enfadado, feliz"
  },
  "portrait_director": {
   "w": 192,
@@ -407,73 +407,73 @@
   "w": 64,
   "h": 64,
   "expression": "alert",
-  "note": "64x64 suelta; fondo transparente"
+  "note": "v6 dibujado 64x64; fondo transparente"
  },
  "portrait_guia_hurt": {
   "w": 64,
   "h": 64,
   "expression": "hurt",
-  "note": "64x64 suelta; fondo transparente"
+  "note": "v6 dibujado 64x64; fondo transparente"
  },
  "portrait_guia_talk": {
   "w": 64,
   "h": 64,
   "expression": "talk",
-  "note": "64x64 suelta; fondo transparente"
+  "note": "v6 dibujado 64x64; fondo transparente"
  },
  "portrait_medica_alert": {
   "w": 64,
   "h": 64,
   "expression": "alert",
-  "note": "64x64 suelta; fondo transparente"
+  "note": "v6 dibujado 64x64; fondo transparente"
  },
  "portrait_medica_hurt": {
   "w": 64,
   "h": 64,
   "expression": "hurt",
-  "note": "64x64 suelta; fondo transparente"
+  "note": "v6 dibujado 64x64; fondo transparente"
  },
  "portrait_medica_talk": {
   "w": 64,
   "h": 64,
   "expression": "talk",
-  "note": "64x64 suelta; fondo transparente"
+  "note": "v6 dibujado 64x64; fondo transparente"
  },
  "portrait_ing_alert": {
   "w": 64,
   "h": 64,
   "expression": "alert",
-  "note": "64x64 suelta; fondo transparente"
+  "note": "v6 dibujado 64x64; fondo transparente"
  },
  "portrait_ing_hurt": {
   "w": 64,
   "h": 64,
   "expression": "hurt",
-  "note": "64x64 suelta; fondo transparente"
+  "note": "v6 dibujado 64x64; fondo transparente"
  },
  "portrait_ing_talk": {
   "w": 64,
   "h": 64,
   "expression": "talk",
-  "note": "64x64 suelta; fondo transparente"
+  "note": "v6 dibujado 64x64; fondo transparente"
  },
  "portrait_lia_alert": {
   "w": 64,
   "h": 64,
   "expression": "alert",
-  "note": "64x64 suelta; fondo transparente"
+  "note": "v6 dibujado 64x64; fondo transparente"
  },
  "portrait_lia_hurt": {
   "w": 64,
   "h": 64,
   "expression": "hurt",
-  "note": "64x64 suelta; fondo transparente"
+  "note": "v6 dibujado 64x64; fondo transparente"
  },
  "portrait_lia_talk": {
   "w": 64,
   "h": 64,
   "expression": "talk",
-  "note": "64x64 suelta; fondo transparente"
+  "note": "v6 dibujado 64x64; fondo transparente"
  },
  "icons": {
   "w": 160,
@@ -774,5 +774,205 @@
   "anchorY": 0,
   "tile": "vertical",
   "note": "eslabon 8x8 tileable en vertical; colocar bajo el gancho de lamp_hang (empalma con y=0 de su cuerpo)"
+ },
+ "portrait_guia_dead": {
+  "w": 64,
+  "h": 64,
+  "expression": "dead",
+  "note": "v6 dibujado 64x64; fondo transparente; escala de grises azul frio, ojos cerrados, sin brillo (final: personas que murieron)"
+ },
+ "portrait_medica_dead": {
+  "w": 64,
+  "h": 64,
+  "expression": "dead",
+  "note": "v6 dibujado 64x64; fondo transparente; escala de grises azul frio, ojos cerrados, sin brillo (final: personas que murieron)"
+ },
+ "portrait_ing_dead": {
+  "w": 64,
+  "h": 64,
+  "expression": "dead",
+  "note": "v6 dibujado 64x64; fondo transparente; escala de grises azul frio, ojos cerrados, sin brillo (final: personas que murieron)"
+ },
+ "portrait_lia_dead": {
+  "w": 64,
+  "h": 64,
+  "expression": "dead",
+  "note": "v6 dibujado 64x64; fondo transparente; escala de grises azul frio, ojos cerrados, sin brillo (final: personas que murieron)"
+ },
+ "pers_marta": {
+  "w": 256,
+  "h": 64,
+  "cell": 64,
+  "fw": 64,
+  "fh": 64,
+  "frames": 4,
+  "cols": 4,
+  "expressions": [
+   "neutral",
+   "preocupado",
+   "asustado",
+   "feliz"
+  ],
+  "note": "v6 dibujado 64x64; fondo transparente; hoja neutral, preocupado, asustado/llorando, aliviado/feliz"
+ },
+ "pers_marta_hurt": {
+  "w": 64,
+  "h": 64,
+  "expression": "hurt",
+  "note": "v6 dibujado 64x64; fondo transparente"
+ },
+ "pers_marta_dead": {
+  "w": 64,
+  "h": 64,
+  "expression": "dead",
+  "note": "v6 dibujado 64x64; fondo transparente; escala de grises azul frio, ojos cerrados, sin brillo"
+ },
+ "pers_leo": {
+  "w": 256,
+  "h": 64,
+  "cell": 64,
+  "fw": 64,
+  "fh": 64,
+  "frames": 4,
+  "cols": 4,
+  "expressions": [
+   "neutral",
+   "preocupado",
+   "asustado",
+   "feliz"
+  ],
+  "note": "v6 dibujado 64x64; fondo transparente; hoja neutral, preocupado, asustado/llorando, aliviado/feliz"
+ },
+ "pers_leo_hurt": {
+  "w": 64,
+  "h": 64,
+  "expression": "hurt",
+  "note": "v6 dibujado 64x64; fondo transparente"
+ },
+ "pers_leo_dead": {
+  "w": 64,
+  "h": 64,
+  "expression": "dead",
+  "note": "v6 dibujado 64x64; fondo transparente; escala de grises azul frio, ojos cerrados, sin brillo"
+ },
+ "pers_hugo": {
+  "w": 256,
+  "h": 64,
+  "cell": 64,
+  "fw": 64,
+  "fh": 64,
+  "frames": 4,
+  "cols": 4,
+  "expressions": [
+   "neutral",
+   "preocupado",
+   "asustado",
+   "feliz"
+  ],
+  "note": "v6 dibujado 64x64; fondo transparente; hoja neutral, preocupado, asustado/llorando, aliviado/feliz"
+ },
+ "pers_hugo_hurt": {
+  "w": 64,
+  "h": 64,
+  "expression": "hurt",
+  "note": "v6 dibujado 64x64; fondo transparente"
+ },
+ "pers_hugo_dead": {
+  "w": 64,
+  "h": 64,
+  "expression": "dead",
+  "note": "v6 dibujado 64x64; fondo transparente; escala de grises azul frio, ojos cerrados, sin brillo"
+ },
+ "pers_sara": {
+  "w": 256,
+  "h": 64,
+  "cell": 64,
+  "fw": 64,
+  "fh": 64,
+  "frames": 4,
+  "cols": 4,
+  "expressions": [
+   "neutral",
+   "preocupado",
+   "asustado",
+   "feliz"
+  ],
+  "note": "v6 dibujado 64x64; fondo transparente; hoja neutral, preocupado, asustado/llorando, aliviado/feliz"
+ },
+ "pers_sara_hurt": {
+  "w": 64,
+  "h": 64,
+  "expression": "hurt",
+  "note": "v6 dibujado 64x64; fondo transparente"
+ },
+ "pers_sara_dead": {
+  "w": 64,
+  "h": 64,
+  "expression": "dead",
+  "note": "v6 dibujado 64x64; fondo transparente; escala de grises azul frio, ojos cerrados, sin brillo"
+ },
+ "dlg_frame": {
+  "w": 24,
+  "h": 24,
+  "slice": 10,
+  "note": "9-slice 24x24 slice=10: esquinas 10x10 con filigrana dorada (px 4..7), bordes 4px estirables (tinta/violeta/claro fino/oscuro), centro violeta oscuro liso. Esquinas con 3 px transparentes (redondeo)"
+ },
+ "dlg_portrait_frame": {
+  "w": 16,
+  "h": 16,
+  "slice": 6,
+  "note": "9-slice 16x16 slice=6 (borde 4px: tinta, claro, violeta, sombra). Centro TRANSPARENTE: dibujar el retrato detras (ya recortado a rect redondeado). Esquinas redondeadas con tachuela dorada"
+ },
+ "npc_marta": {
+  "w": 32,
+  "h": 24,
+  "fw": 16,
+  "fh": 24,
+  "cols": 2,
+  "frames": 2,
+  "fps": 2,
+  "anchorX": 8,
+  "anchorY": 23,
+  "baseY": 23,
+  "note": "mini 16x24, 2 frames idle (respirar). Base en la ULTIMA fila (y=23); anclar en (8,23)"
+ },
+ "npc_leo": {
+  "w": 32,
+  "h": 24,
+  "fw": 16,
+  "fh": 24,
+  "cols": 2,
+  "frames": 2,
+  "fps": 2,
+  "anchorX": 8,
+  "anchorY": 23,
+  "baseY": 23,
+  "note": "mini 16x24, 2 frames idle (respirar). Base en la ULTIMA fila (y=23); anclar en (8,23)"
+ },
+ "npc_hugo": {
+  "w": 32,
+  "h": 24,
+  "fw": 16,
+  "fh": 24,
+  "cols": 2,
+  "frames": 2,
+  "fps": 2,
+  "anchorX": 8,
+  "anchorY": 23,
+  "baseY": 23,
+  "note": "mini 16x24, 2 frames idle (respirar). Base en la ULTIMA fila (y=23); anclar en (8,23)"
+ },
+ "npc_sara": {
+  "w": 32,
+  "h": 24,
+  "fw": 16,
+  "fh": 24,
+  "cols": 2,
+  "frames": 2,
+  "fps": 2,
+  "anchorX": 8,
+  "anchorY": 23,
+  "baseY": 23,
+  "note": "mini 16x24, 2 frames idle (respirar). Base en la ULTIMA fila (y=23); anclar en (8,23)"
  }
 }

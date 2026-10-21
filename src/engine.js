@@ -123,7 +123,7 @@ function buildWorld() {
       tun(TC, 8, 47); tun(TC, 54, 82); gAnchor('', TC, 24);
       tun(TD, 10, 34); tun(TD, 44, 90); A(12, 16, 60, 86); lad(TD, 70);
       tun(TE, 56, 90); tun(TE, 47, 55, 2); A(8, 10, 40, 46);
-      return { sl: [[76, TC], [66, TB], [14, TD], [42, TE], [76, TA], [84, TE]], sp: [8, TA], pk: [[50, TA], [70, TB], [30, TC]] };
+      return { sl: [[76, TC], [66, TB], [14, TD], [42, TE], [76, TA], [84, TE]], sp: [8, TA], pk: [[50, TA], [70, TB], [30, TC], [72, TA], [80, TA]] };
     },
     function () { // 2 mina vieja: galeria de railes, puente sobre el foso de la cima, paso de gas a la camara trasera
       tun(TB, 0, 99); tun(TA, 4, 61); A(35, 37, 30, 37); tun(TA, 62, 72, 2); A(30, 34, 73, 92);
@@ -131,7 +131,7 @@ function buildWorld() {
       tun(TC, 14, 46); tun(TC, 9, 13, 2); A(20, 22, 3, 8); lad(TB, 30); tun(TC, 66, 97); gAnchor('', TB, 84);
       tun(TD, 24, 58); lad(TC, 40);
       tun(TE, 36, 61); lad(TD, 50); gPuente('', TE, 62, 73); tun(TE, 74, 92); A(6, 10, 76, 92);
-      return { sl: [[90, TC], [30, TD], [84, TE], [5, TC], [84, TA], [22, TA]], sp: [6, TB], pk: [[40, TA], [60, TB], [30, TC]] };
+      return { sl: [[90, TC], [30, TD], [84, TE], [5, TC], [84, TA], [22, TA]], sp: [6, TB], pk: [[40, TA], [60, TB], [30, TC], [80, TA], [88, TA]] };
     },
     function () { // 3 sala de cristales: gran sala alta, pozo, ancla para la galeria oeste, paso de gas
       tun(TB, 0, 37); A(19, 28, 38, 66); tun(TB, 67, 99); Pl(27, 42, 46); Pl(25, 50, 55); Pl(23, 58, 62);
@@ -139,21 +139,21 @@ function buildWorld() {
       lad(TB, 20); tun(TC, 10, 36); lad(TC, 28); tun(TD, 10, 40); gBlock('', 'valvula', TD, 20, 21, 4, 1);
       well(74, TB, TD); tun(TC, 80, 95); tun(TD, 60, 96); lad(TD, 84);
       tun(TE, 60, 96); tun(TE, 50, 59, 2); A(8, 10, 44, 49);
-      return { sl: [[60, 23], [90, TD], [16, TD], [46, TE], [75, TA], [92, TE]], sp: [6, TB], pk: [[20, TA], [56, TB], [85, TB]] };
+      return { sl: [[60, 23], [90, TD], [16, TD], [46, TE], [75, TA], [92, TE]], sp: [6, TB], pk: [[20, TA], [56, TB], [85, TB], [66, TA], [76, TA], [84, TA]] };
     },
     function () { // 4 galeria inundada: lago bajo, compuerta, pozo, ancla a la galeria alta
       tun(TB, 0, 99); tun(TA, 4, 92); A(30, 34, 30, 60); A(35, 37, 20, 24); lad(TA, 10); lad(TA, 76);
       lad(TB, 22); tun(TC, 14, 35); gBlock('', 'valvula', TC, 36, 37, 4, -1); tun(TC, 38, 58); A(18, 22, 44, 58);
       tun(TD, 30, 80); well(70, TB, TD); tun(TD, 81, 86, 2); A(14, 16, 87, 93);
       gAnchor('', TD, 40); tun(TE, 30, 92);
-      return { sl: [[40, TA], [60, TD], [52, TC], [90, TD], [70, TE], [80, TB]], sp: [6, TB], pk: [[25, TA], [50, TA], [60, TB], [85, TB]] };
+      return { sl: [[40, TA], [60, TD], [52, TC], [90, TD], [70, TE], [80, TB]], sp: [6, TB], pk: [[25, TA], [50, TA], [60, TB], [85, TB], [72, TA], [86, TA]] };
     },
     function () { // 5 camara de Lia: pozo, puente sobre el foso final, paso de gas, nicho
       tun(TB, 0, 88); tun(TA, 4, 50); lad(TA, 10); lad(TA, 36); tun(TA, 51, 60, 2); A(30, 34, 61, 86); gBlock('', 'reptadero', TA, 51, 53, 2, -1);
       lad(TB, 20); tun(TC, 10, 45); lad(TC, 32); tun(TD, 30, 44); lad(TD, 40); tun(TE, 30, 45);
       well(60, TB, TD); tun(TC, 66, 90); tun(TD, 60, 80); tun(TD, 81, 85, 2); A(14, 16, 86, 92);
       gPuente('', TE, 46, 58); tun(TE, 59, 92); A(5, 10, 72, 92);
-      return { sl: [[80, TC], [36, TD], [76, TE], [89, TD], [80, TA], [34, TE]], sp: [6, TB], pk: [[30, TA], [45, TB], [70, TB]] };
+      return { sl: [[80, TC], [36, TD], [76, TE], [89, TD], [80, TA], [34, TE]], sp: [6, TB], pk: [[30, TA], [45, TB], [70, TB], [66, TA], [76, TA], [84, TA]] };
     }
   ];
   var slotsPx = [], spawns = [], pockets = [];
@@ -595,6 +595,10 @@ function create(canvas, opts) {
   var sc = canvasOf(W, H).getContext('2d'); sc.imageSmoothingEnabled = false; var scv = sc.canvas;
   var dk = canvasOf(W, H).getContext('2d'); var dkv = dk.canvas;
   var authority = opts.authority !== false;
+  // v6: el agua nunca cubre el suelo del spawn de la zona (zona 1: campamento fila 35; resto: fila 29): a 100 % queda a 6 px bajo ese suelo
+  var wSlope = 0.9, wSlopeT = 0.9;
+  function waterY(level) { return PH + 4 - level * wSlope; }
+  function zoneSlope() { var b = bodies[active]; return b && b.x >= SPW ? (PH + 4 - (TB * T - 6)) / 100 : (PH + 4 - (TA * T - 6)) / 100; }
   var assets = opts.assets || global.ASSETS || null;
   var localId = null;
   var ROLES = ['guia', 'medica', 'ing'], NAMES = { guia: 'Nico', medica: 'Dra. Ona', ing: 'Ivan' };
@@ -690,7 +694,7 @@ function create(canvas, opts) {
   function physStep(b, inp, dir, jp, inW, onG) {
     var wy = waterY(wlCur);
     if (onG) b.coyote = 6; else if (b.coyote > 0) b.coyote--;
-    var max = inW ? 0.95 : 1.7, a = onG ? 0.26 : 0.17;
+    var max = inW ? 0.95 : b.run ? 2.72 : 1.7, a = onG ? (b.run ? 0.34 : 0.26) : 0.17;   // v6: correr x1.6
     if (inW) a = 0.09;
     if (dir) {
       if (Math.abs(b.vx) > max && Math.sign(b.vx) === dir) b.vx = approach(b.vx, dir * max, 0.07);
@@ -701,8 +705,8 @@ function create(canvas, opts) {
     // gravedad / nado
     if (inW) {
       b.vy = approach(b.vy, 1.0, 0.05);
-      if (jp && b.swimCd === 0) {
-        var nearTop = (b.y - HH) - wy < 10;
+      var nearTop = (b.y - HH) - wy < 10;
+      if ((jp || (inp.jump && nearTop)) && b.swimCd === 0) {   // v6: mantener salto junto a la superficie repite el impulso de salida
         b.vy = nearTop ? -5.2 : -2.4; b.swimCd = 10; addRipple(b.x, 1.4); bubbles(b.x, b.y - 8, 3); sfx('swim', b);
       } else if (inp.jump) b.vy = Math.max(b.vy - 0.13, -1.7);
     } else {
@@ -730,6 +734,11 @@ function create(canvas, opts) {
   function tickBody(b) {
     var inp = b.bot ? botBrain(b) : (inputs[b.id] || NOINP); b.inp = inp;
     var dir = (inp.right ? 1 : 0) - (inp.left ? 1 : 0);
+    if (!b.bot) {   // v6: correr = input.run (Shift) o doble toque de direccion; solo humanos
+      if (dir && !b.pdir) { b.dtap = (dir === b.ldir && tick - (b.lrel || -99) < 14); } else if (!dir) { if (b.pdir) { b.lrel = tick; b.ldir = b.pdir; } b.dtap = false; }
+      b.pdir = dir; b.run = !!dir && (inp.run || b.dtap) && !b.swim;
+      if (b.run && b.grounded && Math.abs(b.vx) > 1.5 && tick % 4 === 0) puff(b.x - dir * 3, b.y, 2, -dir);
+    } else b.run = false;
     var jp = inp.jump && !b.pj; b.pj = !!inp.jump;
     var ip = inp.interact && !b.pi; b.pi = !!inp.interact;
     if (jp) b.buf = 6; else if (b.buf > 0) b.buf--;
@@ -888,7 +897,7 @@ function create(canvas, opts) {
     if (pk) { if (b.air < 55 && !b.inPk) sfx('gasp', b); b.inPk = true; b.air = Math.min(100, b.air + 0.7); }
     else {
       b.inPk = false;
-      if (headU) { b.air = Math.max(0, b.air - 0.1); if (tick % 45 === (b.ph | 0) % 45) bubbles(b.x + b.face * 3, b.y - 12, 1); }
+      if (headU) { b.air = Math.max(0, b.air - 0.1); if (tick % 12 === (b.ph | 0) % 12) bubbles(b.x + b.face * 4, b.y - 13, b.air < 35 ? 2 : 1); }
       else { if (b.wasU && b.air < 85) sfx('gasp', b); b.air = Math.min(100, b.air + 0.5); }
     }
     b.wasU = headU && !pk;
@@ -901,8 +910,8 @@ function create(canvas, opts) {
     var x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; h.forEach(function (q) { x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y); });
     if (x1 - x0 > 40 || y1 - y0 > 32) return;
     stats.loops++; stats.lastLoop = { r: b.role, x: b.x, y: b.y, g: b.goal ? (b.goal.gate ? 'gate' : b.goal.poi ? 'poi' : 'w') + ':' + (b.goal.node % LW) + ',' + ((b.goal.node / LW) | 0) : null, e: b.lastE ? b.lastE.k + b.lastE.d + (b.lastE.run ? 'r' : '') + b.lastE.hold + '->' + (b.lastE.to % LW) + ',' + ((b.lastE.to / LW) | 0) : null, wy: waterY(wlCur) };
-    b.jh = []; if (b.goal && b.goal.cb) { var lcb = b.goal.cb; setTimeout(function () { lcb(false); }, 0); }
-    b.goal = null; b.mac = null; b.pe = null; b.calm = 150; b.swimHold = 0; if (b.lastE) killEdge(b.lastE); b.idleT = 90;
+    b.jh = []; failGoal(b);
+    b.mac = null; b.pe = null; b.calm = 150; b.swimHold = 0; if (b.lastE) killEdge(b.lastE); b.idleT = 90;
     b.loopN = tick - (b.loopT || -9999) < 1800 ? (b.loopN || 0) + 1 : 1; b.loopT = tick;
     if (b.loopN >= 2) { b.warp = { t: 0 }; stats.warps++; b.loopN = 0; }   // ultimo recurso: se disuelve y reaparece en un nodo seguro
   }
@@ -1014,11 +1023,12 @@ function create(canvas, opts) {
     if (b.busy > 0) { b.busy--; return inp; }
     if ((b.y - 5) > waterY(wlCur)) {                // en el agua (la navegacion simulada es en seco): braza hacia la salida seca mas util (la navegacion simulada es en seco)
       if (!b.wchk || tick - b.wchk > 180) {   // vigilante en el agua: 6 s sin avanzar -> suelta el objetivo
-        if (b.wpx !== undefined && Math.hypot(b.x - b.wpx, b.y - b.wpy) < 8) { if (++b.wst >= 2) { b.wst = 0; if (b.goal && b.goal.cb) { var wcb = b.goal.cb; setTimeout(function () { wcb(false); }, 0); } b.goal = null; b.exitT = 0; stats.loops++; } } else b.wst = 0;
+        if (b.wpx !== undefined && Math.hypot(b.x - b.wpx, b.y - b.wpy) < 8) { if (++b.wst >= 2) { b.wst = 0; failGoal(b); b.exitT = 0; stats.loops++; } } else b.wst = 0;
         b.wchk = tick; b.wpx = b.x; b.wpy = b.y;
       }
       var low = b.air < 40, gw = b.goal; b.mac = null; b.pe = null;
-      if (low) { if (!b.dry || tick - b.dryT > 150 || !nav.out[b.dry.node]) { b.dry = findDry(b); b.dryT = tick; } gw = b.dry; }
+      if (low) { if (!b.dry || tick - b.dryT > 150 || !nav.out[b.dry.node]) { b.dry = findDry(b); b.dryT = tick; } gw = b.dry; if (b.goal && !b.dryEp) { b.dryEp = 1; b.goal.dryN = (b.goal.dryN || 0) + 1; if (b.goal.dryN >= 3) { failGoal(b); gw = b.dry; } } }
+      if (b.air > 75) b.dryEp = 0;
       if (!(gw && curNode(b) === gw.node && Math.abs(gw.x - b.x) < 3)) {
         var pkT = null;
         if (low) for (var pi = 0; pi < wd.pockets.length; pi++) { var pk = wd.pockets[pi]; if (Math.abs(pk.x - b.x) < 90 && Math.abs(pk.y - b.y) < 70 && clearLine(b.x, b.y - 8, pk.x, pk.y + 6)) { pkT = { x: pk.x, y: pk.y + 12 }; break; } }
@@ -1027,7 +1037,7 @@ function create(canvas, opts) {
           var sdx = sw.x - b.x, up = sw.y < b.y - 6, aimY = up ? (Math.abs(sdx) > 5 ? sw.y - 12 : sw.y) : 1e9;
           if (Math.abs(sdx) > 2) { inp[sdx > 0 ? 'right' : 'left'] = 1; b.ad = sdx > 0 ? 1 : -1; }
           if (sw.y > b.y + 4 && b.grounded) inp.down = 1;   // bajar por un tablon
-          if (b.y > aimY + 2) { inp.jump = (tick % 12 < 11) ? 1 : 0; b.swimHold = tick + 40; }
+          if (b.y > aimY + 2) { inp.jump = 1; b.swimHold = tick + 40; }
           return inp;
         }
         if (!b.exitT || tick - b.exitT > 20) { b.exitT = tick; b.exit = findExit(b, low); }
@@ -1054,7 +1064,7 @@ function create(canvas, opts) {
     if (cur === g.node) {
       var dx = g.x - b.x;
       if (Math.abs(dx) > 2.5) { inp[dx > 0 ? 'right' : 'left'] = 1; b.ad = Math.sign(dx); return inp; }
-      b.goal = null; b.vx *= 0.3;
+      b.goal = null; b.vx *= 0.3; if (g.id) failN[b.role + '|' + g.id] = 0;
       if (g.gate) { b.face = g.gate.x > b.x ? 1 : -1; b.busy = 50; if (g.gate.open) { if (g.cb) setTimeout(function () { g.cb(true); }, 0); } else { startOpen(g.gate, b); if (g.cb) g.gate.cbs.push(g.cb); } return inp; }
       if (g.poi) { b.face = g.poi.x > b.x ? 1 : -1; b.busy = 28; if (!usePoi(b, g.poi)) b.busy = 6; }
       else if (g.wander && rr() < 0.4) { b.busy = 40; b.interT = 36; spark(b.x + b.face * 6, b.y - 8, 2); }
@@ -1062,7 +1072,7 @@ function create(canvas, opts) {
       return inp;
     }
     var f = fieldFor(g.node), es = nav.out[cur], best = null, bc = 1e9;
-    if (f[cur] === undefined) { if (tick - g.t0 > 30) { b.goal = null; if (g.cb) { var cb2 = g.cb; setTimeout(function () { cb2(false); }, 0); } } return inp; }
+    if (f[cur] === undefined) { if (tick - g.t0 > 30) failGoal(b); return inp; }
     for (var i = 0; i < es.length; i++) { var e = es[i]; if (!alive(e) || f[e.to] === undefined) continue; var tt = e.cost + f[e.to]; if (tt < bc) { bc = tt; best = e; } }
     if (f[cur] < b.bestDv - 0.5) { b.bestDv = f[cur]; b.progT = tick; }
     if (tick - b.progT > 400) {                         // sin progreso 6.5 s: descarta la arista usada; si persiste, fundido
@@ -1108,7 +1118,7 @@ function create(canvas, opts) {
       for (var i = 0; i < es.length; i++) { var e = es[i]; if (!alive(e) || f[e.to] === undefined) continue; var tt = e.cost + f[e.to]; if (tt < bc) { bc = tt; best = e; } }
       if (!best) break; n = best.to;
       var nx = (n % LW) * T + 8, ny = (n / LW | 0) * T;
-      if (!pick) pick = { x: nx, y: ny }; else if (clearLine(b.x, b.y - 6, nx, ny - 8)) pick = { x: nx, y: ny }; else break;
+      if (!pick) pick = { x: nx, y: ny }; else if (clearLine(b.x, b.y - 6, nx, ny - 8) || (ny < b.y - 8 && cny > b.y - 4 && Math.hypot(nx - b.x, ny - b.y) < 90)) pick = { x: nx, y: ny }; else break;   // v6: salir de un foso: borde por encima del cuerpo
     }
     return pick || { x: cnx, y: cny };
   }
@@ -1170,6 +1180,17 @@ function create(canvas, opts) {
     if (n === cur) { if (rr() < 0.5) b.face = -b.face; b.idleT = 20 + (rr() * 40 | 0); return; }
     b.goal = { x: (n % LW) * T + 8, node: n, wander: true, t0: tick }; b.bestDv = 1e9; b.progT = tick; b.stuckN = 0;
   }
+  // v6: tras 2 fallos seguidos hacia el mismo objetivo el bot lo suelta y avisa (opts.onUnreachable(role, poiId)) para que la historia lo marque
+  var failN = {};
+  function noteFail(role, id) {
+    var k = role + '|' + id; failN[k] = (failN[k] || 0) + 1; stats.unreach = (stats.unreach || 0) + 1;
+    if (failN[k] >= 2) { failN[k] = 0; if (opts.onUnreachable && !SIM) { var cbu = opts.onUnreachable; setTimeout(function () { cbu(role, id); }, 0); } }
+  }
+  function failGoal(b) {
+    var g = b.goal; if (!g) return; b.goal = null; b.mac = null; b.pe = null;
+    if (g.cb) { var fcb = g.cb; setTimeout(function () { fcb(false); }, 0); }
+    var id = g.poi ? g.poi.id : g.gate ? g.gate.id : g.id; if (id && !g.wander) noteFail(b.role, id);
+  }
   function botGoto(role, target, cb) {
     var b = bodies[role]; if (!b || !target) return false;
     var x, y, poi = null;
@@ -1178,8 +1199,8 @@ function create(canvas, opts) {
     var node = poi ? nid(Math.floor(poi.x / T), Math.round(poi.y / T)) : nodeNear(x, y, b);
     if (node < 0 || !nav.out[node]) { if (global.console) console.warn('botGoto: sin nodo para', target); return false; }
     var cur = curNode(b);
-    if (cur >= 0 && fieldFor(node)[cur] === undefined) { if (global.console) console.warn('botGoto: inalcanzable', role, target); return false; }
-    b.goal = { x: x, node: node, poi: poi, cb: cb, t0: tick }; b.bestDv = 1e9; b.progT = tick; b.stuckN = 0; b.idleT = 0; b.busy = 0;
+    if (cur >= 0 && fieldFor(node)[cur] === undefined) { if (global.console) console.warn('botGoto: inalcanzable', role, target); noteFail(role, poi ? poi.id : target.id || 'xy'); return false; }
+    b.goal = { x: x, node: node, poi: poi, id: poi ? poi.id : (typeof target === 'object' && target.id) || 'xy', cb: cb, t0: tick }; b.bestDv = 1e9; b.progT = tick; b.stuckN = 0; b.idleT = 0; b.busy = 0;
     return true;
   }
 
@@ -1346,6 +1367,7 @@ function create(canvas, opts) {
   /* ---------- tick global ---------- */
   function doTick() {
     tick++;
+    wSlopeT = zoneSlope(); wSlope += clamp(wSlopeT - wSlope, -0.004, 0.004);
     if (authority) { syncBodies(); gateTick(); Object.keys(bodies).forEach(function (id) { tickBody(bodies[id]); }); separate(); writeBack(); }
     else {
       Object.keys(bodies).forEach(function (id) { var b = bodies[id]; b.x += (b.tx - b.x) * 0.35; b.y += (b.ty - b.y) * 0.35; b.fr++; b.grounded = b.exAnim !== 'jump' && b.exAnim !== 'fall'; });
@@ -1427,7 +1449,7 @@ function create(canvas, opts) {
   function gather(round) {
     var s = clamp((round | 0) || 1, 1, NS) - 1, k = 0; if (unlocked < s + 1) setUnlocked(s + 1, true);
     Object.keys(bodies).forEach(function (id) { var b = bodies[id], sp = spawnOf(s, k++); b.x = b.tx = sp.x; b.y = b.ty = sp.y; b.vx = b.vy = 0; b.climb = null; b.goal = null; b.mac = null; b.warp = null; b.busy = 0; puff(b.x, b.y, 6, 0); });
-    cam.focus = null; recalcVis(); snapCam();
+    cam.focus = null; wSlope = wSlopeT = zoneSlope(); nav.fields = {}; recalcVis(); snapCam();
   }
 
   /* =================== RENDER =================== */
@@ -1479,6 +1501,7 @@ function create(canvas, opts) {
   }
   function drawBody(b) {
     var x = Math.round(b.x), y = Math.round(b.y), t = tick, shown = false, swm = b.swim && !b.climb;
+    if (swm) { try { sc.filter = b.air < 30 ? 'hue-rotate(150deg) saturate(1.6) brightness(' + (1 + 0.15 * Math.sin(t * 0.4)) + ')' : 'hue-rotate(160deg) saturate(1.5) brightness(1.1)'; } catch (e) { } }
     if (swm) { sc.save(); var sw = Math.sin(b.fr * 0.18); y += Math.round(sw * 1.5); sc.translate(x, y - 6); sc.rotate(b.face * (1.25 + sw * 0.1)); sc.translate(-x, -(y - 6)); }
     var meta = assets && assets.meta && assets.meta['player_' + b.role];
     if (meta && meta.anims && sheet('player_' + b.role)) {
@@ -1494,7 +1517,7 @@ function create(canvas, opts) {
       [[-1, 0], [1, 0], [0, -1], [0, 1]].forEach(function (o) { rects(parts2, x + o[0], y + o[1], b.face, '#1a1424', b.sx, b.sy); });
       rects(parts2, x, y, b.face, null, b.sx, b.sy);
     }
-    if (swm) sc.restore();
+    if (swm) { sc.restore(); try { sc.filter = 'none'; } catch (e) { } }
   }
   function drawLia(z, t) {
     var x = Math.round(z.x), y = Math.round(z.y);
@@ -1894,12 +1917,20 @@ function create(canvas, opts) {
     if (gx < -80 || gx > W + 80 || gy < -30 || gy > H + 40) return;
     var C = ROLE_COL[g0.role], age = t - g0.openT, txt = g0.open ? 'ABIERTO' : g0.text;
     if (g0.open && age > 240) return;
+    var prompt = !g0.open && lb && lb.role === g0.role && gateNear(lb) === g0;
+    // v6: menos ruido: el cartel solo se ve a <12 tiles, si es el objetivo de la guia, o recien abierto; nunca encima del jugador
+    var shownSign = (lb && Math.hypot(lb.x - g0.x, lb.y - g0.y) < 12 * T) || guideT === g0.id || (g0.open && age < 240);
+    var px3 = lb ? Math.round(lb.x - cxr) : -999, py3 = lb ? Math.round(lb.y - cyr) : -999;
+    if (!shownSign && !prompt) return;
     out.globalAlpha = g0.open ? Math.min(1, (240 - age) / 40) : 1;
-    var w = textW(txt) + 8, bx = clamp(gx - Math.round(w / 2), 2, W - w - 2), by = clamp(gy - 12, VIS.y0 + 2, H - 14);
-    pill(bx, by, w, 11, g0.open ? '#12281c' : '#1a1228', g0.open ? '#5ad28a' : C.coat);
-    drawText(out, txt, bx + 4, by + 3, g0.open ? '#9affc0' : C.name);
-    if (!g0.open) { out.fillStyle = '#10081c'; out.fillRect(gx - 2, by + 11, 5, 2); out.fillRect(gx - 1, by + 13, 3, 1); out.fillStyle = C.coat; out.fillRect(gx - 1, by + 11, 3, 1); }
-    if (!g0.open && lb && lb.role === g0.role && gateNear(lb) === g0) {
+    var w = textW(txt) + 6, bx = clamp(gx - Math.round(w / 2), 2, W - w - 2), by = clamp(gy - 12, VIS.y0 + 2, H - 14);
+    var onMe = bx < px3 + 14 && bx + w > px3 - 14 && by + 9 > py3 - 58 && by < py3 + 4;
+    if (!onMe) {
+    pill(bx, by, w, 9, g0.open ? '#12281c' : '#1a1228', g0.open ? '#5ad28a' : C.coat);
+    drawText(out, txt, bx + 3, by + 2, g0.open ? '#9affc0' : C.name);
+    } else if (!prompt) { out.globalAlpha = 1; return; }
+    if (!g0.open && !onMe) { out.fillStyle = '#10081c'; out.fillRect(gx - 2, by + 9, 5, 2); out.fillRect(gx - 1, by + 11, 3, 1); out.fillStyle = C.coat; out.fillRect(gx - 1, by + 9, 3, 1); }
+    if (prompt) {
       var lab = (g0.pend ? 'ABRIENDO...' : GVERB[g0.kind]), pw = 13 + textW(lab) + 6, px = clamp(gx - Math.round(pw / 2), 2, W - pw - 2), py = by - 16 - Math.round(Math.sin(t * 0.12));
       pill(px, py, pw, 13, '#1a1228', C.coat); keycap(px + 2, py + 1, g0.pend > 0, false, 'Q'); drawText(out, lab, px + 13, py + 4, '#fff2d0');
       if (g0.pend) { out.fillStyle = '#10081c'; out.fillRect(px, py + 14, pw, 4); out.fillStyle = C.coat; out.fillRect(px + 1, py + 15, Math.round((pw - 2) * (1 - g0.pend / 38)), 2); }
@@ -1919,16 +1950,24 @@ function create(canvas, opts) {
     order.slice().sort(function (a, b2) { return bodies[a].x - bodies[b2].x; }).forEach(function (id) {   // nombres sin solaparse: se apilan hacia arriba
       var b = bodies[id], x = Math.round(b.x - cxr), y = Math.round(b.y - cyr);
       if (x < -20 || x > W + 20) return;
+      if (id !== active && lb && Math.hypot(b.x - lb.x, b.y - lb.y) > 14 * T) return;   // v6: nombres solo del local y los companeros cercanos
       var nm = String(b.name || id).slice(0, 8), C = ROLE_COL[b.role] || ROLE_COL.guia, w = textW(nm), ny = y - 25 - (b.swim ? 6 : 0), guard = 0;
       while (guard++ < 5 && placed.some(function (q) { return Math.abs(q.y - ny) < 8 && x - w / 2 < q.x1 + 2 && x + w / 2 > q.x0 - 2; })) ny -= 8;
       placed.push({ x0: x - w / 2, x1: x + w / 2, y: ny });
       drawText(out, nm, x - Math.floor(w / 2), ny, C.name, '#10081c');
       var lift = y - 25 - ny;
+      if (b.air < 99.5 && (id === active || b.air < 60)) {   // v6: barra de aire sobre la cabeza (grande y parpadeante para el local)
+        var aw = id === active ? 22 : 14, ax2 = x - (aw >> 1), ay2 = ny - (id === active ? 10 : 8), fr2 = Math.max(0, b.air) / 100, low2 = b.air < 30;
+        out.fillStyle = '#10081c'; out.fillRect(ax2 - 1, ay2 - 1, aw + 2, 5); out.fillStyle = '#1a2a44'; out.fillRect(ax2, ay2, aw, 3);
+        out.fillStyle = low2 ? ((t >> 2) & 1 ? '#ff4a4a' : '#ffb0a0') : b.air < 55 ? '#ffd24a' : '#6adaff'; out.fillRect(ax2, ay2, Math.round(aw * fr2), 3);
+        if (id === active && b.swim) drawText(out, low2 ? 'SIN AIRE!' : 'AIRE', x - Math.floor(textW(low2 ? 'SIN AIRE!' : 'AIRE') / 2), ay2 - 8, low2 ? '#ff8a7a' : '#9fe0ff', '#10081c');
+      }
       if (id === active) { out.fillStyle = '#10081c'; out.fillRect(x - 2, ny - 5, 5, 3); out.fillStyle = '#fff'; out.fillRect(x - 1, ny - 5, 3, 1); out.fillRect(x, ny - 4, 1, 1); }
       drawBubble(id, b, cxr, cyr, t, y - 28 - lift - (b.swim ? 6 : 0));
     });
     var mb = bodies.medica;
     if (mb && mb.holdT > 0) { var hx = Math.round(mb.x - cxr), hy = Math.round(mb.y - cyr) - 34, pr = mb.holdT / 90; out.fillStyle = '#10081c'; out.fillRect(hx - 12, hy, 25, 5); out.fillStyle = '#2a4a3a'; out.fillRect(hx - 11, hy + 1, 23, 3); out.fillStyle = '#7dffb0'; out.fillRect(hx - 11, hy + 1, Math.round(23 * pr), 3); }
+    if (lb && lb.air < 60) { var ai2 = (60 - lb.air) / 60, pl2 = lb.air < 30 ? 0.5 + 0.5 * Math.sin(t * 0.3) : 1; out.fillStyle = (lb.air < 30 ? 'rgba(200,30,40,' : 'rgba(20,70,160,') + (0.22 * ai2 * pl2) + ')'; out.fillRect(0, 0, W, 6); out.fillRect(0, H - 6, W, 6); out.fillRect(0, 0, 5, H); out.fillRect(W - 5, 0, 5, H); }
     // aviso de agua
     var wsy = waterY(wlCur) - cyr;
     if (warnPulse > 0) { out.fillStyle = 'rgba(255,60,60,' + (0.18 * warnPulse * (0.6 + 0.4 * Math.sin(t * 0.4))) + ')'; out.fillRect(0, 0, W, 5); out.fillRect(0, H - 5, W, 5); out.fillRect(0, 0, 4, H); out.fillRect(W - 4, 0, 4, H); }
@@ -1945,6 +1984,7 @@ function create(canvas, opts) {
   function targetPos(id) {      // posicion de mundo (pies) de un POI / 'lia' / {x,y}
     if (id && typeof id === 'object') return { x: +id.x, y: +id.y };
     if (pois[id]) return { x: pois[id].x, y: pois[id].y, poi: pois[id] };
+    if (GBY[id]) return { x: GBY[id].spot.x, y: GBY[id].spot.y };   // v6: guiar hacia el punto de activacion de una puerta
     if (id === 'lia' && (poiRound >= 5 || unlocked >= 5)) return { x: wd.lia.x, y: wd.lia.y, node: true };
     return null;
   }
@@ -1977,7 +2017,7 @@ function create(canvas, opts) {
   }
   function arrowSprite(ai) {
     if (arrowC[ai]) return arrowC[ai];
-    var S = 35, c = canvasOf(S, S), x = c.getContext('2d'), img = x.createImageData(S, S), d = img.data, ang = ai / 16 * TAU, ca = Math.cos(ang), sa = Math.sin(ang), m = new Uint8Array(S * S), vv = new Float32Array(S * S), uu = new Float32Array(S * S), i, j, k;
+    var S = 35, c = canvasOf(S, S), x = c.getContext('2d'), img = x.createImageData(S, S), d = img.data, ang = ai / 32 * TAU, ca = Math.cos(ang), sa = Math.sin(ang), m = new Uint8Array(S * S), vv = new Float32Array(S * S), uu = new Float32Array(S * S), i, j, k;
     for (j = 0; j < S; j++) for (i = 0; i < S; i++) {
       var dx = i - 17, dy = j - 17, u = dx * ca + dy * sa, v = -dx * sa + dy * ca;
       if ((u >= -10 && u <= 2 && Math.abs(v) <= 3.1) || (u > 2 && u <= 12 && Math.abs(v) <= (12 - u) * 0.86 + 0.3)) { m[j * S + i] = 1; vv[j * S + i] = v; uu[j * S + i] = u; }
@@ -1990,7 +2030,7 @@ function create(canvas, opts) {
     x.putImageData(img, 0, 0); arrowC[ai] = c; return c;
   }
   function drawArrow(x, y, ang, t, col) {
-    var ai = ((Math.round(ang / TAU * 16) % 16) + 16) % 16, a = 0.35 + 0.15 * Math.sin(t * 0.15);
+    var ai = ((Math.round(ang / TAU * 32) % 32) + 32) % 32, a = 0.35 + 0.15 * Math.sin(t * 0.15);
     out.globalCompositeOperation = 'lighter';
     var gg = out.createRadialGradient(x, y, 0, x, y, 22); gg.addColorStop(0, 'rgba(' + col + ',' + a + ')'); gg.addColorStop(1, 'rgba(' + col + ',0)');
     out.fillStyle = gg; out.fillRect(x - 22, y - 22, 44, 44); out.globalCompositeOperation = 'source-over';
@@ -2013,19 +2053,28 @@ function create(canvas, opts) {
       out.strokeStyle = 'rgba(255,230,140,' + (0.9 * (1 - rp)) + ')'; out.lineWidth = 1; out.beginPath(); out.ellipse(tx, ty - 12, 6 + rp * 14, 8 + rp * 14, 0, 0, TAU); out.stroke();
       out.strokeStyle = 'rgba(255,230,140,' + (0.8 * (1 - ((rp + 0.5) % 1))) + ')'; out.beginPath(); out.ellipse(tx, ty - 12, 6 + ((rp + 0.5) % 1) * 14, 8 + ((rp + 0.5) % 1) * 14, 0, 0, TAU); out.stroke();
     }
-    var ax, ay, aim = null;
-    if (!useWp) { if (onS) { ax = tx; ay = ty - 52 - bob; drawArrow(ax, ay, TAU / 4, t, col); guideLabel(lab, ax, ay - 30, '#ffd24a'); return; } aim = { x: tx, y: ty }; }
-    else {
-      var wx = r.wp.x - cxr, wy = r.wp.y - cyr;
-      if (onS) guideLabel(lab, tx, ty - 40, '#ffd24a');
-      if (wx > VIS.x0 + 8 && wx < VIS.x1 - 8 && wy > VIS.y0 + 14 && wy < VIS.y1 - 4) { drawArrow(wx, wy - 26 - bob, TAU / 4, t, col); if (!onS) guideLabel(lab, wx, wy - 58 - bob, '#ffd24a'); return; }
-      aim = { x: wx, y: wy };
+    // v6: la flecha siempre apunta (rotacion continua suavizada, 32 direcciones) al waypoint/objetivo: pegada al borde si esta fuera, o girando en torno al jugador si esta a la vista
+    var aim, near2 = false;
+    if (!useWp) aim = { x: tx, y: ty }; else { aim = { x: r.wp.x - cxr, y: r.wp.y - cyr }; }
+    var aimOn = aim.x > VIS.x0 + 8 && aim.x < VIS.x1 - 8 && aim.y > VIS.y0 + 14 && aim.y < VIS.y1 - 4;
+    var px2 = b.x - cxr, py2 = b.y - cyr - 14, pdx = aim.x - px2, pdy = (aim.y - 12) - py2, pd = Math.hypot(pdx, pdy);
+    if (aimOn && pd < 56) {   // casi encima: flecha clasica sobre el punto, hacia abajo
+      drawArrowAng(aim.x, aim.y - 26 - bob, TAU / 4, t, col, true); if (!onS || useWp) guideLabel(lab, aim.x, aim.y - 58 - bob, '#ffd24a'); else guideLabel(lab, tx, ty - 58 - bob, '#ffd24a'); return;
+    }
+    if (aimOn) {      // a la vista pero lejos: orbita al jugador apuntando al destino
+      var ang0 = Math.atan2(pdy, pdx), rd = Math.min(1, pd / 120), ox2 = px2 + Math.cos(ang0) * (26 + 44 * rd + bob * 0.5), oy2 = py2 + Math.sin(ang0) * (22 + 34 * rd + bob * 0.4);
+      drawArrowAng(ox2, oy2, ang0, t, col); guideLabel(lab, ox2 + Math.cos(ang0) * 6, oy2 + (Math.sin(ang0) > 0 ? 18 : -26), '#ffd24a'); return;
     }
     var vcx = (VIS.x0 + VIS.x1) / 2, vcy = (VIS.y0 + VIS.y1) / 2, dx = aim.x - vcx, dy = aim.y - vcy, hw = (VIS.x1 - VIS.x0) / 2 - 22, hh = (VIS.y1 - VIS.y0) / 2 - 22;
     var kk = Math.min(Math.abs(dx) > 0.01 ? hw / Math.abs(dx) : 1e9, Math.abs(dy) > 0.01 ? hh / Math.abs(dy) : 1e9), ln = Math.hypot(dx, dy) || 1;
     var ex = vcx + dx * kk + dx / ln * bob * 0.8, ey = vcy + dy * kk + dy / ln * bob * 0.8;
-    drawArrow(ex, ey, Math.atan2(dy, dx), t, col);
+    drawArrowAng(ex, ey, Math.atan2(dy, dx), t, col);
     guideLabel(lab, ex - dx / ln * 30, ey - dy / ln * 22 - 6, '#ffd24a');
+  }
+  var garg = null;
+  function drawArrowAng(x, y, ang, t, col, snap) {   // suaviza el angulo por el camino corto
+    if (garg === null || snap) garg = ang; else { var d = ang - garg; d = ((d + Math.PI) % TAU + TAU) % TAU - Math.PI; garg += d * 0.22; }
+    drawArrow(x, y, garg, t, col);
   }
   var mmC = {};
   function mmSil(sec) {
@@ -2059,7 +2108,7 @@ function create(canvas, opts) {
   function stop() { running = false; cancelAnimationFrame(raf); }
   function setInput(id, inp) {
     if (!bodies[id]) return;
-    inputs[id] = { left: !!inp.left, right: !!inp.right, jump: !!inp.jump, interact: !!inp.interact, up: !!inp.up, down: !!inp.down, ability: !!(inp.ability || inp.q) };
+    inputs[id] = { left: !!inp.left, right: !!inp.right, jump: !!inp.jump, interact: !!inp.interact, up: !!inp.up, down: !!inp.down, ability: !!(inp.ability || inp.q), run: !!(inp.run || inp.shift) };
   }
   // un humano = un rol. setLocal fija cual; el resto son companeros IA (setBot). setActive/setFollow quedan como alias inofensivos.
   function setLocal(role) {
@@ -2135,7 +2184,7 @@ global.Engine = { create: create, demoLoop: demoLoop, waterY: waterY, W: W, H: H
   pan: function (r) { if (this.current) this.current.pan(r); },
   fx: function (t, x, y) { if (this.current) this.current.fx(t, x, y); },
   camShake: function (a) { if (this.current) this.current.camShake(a); },
-  sectionOf: function (x) { return clamp(Math.floor(x / SPW), 0, NS - 1) + 1; }, version: '5.0',
+  sectionOf: function (x) { return clamp(Math.floor(x / SPW), 0, NS - 1) + 1; }, version: '6.0',
   setGuide: function (t, o) { if (this.current) this.current.setGuide(t, o); },
   getPoiPos: function (id) { return this.current ? this.current.getPoiPos(id) : null; },
   getRoute: function (id) { return this.current ? this.current.getRoute(id) : null; },

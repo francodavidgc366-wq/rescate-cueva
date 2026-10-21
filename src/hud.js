@@ -31,7 +31,7 @@
   };
   var HELP = {
     briefing: ['Nuevo tramo', 'Lee el evento: marca el ambiente del tramo. Lía te habla por radio. En unos segundos empieza la exploración.'],
-    explore: ['Explora y recoge información', 'Camina con WASD o flechas y pulsa E junto a un icono brillante: te da una tarjeta de información PRIVADA. Tus compañeros no la ven si no se la cuentas. Habla en el chat (T) y comparte lo que sepas desde el cuaderno (J). Con Q usas la habilidad de tu rol. Cuando hayas investigado algo, pulsa «Convocar reunión» (R) para adelantar la crisis.'],
+    explore: ['Explora y recoge información', 'Camina con WASD o flechas y pulsa E junto a un icono brillante: te da una tarjeta de información PRIVADA. Tus compañeros no la ven si no se la cuentas. Habla en el chat (T) y comparte lo que sepas desde el cuaderno (J). Cuando estés listo, pulsa «Hablar con el equipo y decidir» (R). CONTROLES: A D / flechas = mover · Espacio = saltar · Shift = correr · E = examinar · Q = habilidad · T = chat · M = mapa.'],
     plan: ['Elegid el plan del equipo', 'Cada opción tiene información parcial. Lo que tú sabes en privado está resaltado. Convence a los demás en el chat y vota con 1, 2 o 3. Gana la mayoría.'],
     secret: ['Tu acción secreta', 'Elige una de las 3: una ayuda al equipo, otra a tu objetivo secreto y otra es arriesgada. Nadie ve tu elección hasta la resolución. Pulsa la misma tecla otra vez, o SELLAR, para confirmar.'],
     resolve: ['Resolución', 'Se tiran los dados del riesgo según el plan, la información compartida y las acciones secretas. Los secretos y las mentiras salen a la luz.'],
@@ -155,7 +155,7 @@
   var customChips = null, dossierTab = 'intel', editing = null, paused = false;
   var toastQ = [], toastBusy = false, resolving = false, rafOn = false;
   var airV = null, airWarned = false, abilO = null, helpO = null, quickO = null, dlgQ = null, dlgOpen = false;
-  var nowOv = null, misOv = null, readyOv = null, nowKey = '', miniFn = null, miniTimer = 0, ro = null;
+  var coachO = null, coachPrev = null, miniUser = null, sayQ = [], shareWait = null, nowOv = null, misOv = null, readyOv = null, nowKey = '', miniFn = null, miniTimer = 0, ro = null;
 
   /* ---------- CSS ---------- */
   var CSS = [
@@ -462,23 +462,8 @@
 .h-chips{flex-wrap:wrap;overflow-x:hidden;overflow-y:auto;max-height:116px}.h-chips button{white-space:normal;text-align:left;max-width:100%;line-height:1.25}
 .h-mlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}.h-mlist li{display:flex;gap:8px;align-items:flex-start;font-size:calc(14px*var(--h-fs));line-height:1.4;padding:6px 9px;background:#0e0a1d;border:1px solid var(--h-line);border-radius:6px}
 .h-mlist li i{flex:none;width:18px;height:18px;border:2px solid var(--h-amber);border-radius:4px;display:grid;place-items:center;font-style:normal;font-size:12px;color:transparent;margin-top:1px}.h-mlist li.done{color:var(--h-dim)}.h-mlist li.done i{background:var(--h-green);border-color:var(--h-green);color:#06301a}
-.h-dlg{position:absolute;left:12px;right:calc(var(--h-chatw) + 16px);bottom:10px;z-index:36;display:none;pointer-events:auto;cursor:pointer}
-.h-dlg.on{display:block;animation:dl-up .25s ease-out}.h-dlg.out{animation:dl-down .2s forwards}
-@keyframes dl-up{from{opacity:0;transform:translateY(40px)}}@keyframes dl-down{to{opacity:0;transform:translateY(30px)}}
-.dl-wrap{position:relative;--pw:192px;--ph:192px;--c:#f2a93b;--cg:#f2a93b44}
-.dl-box{position:relative;min-height:clamp(140px,22vh,240px);padding:clamp(24px,3.4vh,36px) 26px clamp(30px,4.2vh,40px) calc(var(--pw) + 46px);background:linear-gradient(#10224ff2,#07112efa);border:3px solid #d8a640;border-radius:6px;box-shadow:inset 0 0 0 3px #07112e,inset 0 0 0 5px #7a622c,0 0 0 3px #000,0 10px 30px #000a;color:#f4f1e6;font-family:var(--h-ui)}
-.dl-box:before{content:"";position:absolute;left:0;top:0;bottom:0;width:calc(var(--pw) + 70px);background:radial-gradient(ellipse at 45% 100%,var(--cg),transparent 70%);pointer-events:none;border-radius:4px}
-.dl-por{position:absolute;left:20px;bottom:3px;z-index:2;line-height:0;filter:drop-shadow(0 6px 0 #0007)}.dl-por.pop{animation:dl-pop .3s ease-out}
-@keyframes dl-pop{from{transform:translateY(14px) scale(.97);opacity:.5}}
-.dl-name{position:absolute;left:calc(var(--pw) + 40px);top:-16px;z-index:3;display:flex;align-items:baseline;gap:9px;padding:6px 13px 5px;background:#07112e;border:3px solid var(--c);border-radius:4px;box-shadow:0 0 0 2px #000;max-width:calc(100% - var(--pw) - 60px)}
-.dl-name b{font-family:var(--h-px);font-weight:400;font-size:clamp(10px,1.5vh,14px);color:var(--c);white-space:nowrap}.dl-name i{font-style:normal;font-size:clamp(11px,1.5vh,14px);color:#b8c2e0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.dl-text{position:relative;font-size:calc(clamp(15px,2.3vh,24px)*var(--h-fs));line-height:1.5;min-height:4.5em;max-height:46vh;overflow:auto;text-shadow:0 2px 0 #000;overflow-wrap:anywhere}.dl-text .b{visibility:hidden}
-.dl-foot{position:absolute;right:18px;bottom:9px;z-index:3;display:flex;align-items:center;gap:14px;font-size:12px;color:#b8c2e0}.dl-foot .arr{font-size:18px;color:var(--h-amber2);animation:dl-bl .8s steps(2) infinite}@keyframes dl-bl{50%{opacity:.15}}
-.dl-foot .sk{background:none;border:0;color:#b8c2e0;font-size:12px;cursor:pointer;padding:2px 4px}.dl-foot .sk:hover{color:#fff}
-.h-dlg.radio .dl-box{background:linear-gradient(#06231af2,#031410fa);border-color:#3da56d;box-shadow:inset 0 0 0 3px #031410,inset 0 0 0 5px #1d5a3c,0 0 0 3px #000,0 10px 30px #000a}.h-dlg.radio .dl-text{color:var(--h-radio);font-family:ui-monospace,Menlo,Consolas,monospace}
-.h-dlg.radio .dl-name{background:#031410}
 .hud.dlg .h-act{visibility:hidden}
-@media (max-width:820px),(max-height:520px){.h-dlg{left:4px;right:4px;bottom:4px}.dl-box{padding-left:calc(var(--pw) + 30px);padding-right:14px}.dl-por{left:10px}.dl-name{left:calc(var(--pw) + 22px)}.dl-foot .sk kbd{display:none}}`,
+`,
     "@media (max-width:820px),(max-height:520px){",
     ":root{--h-chatw:0px}",
     ".hud{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;grid-template-areas:\"top\" \"mid\" \"bar\"}",
@@ -490,7 +475,88 @@
     ".h-left{position:absolute;left:4px;right:4px;top:auto;bottom:100px;width:auto;margin:0;max-height:50vh;transform:translateY(130%);opacity:0;pointer-events:none;z-index:8}.h-left.mob{transform:none;opacity:1;pointer-events:auto}.h-left.gone{display:flex}",
     ".h-mid{margin:0 4px}.h-dos{width:100%}",
     ".h-mini{bottom:2px}.h-pn.fr{border-width:8px}.h-opt .k,.h-so .k{display:none}",
-    "}"
+    "}",
+    `/* ===== v6 ===== */
+/* dialogo estilo Hades/Hollow: caja morada ornamentada + retrato enmarcado a un lado */
+.h-dlg{position:absolute;left:12px;right:calc(var(--h-chatw) + 16px);bottom:10px;z-index:36;display:none;pointer-events:auto;cursor:pointer}
+.h-dlg.on{display:block;animation:dl-up .25s ease-out}.h-dlg.out{animation:dl-down .2s forwards}
+@keyframes dl-up{from{opacity:0;transform:translateY(40px)}}@keyframes dl-down{to{opacity:0;transform:translateY(30px)}}
+.dl-wrap{position:relative;max-width:980px;margin:0 auto;--c:#f2a93b;--cg:#f2a93b44}
+.dl-box{position:relative;display:flex;align-items:center;gap:22px;min-height:clamp(140px,22vh,230px);padding:26px 34px 34px;background:radial-gradient(ellipse at 15% 0%,#43307f,#24164d 55%,#170d34);border:2px solid #d9c9ff;border-radius:12px;box-shadow:inset 0 0 0 4px #1a0f38,inset 0 0 0 5px #7e62c8,0 0 0 3px #000,0 12px 34px #000b;color:#f4effc;font-family:var(--h-ui)}
+.dl-box.L{flex-direction:row-reverse}
+.dl-co{position:absolute;width:38px;height:38px;pointer-events:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg fill='none' stroke='%23e6d6ff' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M3 38V12Q3 3 12 3H38'/%3E%3Cpath d='M9 38V17Q9 9 17 9H38' stroke-opacity='.45'/%3E%3Cpath d='M13 3Q13 15 24 15Q15 15 15 25Q15 13 3 13' stroke-width='1.2'/%3E%3C/g%3E%3Ccircle cx='5' cy='5' r='2.6' fill='%23ffd27a'/%3E%3C/svg%3E") no-repeat center/100%}
+.dl-co.tl{left:-4px;top:-4px}.dl-co.tr{right:-4px;top:-4px;transform:scaleX(-1)}.dl-co.bl{left:-4px;bottom:-4px;transform:scaleY(-1)}.dl-co.br{right:-4px;bottom:-4px;transform:scale(-1)}
+.dl-tx{flex:1;min-width:0;align-self:stretch;display:flex;flex-direction:column;gap:8px;justify-content:center}
+.dl-name{display:flex;align-items:baseline;gap:10px}.dl-name b{font-family:var(--h-px);font-weight:400;font-size:clamp(11px,1.6vh,15px);color:var(--c);text-shadow:0 2px 0 #000}.dl-name i{font-style:normal;font-size:clamp(12px,1.6vh,15px);color:#bdb0e0}
+.dl-text{position:relative;font-size:calc(clamp(17px,2.5vh,26px)*var(--h-fs));line-height:1.5;min-height:3em;max-height:44vh;overflow:auto;text-shadow:0 2px 0 #000;overflow-wrap:anywhere}.dl-text .b{visibility:hidden}
+.dl-fr{flex:none;position:relative;padding:7px;border-radius:24px;background:linear-gradient(145deg,#5a41a8,#1c1040);border:3px solid var(--c);box-shadow:0 0 0 3px #000,inset 0 0 0 2px #ffffff33,0 0 26px var(--cg);transform:rotate(-1.5deg)}
+.dl-box.L .dl-fr{transform:rotate(1.5deg)}
+.dl-por{line-height:0;border-radius:17px;overflow:hidden;background:radial-gradient(circle at 50% 100%,var(--cg),#150b30 78%);box-shadow:inset 0 0 0 2px #0009}
+.dl-por .h-big{filter:drop-shadow(2px 0 0 #1a0f38) drop-shadow(-2px 0 0 #1a0f38) drop-shadow(0 2px 0 #1a0f38) saturate(1.12) contrast(1.05)}
+.dl-fr.pop{animation:dl-pop .32s cubic-bezier(.2,1.6,.4,1)}.dl-fr.talk .dl-por{animation:dl-bob .3s steps(2) infinite}
+@keyframes dl-pop{0%{transform:scale(.55) translateY(20px);opacity:.2}100%{opacity:1}}@keyframes dl-bob{50%{transform:translateY(-4px)}}
+.dl-foot{position:absolute;right:26px;bottom:8px;z-index:3;display:flex;align-items:center;gap:14px;font-size:12px;color:#bdb0e0}.dl-foot .arr{font-size:18px;color:var(--h-amber2);animation:dl-bl .8s steps(2) infinite}@keyframes dl-bl{50%{opacity:.15}}
+.dl-foot .sk{background:none;border:0;color:#bdb0e0;font-size:12px;cursor:pointer;padding:2px 4px}.dl-foot .sk:hover{color:#fff}
+.h-dlg.radio .dl-box{background:radial-gradient(ellipse at 15% 0%,#1c5a42,#0d3025 55%,#071c15);border-color:#a5f0c4;box-shadow:inset 0 0 0 4px #06150f,inset 0 0 0 5px #3da56d,0 0 0 3px #000,0 12px 34px #000b}.h-dlg.radio .dl-text{color:var(--h-radio);font-family:ui-monospace,Menlo,Consolas,monospace}
+@media (max-width:820px),(max-height:520px){.h-dlg{left:4px;right:4px;bottom:4px}.dl-box{padding:20px 22px 30px;gap:12px}.dl-foot .sk kbd{display:none}}
+/* popup de chat: Hud.say */
+.h-sy{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);width:min(520px,calc(100% - 340px));min-width:240px;display:flex;flex-direction:column;gap:6px;z-index:9;pointer-events:none}
+.hud.modal .h-sy{bottom:auto;top:var(--sy-top,110px)}
+.h-sp{display:flex;gap:10px;align-items:center;padding:8px 14px 8px 8px;background:linear-gradient(#35266ef2,#1b1040f5);border:2px solid #cbb8ff;border-radius:12px;box-shadow:inset 0 0 0 3px #1a0f38,0 0 0 2px #000,0 6px 18px #000a;animation:sy-in .32s cubic-bezier(.2,1.5,.4,1)}.h-sp.out{animation:sy-out .3s forwards}
+@keyframes sy-in{from{opacity:0;transform:translateY(24px) scale(.9)}}@keyframes sy-out{to{opacity:0;transform:translateY(10px)}}
+.h-sp .fc{flex:none;border:3px solid var(--c);border-radius:14px;overflow:hidden;line-height:0;background:radial-gradient(circle at 50% 100%,#ffffff22,#150b30 78%);box-shadow:0 0 0 2px #000}.h-sp .fc .h-big{filter:drop-shadow(1px 0 0 #1a0f38) drop-shadow(-1px 0 0 #1a0f38)}
+.h-sp .fc.bounce{animation:dl-bob .3s steps(2) 4}
+.h-sp .sb{min-width:0;display:flex;flex-direction:column;gap:2px}.h-sp .nm{font-weight:700;font-size:calc(14px*var(--h-fs));color:var(--c)}.h-sp .sx{font-size:calc(15px*var(--h-fs));line-height:1.35;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere;color:#f4effc}
+/* chat discreto: compacto (historial) por defecto, T para ampliar */
+.hud.chatmin{--h-chatw:clamp(188px,15vw,232px)}
+.h-chat.min .h-log,.h-chat.min .h-logw{visibility:visible}.h-chat.min .h-in,.h-chat.min .h-chips,.h-chat.min .h-typ{display:none}
+.hud.chatmin .h-ch{flex-direction:row;padding:7px 9px;justify-content:flex-start}.hud.chatmin .h-ch .ttl{display:inline}.hud.chatmin .h-ch kbd{display:inline-block}.hud.chatmin .h-ch .cv{display:inline}.h-chat.min .h-ch .tg{display:flex}
+.h-chat .cv:before{content:"⤡"}.h-chat.min .cv:before{content:"⤢"}
+.h-chat.min .h-g .av .h-por{border-width:2px}.h-chat.min .h-g .bd{max-width:calc(100% - 36px)}.h-chat.min .h-g .hd i,.h-chat.min .h-g .hd time{display:none}.h-chat.min .h-b{font-size:12px;padding:3px 7px}.h-chat.min .h-card .x{font-size:12px}.h-chat.min .h-m.radio{font-size:12px}
+.h-chat:not(.min) .h-chips{max-height:none}
+.h-b.hl,.h-b.hl .h-card{animation:h-hl 1.8s ease-out}@keyframes h-hl{0%,40%{box-shadow:0 0 0 3px var(--h-amber),0 0 22px var(--h-amber)}}
+/* menos ruido */
+.h-pips,.h-phn,.h-phi{display:none}
+.h-rlab{font-size:calc(10px*var(--h-fs))}.h-rlab b{font-size:1.5em}
+.h-st .l{font-size:calc(8px*var(--h-fs))}.h-st .l b{font-size:calc(16px*var(--h-fs))}.h-st .l .h-ic{flex:none}
+.h-evt{font-size:calc(14px*var(--h-fs));color:var(--h-ink)}
+.h-left:not(.exp){width:clamp(150px,12vw,176px)}.h-left:not(.exp) .h-lb>:not(.h-me){display:none}.h-left:not(.exp) .h-me{flex-wrap:wrap;gap:6px}.h-left:not(.exp) .h-me .r{display:none}.h-left:not(.exp) .h-ap{margin-left:0;text-align:left;width:100%}.h-left:not(.exp) .h-ap div{justify-content:flex-start}
+.h-dock .h-btn.ic{padding:8px 11px;font-size:calc(11px*var(--h-fs))}
+.h-vig{position:absolute;inset:0;z-index:19;pointer-events:none;opacity:0;box-shadow:inset 0 0 140px 36px #ff2a2aaa;transition:opacity .3s}.h-vig.on{opacity:1;animation:h-vig .9s ease-in-out infinite}@keyframes h-vig{50%{opacity:.35}}
+.hud.noflash .h-vig.on{animation:none;opacity:.6}
+.h-air{padding:8px 20px;gap:12px;border-width:3px;background:#0a1830f5;box-shadow:0 4px 0 #07040f,0 0 20px #3aa0ff55}.h-air .l{font-size:calc(14px*var(--h-fs));color:#d6ecff}.h-air .b{width:clamp(150px,20vw,260px);height:20px}.h-air b{font-size:calc(16px*var(--h-fs))}.h-air em{font-size:calc(16px*var(--h-fs))}.h-air.low{box-shadow:0 4px 0 #07040f,0 0 26px #ff5d5daa}
+/* coach: paso actual de la primera zona */
+.h-coach{display:none;flex-direction:column;align-items:center;gap:2px;max-width:min(760px,100%);padding:10px 26px 12px;background:linear-gradient(#ffd27a,#f2a93b);color:#2a1606;border:4px solid #fff3c9;border-radius:16px;box-shadow:0 0 0 3px #000,0 8px 0 #7a4308,0 0 36px #ffd27acc;animation:h-coach 1.3s ease-in-out infinite;position:relative}
+.h-coach.on{display:flex;margin-bottom:26px}.h-coach .st{font-family:var(--h-px);font-size:calc(11px*var(--h-fs));color:#7a3d06}.h-coach .tx{font-size:calc(24px*var(--h-fs));font-weight:800;line-height:1.2;text-align:center;overflow-wrap:anywhere}
+.h-coach .ar{position:absolute;left:50%;bottom:-30px;transform:translateX(-50%);font-size:26px;color:#ffd27a;text-shadow:0 3px 0 #000,0 0 0 #000;animation:h-arrow .7s ease-in-out infinite alternate;line-height:1}
+@keyframes h-coach{50%{transform:scale(1.035);box-shadow:0 0 0 3px #000,0 8px 0 #7a4308,0 0 54px #ffd27a}}@keyframes h-arrow{to{transform:translate(-50%,8px)}}
+.h-coach.done{animation:h-nowchg 1s ease-out}
+.h-gd{padding-bottom:22px}
+/* textos flotantes apilados bajo el banner */
+.h-tst{gap:6px}.h-fl2{font-family:var(--h-px);font-size:calc(14px*var(--h-fs));padding:6px 14px;background:#120e26ee;border:2px solid currentColor;border-radius:8px;text-shadow:0 2px 0 #000;white-space:nowrap;animation:h-fl2 2s ease-out forwards;box-shadow:0 3px 0 #07040f}
+@keyframes h-fl2{0%{opacity:0;transform:translateY(-10px) scale(.8)}12%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0}}
+.h-fl2.good{color:var(--h-green)}.h-fl2.bad{color:var(--h-red)}.h-fl2.score{color:var(--h-amber2)}.h-fl2.info{color:var(--h-violet)}
+/* decision de historia */
+.h-pn[data-p=plan] .h-ph1,.h-pn[data-p=secret] .h-ph1{padding:12px 46px 10px 16px;flex-direction:column;align-items:flex-start;gap:4px}
+.h-ph1 .q{margin:0;font-family:var(--h-ui);font-weight:800;font-size:calc(24px*var(--h-fs));line-height:1.25;color:var(--h-amber2)}
+.h-ph1 .hv{font-size:calc(16px*var(--h-fs));color:var(--h-ink)}.h-ph1 .hv b{color:var(--h-teal)}
+.h-pn[data-p=plan] .h-pb,.h-pn[data-p=secret] .h-pb{padding:12px 14px}
+.h-pn[data-p=plan] .h-opts,.h-pn[data-p=secret] .h-sopts{grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.h-pn[data-p=plan] .h-opt,.h-pn[data-p=secret] .h-so{padding:14px 14px 12px;gap:9px}
+.h-pn[data-p=plan] .h-opt h3{font-family:var(--h-ui);font-weight:800;font-size:calc(20px*var(--h-fs));line-height:1.2;color:var(--h-amber2)}
+.h-pn[data-p=plan] .h-opt p,.h-pn[data-p=secret] .h-so p{font-size:calc(16px*var(--h-fs));line-height:1.4}
+.h-eff{display:flex;flex-direction:column;gap:4px}.h-eff div{display:flex;align-items:center;gap:7px;font-size:calc(15px*var(--h-fs));line-height:1.3}.h-eff .u{color:var(--h-green);font-weight:900;font-size:1.3em}.h-eff .d{color:var(--h-red);font-weight:900;font-size:1.3em}
+.h-pn[data-p=plan] .h-opt .kn{font-size:calc(14px*var(--h-fs));padding:6px 9px}.h-pn[data-p=plan] .h-opt .pv{font-size:calc(15px*var(--h-fs));padding:8px 10px;border-width:2px;background:#0f3a3d;color:#fff}.h-pn[data-p=plan] .h-opt .pv b{color:#6ff0df;font-size:1.05em}
+.h-stage[data-p=plan] .h-pn,.h-stage[data-p=secret] .h-pn{max-height:100%}@media (max-height:760px){.h-pn[data-p=plan] .h-pb,.h-pn[data-p=secret] .h-pb{padding:8px 12px}.h-pn[data-p=plan] .h-opt,.h-pn[data-p=secret] .h-so{padding:10px 12px;gap:6px}.h-ph1 .hv{font-size:calc(14px*var(--h-fs))}}
+.h-pn[data-p=secret] .h-so b{font-size:calc(18px*var(--h-fs))}
+@media (max-height:760px){.h-ph1 .q{font-size:calc(20px*var(--h-fs))}.h-pn[data-p=plan] .h-opt h3{font-size:calc(17px*var(--h-fs))}.h-pn[data-p=plan] .h-opt p{font-size:calc(14px*var(--h-fs))}.h-eff div{font-size:calc(13.5px*var(--h-fs))}}
+/* resultado claro */
+.h-xh{margin:0 0 12px;font-family:var(--h-ui);font-weight:800;font-size:calc(28px*var(--h-fs));line-height:1.2;color:var(--h-amber2);text-shadow:0 3px 0 #000}
+.h-xl{display:flex;flex-direction:column;gap:8px}.h-xr{display:flex;align-items:center;gap:12px;padding:10px 14px;background:#0e0a1d;border:2px solid var(--h-line);border-radius:8px;animation:h-slide .35s both}
+.h-xr .tx{flex:1;font-size:calc(18px*var(--h-fs));line-height:1.35}.h-xr .dl{font-family:var(--h-px);font-size:calc(20px*var(--h-fs));min-width:84px;text-align:right}.h-xr .dl.g{color:var(--h-green)}.h-xr .dl.b{color:var(--h-red)}.h-xr .dl.z{color:var(--h-dim)}
+.h-xw{margin:14px 0 0;padding:0;list-style:none;font-size:calc(16px*var(--h-fs));color:var(--h-ink)}.h-xw li{padding:4px 0 4px 20px;position:relative}.h-xw li:before{content:"▸";position:absolute;left:0;color:var(--h-amber)}.h-xw h4{margin:0 0 4px;font-family:var(--h-px);font-weight:400;font-size:calc(9px*var(--h-fs));color:var(--h-violet)}
+.h-pn[data-p=resolve] .h-foot .h-btn{font-size:calc(14px*var(--h-fs));padding:14px 22px}
+`
   ].join('\n');
 
   var STAT_TIPS = {
@@ -518,30 +584,29 @@
     var pips = ''; for (var i = 1; i <= 5; i++) pips += '<div class="h-pip" data-r="' + i + '">' + i + '</div>';
     var stats = STATS.map(function (s) {
       var tp = statTip(s);
-      return '<div class="h-st" data-k="' + s.k + '" style="--c:' + s.color + '" tabindex="0" title="' + esc(s.label + ': ' + tp) + '"><div class="l">' + icon(s.k, 14) + '<span class="lt">' + s.label + '</span><b>0</b></div><div class="h-bar"><i class="ghost"></i><i class="fill"></i></div><div class="tip"><b>' + s.label + '</b>' + esc(tp) + '</div></div>';
+      return '<div class="h-st" data-k="' + s.k + '" style="--c:' + s.color + '" tabindex="0" title="' + esc(s.label + ': ' + tp) + '"><div class="l">' + icon(s.k, 26) + '<span class="lt">' + s.label + '</span><b>0</b></div><div class="h-bar"><i class="ghost"></i><i class="fill"></i></div><div class="tip"><b>' + s.label + '</b>' + esc(tp) + '</div></div>';
     }).join('');
     root.innerHTML =
-      '<div class="h-top"><div class="h-rnd"><div class="h-rlab">TRAMO <b class="rn">1/5</b></div><div class="h-pips">' + pips + '</div></div>' +
+      '<div class="h-top"><div class="h-rnd"><div class="h-rlab">ZONA <b class="rn">1/5</b></div><div class="h-pips">' + pips + '</div></div>' +
       '<div class="h-ph"><div class="h-phn"></div><div class="h-phi"></div><div class="h-evt"></div></div>' +
       '<div class="h-tm"><div class="h-time">0:00</div><div class="h-tbar"><i></i></div></div>' +
       '<div class="h-sts">' + stats + '</div></div>' +
-      '<div class="h-left"><div class="h-lh" data-act="leftmin">' + icon('mapa', 14) + ' OBJETIVOS<span class="x">▾</span></div><div class="h-lb"></div></div>' +
-      '<div class="h-mid"><div class="h-gd"><div class="h-now"></div><div class="h-air"></div></div><div class="h-tst"></div><div class="h-stage"></div>' +
-        '<div class="h-help"></div><div class="h-dos"></div><canvas class="h-mini" width="160" height="64"></canvas></div>' +
+      '<div class="h-left"><div class="h-lh" data-act="leftmin">' + icon('mapa', 14) + ' TÚ<span class="x">▾</span></div><div class="h-lb"></div></div>' +
+      '<div class="h-mid"><div class="h-gd"><div class="h-coach"></div><div class="h-now"></div><div class="h-air"></div></div><div class="h-tst"></div><div class="h-stage"></div>' +
+        '<div class="h-help"></div><div class="h-sy"></div><div class="h-dos"></div><canvas class="h-mini" width="160" height="64"></canvas></div>' +
       '<div class="h-act"><div class="h-abil"></div><div class="h-bot"></div><div class="h-dock">' +
         '<button class="h-btn alt" data-act="dossier" title="Cuaderno de Intel (J)">' + icon('ojo', 14) + ' CUADERNO <kbd>J</kbd><span class="h-badge" style="display:none"></span></button>' +
-        '<button class="h-btn alt" data-act="goals" title="Mostrar/ocultar panel de objetivos (O)">' + icon('mapa', 14) + ' OBJETIVOS <kbd>O</kbd></button>' +
-        '<button class="h-btn alt" data-act="help" title="Ayuda (H)">? AYUDA <kbd>H</kbd></button>' +
-        '<button class="h-btn alt" data-act="pause" title="Pausa (Esc)">II <kbd>ESC</kbd></button></div></div>' +
+        '<button class="h-btn alt ic" data-act="help" title="Ayuda (H)">?</button>' +
+        '<button class="h-btn alt ic" data-act="pause" title="Pausa (Esc)">II</button></div></div>' +
       '<div class="h-chat"><div class="h-ch" data-act="chatmin">' + icon('chat', 14) + '<span class="ttl"> CHAT DEL EQUIPO</span><span class="tg"><kbd>T</kbd><span class="cv"></span><span class="h-badge" style="display:none;position:static"></span></span></div>' +
-        '<div class="h-say"></div><div class="h-logw"><div class="h-log" role="log" aria-live="polite"></div><button type="button" class="h-newmsg" data-act="newmsg">Mensajes nuevos ↓</button></div><div class="h-typ"></div><div class="h-chips"></div>' +
+        '<div class="h-logw"><div class="h-log" role="log" aria-live="polite"></div><button type="button" class="h-newmsg" data-act="newmsg">Mensajes nuevos ↓</button></div><div class="h-typ"></div><div class="h-chips"></div>' +
         '<form class="h-in" autocomplete="off"><input type="text" maxlength="220" placeholder="Escribe al equipo…" aria-label="Mensaje al equipo"><button class="h-btn teal" type="submit">ENVIAR</button></form></div>' +
-      '<div class="h-fx"></div><div class="h-dlg"></div><div class="h-pause"></div>';
+      '<div class="h-fx"></div><div class="h-vig"></div><div class="h-dlg"></div><div class="h-pause"></div>';
     host.appendChild(root);
     var fr = img('ui_frame'); if (fr) root.style.setProperty('--h-frame', 'url(' + fr + ')');
     var q = function (s) { return root.querySelector(s); };
     el = { top: q('.h-top'), rn: q('.rn'), pips: root.querySelectorAll('.h-pip'), phn: q('.h-phn'), phi: q('.h-phi'), evt: q('.h-evt'), time: q('.h-time'), tbar: q('.h-tbar'),
-      left: q('.h-left'), lb: q('.h-lb'), stage: q('.h-stage'), bot: q('.h-bot'), help: q('.h-help'), dock: q('.h-dock'), now: q('.h-now'), air: q('.h-air'), abil: q('.h-abil'), say: q('.h-say'), dlg: q('.h-dlg'), gd: q('.h-gd'), mid: q('.h-mid'), bar: q('.h-act'), mini: q('.h-mini'), newmsg: q('.h-newmsg'), chat: q('.h-chat'), log: q('.h-log'), typ: q('.h-typ'), chips: q('.h-chips'),
+      left: q('.h-left'), lb: q('.h-lb'), stage: q('.h-stage'), bot: q('.h-bot'), help: q('.h-help'), dock: q('.h-dock'), now: q('.h-now'), air: q('.h-air'), abil: q('.h-abil'), coach: q('.h-coach'), sy: q('.h-sy'), vig: q('.h-vig'), dlg: q('.h-dlg'), gd: q('.h-gd'), mid: q('.h-mid'), bar: q('.h-act'), mini: q('.h-mini'), newmsg: q('.h-newmsg'), chat: q('.h-chat'), log: q('.h-log'), typ: q('.h-typ'), chips: q('.h-chips'),
       form: q('.h-in'), input: q('.h-in input'), dos: q('.h-dos'), tst: q('.h-tst'), fx: q('.h-fx'), pause: q('.h-pause'), dbadge: q('.h-dock .h-badge'), cbadge: q('.h-ch .h-badge') };
     el.sts = {}; STATS.forEach(function (s) { el.sts[s.k] = q('.h-st[data-k=' + s.k + ']'); });
     root.addEventListener('click', onClick);
@@ -553,14 +618,14 @@
     el.input.addEventListener('blur', function () { if (cb.focus) cb.focus(false); });
     el.log.addEventListener('scroll', function () { pinned = nearBottom(); if (pinned) { unread = 0; badge(); showNew(false); } });
     el.newmsg.addEventListener('click', function () { el.log.scrollTop = el.log.scrollHeight; });
-    W.addEventListener('keydown', onKey);
+    W.addEventListener('keydown', onKeyCap, true); W.addEventListener('keydown', onKey);
     W.addEventListener('resize', layout); layout();
     if (W.ResizeObserver) { ro = new ResizeObserver(function () { if (cb.insets) cb.insets(getInsets()); }); [el.top, el.left, el.chat, el.bar, el.gd].forEach(function (n) { ro.observe(n); }); }
     miniTimer = setInterval(drawMini, 250);
     applyOpts(); mounted = true;
     if (!rafOn) { rafOn = true; requestAnimationFrame(loop); }
     setInterval(clockTick, 200);
-    renderChips(); setChat(!isMobile()); setAir(airV); paintAbil();
+    renderChips(); setChat(false); setAir(airV); paintAbil();
     return root;
   }
   function isMobile() { return W.matchMedia && W.matchMedia('(max-width:820px),(max-height:520px)').matches; }
@@ -600,7 +665,7 @@
     var left = Math.max(0, clock.left - (performance.now() - clock.at) / 1000), sh = Math.ceil(left - 0.001);
     if (sh === clock.lastShown) return; clock.lastShown = sh;
     var timed = ['explore', 'plan', 'secret', 'briefing'].indexOf(P.phase) >= 0;
-    el.time.textContent = timed || P.phase === 'resolve' ? mmss(sh) : '--';
+    el.time.textContent = timed ? mmss(sh) : '--';
     var urgent = timed && sh <= 10 && sh > 0, warn = timed && sh <= 30 && !urgent;
     el.time.classList.toggle('urgent', urgent); el.time.classList.toggle('warn', warn);
     el.tbar.classList.toggle('urgent', urgent); el.tbar.classList.toggle('warn', warn);
@@ -667,7 +732,7 @@
     el.phn.innerHTML = '<span class="t" style="color:' + info.c + '"><span>' + info.e + ' ' + esc(info.n) + '</span></span>';
     var me = P.players && P.players[R], ap = V && V.ap != null ? V.ap : me && me.ap;
     var instr = info.i;
-    if (ph === 'explore') instr = 'Explora, habla con el equipo y convoca la reunión cuando quieras';
+    if (ph === 'explore') instr = 'Explora y habla con el equipo; decidid cuando estés listo';
     if (ph === 'plan' && localVote) instr = 'Has votado ' + optLetter(localVote) + '. Puedes cambiar hasta que acabe el tiempo';
     if (ph === 'secret' && secretSealed) instr = 'Decisión sellada. Espera a la resolución';
     el.phi.textContent = instr; el.phi.title = instr;
@@ -703,7 +768,7 @@
   }
   function curAp() { var me = P && P.players && P.players[R]; return V && V.ap != null ? V.ap : me && me.ap; }
   function readyCfg() {
-    var d = { label: 'Convocar reunión', tip: 'Adelanta la crisis: el equipo se reúne y se debate el plan. No es obligatorio ni bloquea el juego: puedes seguir explorando hasta que arranque. Los compañeros IA convocan cuando acaban.', after: '', pulse: false, disabled: false };
+    var d = { label: 'HABLAR CON EL EQUIPO Y DECIDIR', tip: 'Cuando estés listo, el equipo se reúne para votar el plan', after: '', pulse: false, disabled: false };
     if (readyOv) Object.keys(readyOv).forEach(function (k) { if (readyOv[k] != null) d[k] = readyOv[k]; });
     return d;
   }
@@ -713,8 +778,8 @@
     var done = PLAYER_ROLES.filter(function (r) { return r !== R && P.players && P.players[r] && P.players[r].ready; }).map(function (r) { return roleInfo(r).name; });
     var c = readyCfg(), key = JSON.stringify(c) + ready + done.join(',');
     if (el.bot.dataset.k === key) return; el.bot.dataset.k = key;
-    el.bot.innerHTML = ready ? '<div class="h-hint"><b>✔ Reunión convocada.</b> ' + (done.length ? 'También la piden: ' + esc(done.join(', ')) + '. ' : '') + 'Sigue explorando hasta que arranque.</div>'
-      : '<div class="h-rdy"><button class="h-btn teal ' + (c.pulse ? 'pulse glow' : '') + '" data-act="ready" title="' + esc(c.tip) + '"' + (c.disabled ? ' disabled' : '') + '>📣 ' + esc(c.label) + ' <kbd>R</kbd></button>' + (c.after ? '<small>' + esc(c.after) + '</small>' : '') + '</div>';
+    el.bot.innerHTML = ready ? '<div class="h-hint"><b>✔ Listo.</b> ' + (done.length ? 'También quieren decidir: ' + esc(done.join(', ')) + '. ' : '') + 'Sigue explorando hasta que arranque.</div>'
+      : '<div class="h-rdy"><button class="h-btn ' + (c.pulse ? 'teal pulse glow' : 'alt') + '" data-act="ready" title="' + esc(c.tip) + '"' + (c.disabled ? ' disabled' : '') + '>📣 ' + esc(c.label) + ' <kbd>R</kbd></button>' + (c.after ? '<small>' + esc(c.after) + '</small>' : '') + '</div>';
   }
 
   /* ---------- guiado: UN solo objetivo (con su porqué) ---------- */
@@ -725,7 +790,6 @@
       explore: ['Explora la cueva', 'Camina hasta un icono brillante y pulsa E.', 'explore'],
       plan: ['Votad el plan', 'Debate en el chat y vota con 1 · 2 · 3. Gana la mayoría.', 'plan'],
       secret: ['Elige tu acción secreta', 'Nadie la ve hasta la resolución. 1-3 elige, otra vez sella.', 'secret'],
-      resolve: ['Mira qué ha pasado', 'Se tiran los dados de la crisis.', 'info'],
       summary: ['Revisa tus puntos', 'Cuando quieras, sigue adelante.', 'done']
     }[ph];
     return o ? { text: o[0], sub: o[1], kind: o[2] } : null;
@@ -733,7 +797,7 @@
   function paintNow() {
     if (!el.now || !P) return;
     var ph = P.phase, n = nowOv || nowAuto(ph);
-    if (!n || ph === 'final') { el.now.style.display = 'none'; nowKey = ''; return; }
+    if (!n || ph === 'final' || coachO || (ph === 'resolve' && panelName !== 'resolve') || panelName === 'plan' || panelName === 'secret') { el.now.style.display = 'none'; nowKey = ''; return; }
     el.now.style.display = '';
     var pr = n.progress, why = n.why || '', sub = n.sub || n.hint || '', key = [n.text, why, sub, n.kind, pr && pr.done, pr && pr.total].join('|');
     if (key === nowKey) return;
@@ -752,10 +816,10 @@
   function setAir(v) {
     airV = v == null || isNaN(+v) ? null : clamp(+v, 0, 100);
     if (!mounted) return; var a = el.air;
-    if (airV == null) { a.style.display = 'none'; a.innerHTML = ''; a.classList.remove('low'); return; }
+    if (airV == null) { a.style.display = 'none'; a.innerHTML = ''; a.classList.remove('low'); if (el.vig) el.vig.classList.remove('on'); airWarned = false; return; }
     var low = airV < 25;
-    if (!a.firstChild) a.innerHTML = '<span class="l">' + icon('agua', 14) + ' AIRE</span><span class="b"><i></i></span><b></b><em>¡SIN AIRE! Sal del agua</em>';
-    a.style.display = 'flex'; a.classList.toggle('low', low);
+    if (!a.firstChild) a.innerHTML = '<span class="l">' + icon('agua', 22) + ' AIRE</span><span class="b"><i></i></span><b></b><em>¡SIN AIRE! Sal del agua</em>';
+    a.style.display = 'flex'; a.classList.toggle('low', low); if (el.vig) el.vig.classList.toggle('on', low);
     a.querySelector('.b i').style.width = airV + '%'; a.querySelector('b').textContent = Math.round(airV);
     a.title = 'Aire: bajo el agua se gasta rápido. A 0 te ahogas y el equipo pierde salud. Sal a respirar o busca una bolsa de aire.';
     if (low && !airWarned) { airWarned = true; snd('water_warn'); } if (!low) airWarned = false;
@@ -763,7 +827,7 @@
   /* habilidad del rol (tecla Q) y fila «Pedir ayuda» */
   function paintAbil() {
     if (!el.abil) return; var ab = abilO, hp = helpO, h = '';
-    if (ab) h += '<div class="h-ab"><button class="h-btn ' + (ab.ready ? 'teal glow' : 'alt') + '" data-act="ability" title="' + esc(ab.hint || '') + '"' + (ab.ready ? '' : ' aria-disabled="true"') + '><kbd>' + esc(ab.key || 'Q') + '</kbd> ' + esc(ab.label || 'Habilidad') + '</button>' + (ab.hint ? '<small>' + esc(ab.hint) + '</small>' : '') + '</div>';
+    if (ab && (ab.ready !== false || ab.hint)) h += '<div class="h-ab"><button class="h-btn ' + (ab.ready ? 'teal glow' : 'alt') + '" data-act="ability" title="' + esc(ab.hint || '') + '"' + (ab.ready ? '' : ' aria-disabled="true"') + '><kbd>' + esc(ab.key || 'Q') + '</kbd> ' + esc(ab.label || 'Habilidad') + '</button>' + (ab.hint ? '<small>' + esc(ab.hint) + '</small>' : '') + '</div>';
     if (hp && hp.length) h += '<div class="h-ask"><span class="l">PEDIR AYUDA</span>' + hp.map(function (x, i) {
       var b = roleInfo(x.role);
       return '<button class="h-btn alt" data-act="ask" data-i="' + i + '" style="--rc:' + b.color + '" title="' + esc(x.hint || '') + '"' + (x.enabled === false ? ' disabled' : '') + '>' + esc(x.label || ('Pedir a ' + b.name)) + '</button>'; }).join('') + '</div>';
@@ -777,7 +841,7 @@
     var rr = root.getBoundingClientRect(), mob = isMobile();
     function shown(n) { return n && n.getClientRects().length > 0 && getComputedStyle(n).display !== 'none'; }
     var top = el.top.getBoundingClientRect().bottom;
-    if (shown(el.now) || shown(el.air)) top = Math.max(top, el.gd.getBoundingClientRect().bottom);
+    if (shown(el.now) || shown(el.air) || shown(el.coach)) top = Math.max(top, el.gd.getBoundingClientRect().bottom);
     z.top = top - rr.top + 4;
     if (shown(el.left) && (!mob || el.left.classList.contains('mob'))) z.left = el.left.getBoundingClientRect().right - rr.left + 4;
     if (!mob && shown(el.chat)) z.right = rr.right - el.chat.getBoundingClientRect().left + 4;
@@ -788,6 +852,8 @@
   }
   function drawMini() {
     if (!el.mini || hidden || !P) return;
+    var zn = 0; try { var e0 = W.RC && W.RC.eng && W.RC.eng(); zn = e0 && e0.getZone ? e0.getZone() : 0; } catch (e1) { }
+    if (!(miniUser != null ? miniUser : zn >= 2)) { el.mini.classList.remove('on'); return; }
     var fn = miniFn; if (!fn) { var e = W.RC && W.RC.eng && W.RC.eng(); if (e && e.drawMinimap) fn = function (c, w, h) { return e.drawMinimap(c, w, h); }; }
     var ok = false;
     if (fn) { try { var c = el.mini.getContext('2d'); c.clearRect(0, 0, 160, 64); ok = fn(c, 160, 64) !== false; } catch (e2) { ok = false; } }
@@ -861,22 +927,36 @@
   }
 
   /* plan */
+  function effHtml(v, up) { // gain/risk/effects: string | [string|{icon,text}] | {stat:n}
+    var items = Array.isArray(v) ? v : typeof v === 'string' ? [v] : v && typeof v === 'object' ? Object.keys(v).map(function (k) { return { stat: k, n: v[k] }; }) : [];
+    return items.map(function (x) {
+      var st = null, txt = '', ic = '', u = up, good = null;
+      if (typeof x === 'string') txt = x;
+      else if (x && typeof x === 'object') {
+        st = STATS.filter(function (z) { return z.k === (x.stat || x.icon); })[0]; ic = x.icon || x.stat || '';
+        if (typeof x.n === 'number') { if (up == null) u = x.n > 0; good = st && st.bad ? x.n < 0 : x.n > 0; txt = (st ? st.label : x.stat) + ' ' + (x.n > 0 ? '+' : '') + x.n; } else txt = x.text || '';
+      }
+      if (!txt) return '';
+      if (u == null) u = true;
+      if (good == null) good = u;
+      return '<div>' + (ic ? icon(ic, 22) : '') + '<span class="' + (good ? 'u' : 'd') + '">' + (u ? '↑' : '↓') + '</span><span>' + esc(txt) + '</span></div>';
+    }).join('');
+  }
   function openPlan(data) {
     var plan = P.plan || { options: [] }, opts_ = plan.options || [];
     var intel = (V && V.intel || []).filter(function (c) { return c.round === P.round; });
-    var mine = intel.length ? '<div class="h-mine"><div class="t">🔒 LO QUE SABES TÚ ESTE TRAMO (privado)</div><div class="h-mc">' + intel.map(function (c) {
-      return '<button data-act="dossier" title="' + esc(c.text) + '">' + esc(c.title) + ' · ' + relInfo(c.reliability).v + '%</button>'; }).join('') + '</div></div>'
-      : '<div class="h-mine"><div class="t">🔒 NO HAS RECOGIDO INTEL ESTE TRAMO</div><div style="font-size:13px;color:var(--h-dim)">Fíate de lo que cuenten los demás… o pregúntales en el chat.</div></div>';
     var cards = opts_.map(function (o, i) {
       var hint = (V && V.planHints && V.planHints[o.id]) || '';
       var rel = intel.filter(function (c) { return c.about && [].concat(c.about).indexOf(o.id) >= 0; }).map(function (c) { return c.title + ' (' + relInfo(c.reliability).v + '%)'; }).join(' · ');
-      return '<button class="h-opt" data-act="vote" data-id="' + esc(o.id) + '"><span class="k"><kbd>' + (i + 1) + '</kbd></span><h3>' + 'ABC'[i] + ' · ' + esc(o.title) + '</h3><p>' + esc(o.text) + '</p>' +
-        (o.known ? '<div class="kn"><b>SE SABE:</b> ' + esc(o.known) + '</div>' : '') +
-        (hint || rel ? '<div class="pv"><b>TÚ SABES:</b> ' + esc(hint || rel) + '</div>' : '') +
+      var eff = (o.gain || o.risk) ? effHtml(o.gain, true) + effHtml(o.risk, false) : effHtml(o.effects || o.known_effects, null);
+      return '<button class="h-opt" data-act="vote" data-id="' + esc(o.id) + '"><span class="k"><kbd>' + (i + 1) + '</kbd></span><h3>' + esc(o.title) + '</h3><p>' + esc(o.what || o.text || '') + '</p>' +
+        (eff ? '<div class="h-eff">' + eff + '</div>' : '') +
+        (o.known ? '<div class="kn"><b>Se sabe:</b> ' + esc(o.known) + '</div>' : '') +
+        (hint || rel ? '<div class="pv"><b>Tú sabes:</b> ' + esc(hint || rel) + '</div>' : '') +
         '<div class="h-votes"><span class="c"></span></div></button>';
     }).join('');
-    openPanel('plan', '<div class="h-ph1"><span style="font-size:26px">🗳️</span><div><h2>ELEGID EL PLAN DEL EQUIPO</h2><div class="sub">Hablad en el chat y votad. Gana la mayoría' + (P.plan && P.plan.tiebreakNote ? '' : '; en empate decide el guía') + '.</div></div><div class="tm">0:00</div></div>' +
-      '<div class="h-pb">' + mine + '<div class="h-opts">' + cards + '</div></div><div class="h-foot"><span class="l h-pstat"></span><button class="h-btn alt" data-act="chatfocus">💬 DISCUTIR EN EL CHAT <kbd>T</kbd></button></div>');
+    openPanel('plan', '<div class="h-ph1"><div class="q">' + esc(plan.ask || '¿Qué hacemos ahora?') + '</div><div class="hv">Vota con <b>1</b>, <b>2</b> o <b>3</b>. Gana la mayoría.</div></div>' +
+      '<div class="h-pb"><div class="h-opts">' + cards + '</div></div><div class="h-foot"><span class="l h-pstat"></span><button class="h-btn alt" data-act="chatfocus">💬 HABLAR EN EL CHAT <kbd>T</kbd></button></div>');
     updatePlan(); clockTick(); if (P.plan && P.plan.chosen) showChosen();
   }
   function updatePlan() {
@@ -922,8 +1002,8 @@
         (o.title ? '<b style="font-size:15px">' + esc(o.title) + '</b>' : '') + '<p>' + esc(o.text) + '</p>' + (o.hint ? '<p style="font-size:12px;color:var(--h-dim)">' + esc(o.hint) + '</p>' : '') +
         '<div class="h-risk">RIESGO <span class="p r' + risk + '">' + pips + '</span>' + (o.reward ? '<span style="margin-left:auto;color:var(--h-green)">' + esc(o.reward) + '</span>' : '') + '</div></button>';
     }).join('') || '<div class="h-empty">Esperando tus opciones…</div>';
-    openPanel('secret', '<div class="h-ph1"><span style="font-size:26px">🔒</span><div><h2>ACCIÓN SECRETA</h2><div class="sub">Solo tú ves esto. Tu decisión se revela al final del tramo.</div></div><div class="tm">0:00</div></div>' +
-      '<div class="h-pb"><div class="h-sopts">' + cards + '</div></div><div class="h-foot"><span class="l h-sstat">Pulsa 1-3 para elegir; la misma tecla otra vez (o SELLAR) confirma.</span><button class="h-btn red" data-act="seal" disabled>🔒 SELLAR DECISIÓN</button></div>');
+    openPanel('secret', '<div class="h-ph1"><div class="q">Ahora decide en secreto qué haces tú.</div><div class="hv">Nadie lo verá hasta el final.</div></div>' +
+      '<div class="h-pb"><div class="h-sopts">' + cards + '</div></div><div class="h-foot"><span class="l h-sstat">Elige con 1, 2 o 3 y pulsa SELLAR.</span><button class="h-btn red" data-act="seal" disabled>🔒 SELLAR DECISIÓN</button></div>');
     updateSecret(); clockTick();
   }
   function updateSecret() {
@@ -952,14 +1032,15 @@
   /* ---------- resolución ---------- */
   function showResolve(res) {
     if (!mounted) mount(); res = res || {}; lastResult = res; resolving = true;
+    if (res.explain) return showExplain(res);
     return new Promise(function (done) {
       var skip = false, finished = false;
-      var p = openPanel('resolve', '<div class="h-ph1"><span style="font-size:26px">🎲</span><div><h2>RESOLUCIÓN DEL TRAMO ' + (P && P.round || '') + '</h2><div class="sub">Haz clic para acelerar</div></div></div><div class="h-pb"><div class="h-narr"></div><div class="h-rolls"></div><div class="h-reveals"></div><div class="h-deltas"></div><div class="h-ptsbig"></div></div><div class="h-foot"><span class="l"></span><button class="h-btn" data-act="skiprs">SALTAR ▶▶</button></div>');
+      var p = openPanel('resolve', '<div class="h-ph1"><span style="font-size:26px">🎲</span><div><h2>RESULTADO</h2></div></div><div class="h-pb"><div class="h-narr"></div><div class="h-rolls"></div><div class="h-reveals"></div><div class="h-deltas"></div><div class="h-ptsbig"></div></div><div class="h-foot"><span class="l"></span><button class="h-btn teal pulse" data-act="cont">CONTINUAR ▶ <kbd>Espacio</kbd></button></div>');
       p.addEventListener('click', function (e) { if (!e.target.closest('[data-act=cont],.h-mn')) skip = true; });
+      p._end = function () { if (p._done) return; p._done = true; skip = true; resolving = false; closePanel(); done(); };
       var S = function (ms) { return skip ? Promise.resolve() : sleep(ms); };
       var sc = function () { p.scrollTo({ top: p.scrollHeight, behavior: skip ? 'auto' : 'smooth' }); };
       var narr = p.querySelector('.h-narr'), rolls = p.querySelector('.h-rolls'), revs = p.querySelector('.h-reveals'), dl = p.querySelector('.h-deltas'), pts = p.querySelector('.h-ptsbig');
-      var btn = p.querySelector('.h-foot .h-btn');
       (async function () {
         try {
           snd('resolve'); shake(.3);
@@ -1010,14 +1091,33 @@
           await S(400);
         } catch (e) { if (W.console) console.warn('[Hud.resolve]', e); }
         finished = true; resolving = false;
-        btn.className = 'h-btn teal pulse'; btn.dataset.act = 'cont'; btn.textContent = 'CONTINUAR ▶';
-        p.querySelector('.h-ph1 .sub').textContent = 'Resultado del tramo';
-        var auto = setInterval(function () { if (!p.classList.contains('min') && (p._t = (p._t || 0) + 1) >= 7) end(); }, 1000);
-        function end() { clearInterval(auto); if (p._done) return; p._done = true; resolving = false; closePanel(); done(); }
-        p._end = end;
       })();
       // cualquier fase siguiente cierra el panel y resuelve
       p._abort = function () { resolving = false; if (!p._done) { p._done = true; done(); } };
+    });
+  }
+  /* resultado claro: titular + causa->efecto + CONTINUAR siempre visible (sin esperas ni auto-cierre) */
+  function showExplain(res) {
+    var ex = res.explain || {}, tms = [], bad = 0;
+    var lines = (ex.lines || []).map(function (l) {
+      var st = STATS.filter(function (z) { return z.k === l.icon || z.k === l.stat; })[0], d = l.delta, num = typeof d === 'number' || (typeof d === 'string' && /^[+-]?\d+$/.test(d)), n = num ? +d : 0;
+      var good = num ? (st && st.bad ? n < 0 : n > 0) : null; if (num && n !== 0 && !good) bad++;
+      return { l: l, n: n, num: num, cls: !num ? 'z' : n === 0 ? 'z' : good ? 'g' : 'b' };
+    });
+    var rows = lines.map(function (r, i) {
+      return '<div class="h-xr" style="animation-delay:' + (.25 + i * .4) + 's">' + poiIcon(r.l.icon || 'info', 36) + '<div class="tx">' + esc(r.l.text || '') + '</div>' + (r.l.delta != null ? '<div class="dl ' + r.cls + '">' + (r.num ? '0' : esc(r.l.delta)) + '</div>' : '') + '</div>';
+    }).join('');
+    var why = (ex.why || []).map(function (w) { return '<li>' + esc(w) + '</li>'; }).join('');
+    return new Promise(function (done) {
+      var p = openPanel('resolve', '<div class="h-pb"><div class="h-xh">' + esc(ex.headline || res.narrative || 'Resultado') + '</div><div class="h-xl">' + rows + '</div>' + (why ? '<ul class="h-xw"><h4>POR QUÉ</h4>' + why + '</ul>' : '') + '</div>' +
+        '<div class="h-foot"><span class="l"></span><button class="h-btn teal pulse" data-act="cont">CONTINUAR ▶ <kbd>Espacio</kbd></button></div>');
+      function stop() { tms.forEach(clearTimeout); resolving = false; }
+      p._end = function () { if (p._done) return; p._done = true; stop(); closePanel(); done(); };
+      p._abort = function () { if (!p._done) { p._done = true; stop(); done(); } };
+      snd('resolve'); if (bad) { shake(.4); flash('#ff5d5d'); } else { flash('#5fe39a'); sparks(.5, .4, 8); }
+      lines.forEach(function (r, i) { if (!r.num) return; var nd = p.querySelectorAll('.h-xr')[i].querySelector('.dl'); tms.push(setTimeout(function () { countTo(nd, r.n, 600, true); snd('tick'); }, 300 + i * 400)); });
+      (res.achievements || []).forEach(function (a, k) { tms.push(setTimeout(function () { achievement(a); }, 600 + lines.length * 400 + k * 900)); });
+      var b = p.querySelector('[data-act=cont]'); if (b) b.focus({ preventScroll: true });
     });
   }
   function countTo(node, to, ms, signed) {
@@ -1065,7 +1165,7 @@
 
   /* ---------- chat ---------- */
   function syncChat() { if (P && P.chat) P.chat.forEach(function (m) { chatAdd(m, true); }); }
-  function msgKey(m) { return m.id != null ? 'i' + m.id : m.from + '|' + m.t + '|' + (m.text || '').slice(0, 30); }
+  function msgKey(m) { if (m.kind === 'share') { var c0 = m.card && m.card.text || m.text || ''; return 'share|' + m.from + '|' + c0.slice(0, 60); } return m.id != null ? 'i' + m.id : m.from + '|' + m.t + '|' + (m.text || '').slice(0, 30); }
   function nearBottom() { return el.log.scrollHeight - el.log.scrollTop - el.log.clientHeight < 60; }
   function fmtTime(t) { if (!t || t < 1e11) return ''; var d = new Date(t); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
   function chatAdd(m, fromState) {
@@ -1084,16 +1184,15 @@
       if (last && last.classList.contains('h-g') && last.dataset.from === from && last.dataset.mood === mood && (!m.t || !lastChatT || m.t - lastChatT < 90000)) g = last;
       else {
         g = D.createElement('div'); g.className = 'h-g' + (me ? ' me' : ''); g.dataset.from = from; g.dataset.mood = mood;
-        g.innerHTML = '<div class="av">' + portrait(from, mood, 48) + '</div><div class="bd"><div class="hd" style="color:' + b.color + '">' + esc(b.name) + '<i>' + esc(b.title) + (me ? ' · TÚ' : P && P.players && P.players[from] && P.players[from].ai ? ' · IA' : '') + '</i><time>' + fmtTime(m.t) + '</time></div><div class="bs"></div></div>';
+        g.innerHTML = '<div class="av">' + portrait(from, mood, 40) + '</div><div class="bd"><div class="hd" style="color:' + b.color + '">' + esc(b.name) + '<i>' + esc(b.title) + (me ? ' · TÚ' : P && P.players && P.players[from] && P.players[from].ai ? ' · IA' : '') + '</i><time>' + fmtTime(m.t) + '</time></div><div class="bs"></div></div>';
         el.log.appendChild(g);
       }
       var bb = D.createElement('div'); bb.className = 'h-b' + (card ? ' card' : ''); bb.innerHTML = inner; g.querySelector('.bs').appendChild(bb);
-      say(from, mood, card ? (tx && !same ? tx + ' · ' : '') + card.text : tx);
+      if (kind === 'share' && me) { bb.classList.add('hl'); setTimeout(function () { try { bb.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) { } }, 60); }
     } else {
       var d = D.createElement('div'); d.className = 'h-m ' + kind;
-      d.innerHTML = kind === 'radio' ? '<div class="av">' + portrait(from === 'sys' ? 'lia' : from, mood, 48) + '</div><div class="bd"><div class="hd">📻 ' + esc(b.name.toUpperCase()) + ' · RADIO</div><div class="tx">' + esc(tx) + '</div></div>' : '<div class="tx">' + (kind === 'event' ? '⚠ ' : '') + esc(tx) + '</div>';
+      d.innerHTML = kind === 'radio' ? '<div class="av">' + portrait(from === "sys" ? "lia" : from, mood, 40) + '</div><div class="bd"><div class="hd">📻 ' + esc(b.name.toUpperCase()) + ' · RADIO</div><div class="tx">' + esc(tx) + '</div></div>' : '<div class="tx">' + (kind === 'event' ? '⚠ ' : '') + esc(tx) + '</div>';
       el.log.appendChild(d);
-      if (kind === 'radio') say(from === 'sys' ? 'lia' : from, mood, tx);
     }
     chatCount++; lastChatT = m.t || 0;
     while (el.log.children.length > 80) el.log.removeChild(el.log.firstChild);
@@ -1103,16 +1202,6 @@
       if (!me) snd(kind === 'radio' ? 'radio_on' : kind === 'share' ? 'share' : kind === 'chat' ? 'chat_recv' : kind === 'event' ? 'toast' : 'click');
     }
     if (isMobile() && !el.chat.classList.contains('open') && !me) { var pv = el.chat.querySelector('.h-ch'); pv.dataset.pv = (b.name + ': ' + tx).slice(0, 60); }
-  }
-  /* panel «hablando ahora»: retrato grande del último que ha hablado + su frase */
-  var sayKey = '';
-  function say(from, mood, text) {
-    if (!el.say || from === 'sys') return;
-    var b = roleInfo(from), sc = (W.innerHeight || 800) >= 760 ? 2 : 1.5, key = from + mood + text + sc;
-    if (key === sayKey) return; sayKey = key;
-    el.say.classList.add('on');
-    el.say.innerHTML = '<div class="fc" style="--c:' + b.color + '">' + bigFace(from, mood, sc) + '</div><div class="sb"><div class="nm" style="color:' + b.color + '">' + esc(b.name) + '<i>' + esc(b.title) + '</i><span>HABLA AHORA</span></div><div class="sx">' + esc(text) + '</div></div>';
-    el.say.classList.remove('pop'); void el.say.offsetWidth; el.say.classList.add('pop');
   }
   function addRoundSep() {
     if (!P || !P.round || P.round === lastChatRound || !el.log) return;
@@ -1147,9 +1236,9 @@
   function chatOpen() { return isMobile() ? el.chat.classList.contains('open') : !el.chat.classList.contains('min'); }
   function renderChips() {
     var list, opt = P && P.plan && P.plan.options || [];
-    if (quickO && quickO.length) list = quickO.slice(0, 6).map(function (x) { return { label: x.label || x.text, text: x.text || x.label }; });
+    if (quickO && quickO.length) list = quickO.slice(0, 3).map(function (x) { return { label: x.label || x.text, text: x.text || x.label }; });
     else list = (customChips || (P && CHIPS[P.phase]) || CHIPS._).map(function (t) { t = t.replace('{A}', 'A').replace('ruta B', opt.length ? 'ruta ' + 'ABC'[Math.min(1, opt.length - 1)] : 'ruta B'); return { label: t, text: t }; });
-    var key = JSON.stringify(list); if (el.chips.dataset.k === key) return; el.chips.dataset.k = key;
+    list = list.slice(0, 3); var key = JSON.stringify(list); if (el.chips.dataset.k === key) return; el.chips.dataset.k = key;
     el.chips.innerHTML = list.map(function (c) { return '<button type="button" data-act="chip" data-text="' + esc(c.text) + '" title="' + esc(c.text) + '">' + esc(c.label) + '</button>'; }).join('');
   }
 
@@ -1193,14 +1282,17 @@
   function doShare(id, asIs, text) {
     var c = ((V && V.intel) || []).filter(function (x) { return x.id === id; })[0]; if (!c) return;
     c.shared = true; editing = null; snd(asIs ? 'share' : 'lie');
+    setChat(true); pinned = true;
     if (cb.share) cb.share(id, asIs ? { asIs: true } : { asIs: false, text: text });
-    renderDossier(); setChat(true); pinned = true; toastNote(asIs ? 'Compartida: mira el chat' : 'Has compartido una versión alterada: mira el chat');
+    renderDossier(); toastNote(asIs ? 'Compartida: mira el chat' : 'Has compartido una versión alterada: mira el chat');
+    // si main no ha devuelto el mensaje de chat, lo mostramos nosotros (misma clave -> sin duplicar)
+    var sh = asIs ? c.text : text; setTimeout(function () { chatAdd({ from: R, kind: 'share', text: sh, mood: 'happy', t: Date.now(), card: { title: c.title, text: sh, reliability: c.reliability } }); if (el.log) { el.log.scrollTop = el.log.scrollHeight; } }, 450);
   }
 
   /* ---------- diálogo estilo Castlevania: SotN ---------- */
   function dlgScale(who, mood) { // escala ENTERA según el alto/ancho de pantalla
     var f = faceInfo(who, mood), fw = f ? f.fw : 64, vh = W.innerHeight || 700, bw = (el.dlg && el.dlg.clientWidth) || (W.innerWidth || 1000);
-    var px = Math.min(.30 * vh, .34 * bw, 320);
+    var px = Math.min(.21 * vh, .22 * bw, 224);
     return Math.max(1, Math.floor(px / fw));
   }
   function dialogue(lines, o) {
@@ -1218,17 +1310,17 @@
     return new Promise(function (done) {
       var box = el.dlg, i = -1, typed = 0, text = '', tm = 0, talkTm = 0, line = null, fin = false, autoTm = 0, speed = o.speed || 26, ended = false, swap = false;
       if (D.activeElement && D.activeElement.blur && typingNow()) D.activeElement.blur();
-      box.innerHTML = '<div class="dl-wrap"><div class="dl-por"></div><div class="dl-box"><div class="dl-name"><b></b><i></i></div><div class="dl-text"><span class="a"></span><span class="b"></span></div><div class="dl-foot"><span class="pg"></span><span class="arr">▼</span><button type="button" class="sk" data-act="dlgskip">Saltar <kbd>Esc</kbd></button></div></div></div>';
-      var por = box.querySelector('.dl-por'), nm = box.querySelector('.dl-name'), ta = box.querySelector('.a'), tb = box.querySelector('.b'), wrap = box.querySelector('.dl-wrap'), pg = box.querySelector('.pg'), arr = box.querySelector('.arr');
+      box.innerHTML = '<div class="dl-wrap"><div class="dl-box"><i class="dl-co tl"></i><i class="dl-co tr"></i><i class="dl-co bl"></i><i class="dl-co br"></i><div class="dl-tx"><div class="dl-name"><b></b><i></i></div><div class="dl-text"><span class="a"></span><span class="b"></span></div></div><div class="dl-fr"><div class="dl-por"></div></div><div class="dl-foot"><span class="pg"></span><span class="arr">▼</span><button type="button" class="sk" data-act="dlgskip">Saltar <kbd>Esc</kbd></button></div></div></div>';
+      var dbox = box.querySelector('.dl-box'), fr = box.querySelector('.dl-fr'), por = box.querySelector('.dl-por'), nm = box.querySelector('.dl-name'), ta = box.querySelector('.a'), tb = box.querySelector('.b'), wrap = box.querySelector('.dl-wrap'), pg = box.querySelector('.pg'), arr = box.querySelector('.arr');
       box.classList.add('on'); root.classList.add('dlg'); dlgOpen = true; snd('dialogue_open'); if (cb.dialogue) cb.dialogue(true);
-      function face(mood) { var sc = dlgScale(line.who, mood); por.innerHTML = bigFace(line.who, mood, sc); wrap.style.setProperty('--pw', (por.firstChild.offsetWidth || 64 * sc) + 'px'); wrap.style.setProperty('--ph', (por.firstChild.offsetHeight || 64 * sc) + 'px'); }
+      function face(mood) { por.innerHTML = bigFace(line.who, mood, dlgScale(line.who, mood)); }
       function next() {
         clearTimeout(tm); clearTimeout(talkTm); clearTimeout(autoTm); i++;
         if (i >= lines.length) return end();
         line = lines[i]; text = line.text; typed = 0; fin = false; swap = false;
         var b = roleInfo(line.who); wrap.style.setProperty('--c', b.color); wrap.style.setProperty('--cg', b.color + '55'); box.classList.toggle('radio', line.who === 'lia' || !!line.radio);
         nm.querySelector('b').textContent = line.name || b.name; nm.querySelector('i').textContent = line.title != null ? line.title : b.title; nm.style.display = (line.name || b.name) ? '' : 'none';
-        face(line.mood); por.classList.remove('pop'); void por.offsetWidth; por.classList.add('pop');
+        dbox.classList.toggle('L', line.who === R || line.who === 'lia' || line.who === 'director'); face(line.mood); fr.classList.remove('pop'); void fr.offsetWidth; fr.classList.add('pop'); fr.classList.add('talk');
         ta.textContent = ''; tb.textContent = text; arr.style.visibility = 'hidden'; pg.textContent = lines.length > 1 ? (i + 1) + '/' + lines.length : '';
         if (o.onLine) { try { o.onLine(line, i); } catch (e) { } }
         step(); talkAnim();
@@ -1242,12 +1334,12 @@
         tm = setTimeout(step, speed * (/[.!?…]/.test(ch) ? 9 : /[,;:]/.test(ch) ? 4 : 1));
       }
       function talkAnim() { // boca abierta/cerrada mientras escribe (solo moods tranquilos; con otras expresiones se mantiene el gesto)
-        clearTimeout(talkTm); if (fin || ended || (line.mood !== 'neutral' && line.mood !== 'talk')) return;
+        clearTimeout(talkTm); if (fin || ended || (line.mood !== 'neutral' && line.mood !== 'talk')) return; // con otros moods se mantiene el gesto y solo rebota
         swap = !swap; face(swap ? 'talk' : 'neutral'); talkTm = setTimeout(talkAnim, 150);
       }
       function finish() {
         fin = true; clearTimeout(tm); clearTimeout(talkTm); typed = text.length; ta.textContent = text; tb.textContent = '';
-        face(line.mood === 'talk' ? 'neutral' : line.mood); arr.style.visibility = 'visible';
+        face(line.mood === 'talk' ? 'neutral' : line.mood); fr.classList.remove('talk'); arr.style.visibility = 'visible';
         if (o.auto) autoTm = setTimeout(next, o.auto);
       }
       function advance() { if (ended) return; if (!fin) finish(); else { snd('click'); next(); } }
@@ -1275,7 +1367,7 @@
   function helpFor(ph, auto) {
     el.help.innerHTML = '';
     var h = HELP[ph]; if (!h) return;
-    if (auto) { if (!opts.help || helpSeen[ph] || ph === 'resolve' || ph === 'summary' || ph === 'briefing') return; helpSeen[ph] = 1; lsSet('rcv3_hudhelp', helpSeen); }
+    if (auto) { return; /* v6: sin ayudas automáticas (H la abre) */ if (!opts.help || helpSeen[ph] || ph === 'resolve' || ph === 'summary' || ph === 'briefing' || ph === 'plan' || ph === 'secret') return; helpSeen[ph] = 1; lsSet('rcv3_hudhelp', helpSeen); }
     var d = D.createElement('div'); d.className = 'h-hb';
     d.innerHTML = '<h4>💡 ' + esc(h[0]) + '</h4><p>' + esc(h[1]) + '</p><div class="r"><span>H para volver a verla</span><button class="h-btn" data-act="closehelp">ENTENDIDO</button></div>';
     var run = function () {
@@ -1311,12 +1403,17 @@
     else if (lk === 'j') { el.dos.classList.contains('open') ? closeDossier() : openDossier(); }
     else if (lk === 'h') toggleHelp();
     else if (lk === 'o') toggleGoals();
+    else if (lk === 'm') { var on0 = el.mini.classList.contains('on'); miniUser = !on0; drawMini(); }
     else if (lk === 'r' && P && P.phase === 'explore') doReady();
     else if (k === '1' || k === '2' || k === '3') {
       var i = +k - 1;
       if (P && P.phase === 'plan' && P.plan && P.plan.options[i]) doVote(P.plan.options[i].id);
       else if (P && P.phase === 'secret') selectSecret(i);
     }
+  }
+  function onKeyCap(e) { // Espacio/Enter = CONTINUAR en la pantalla de resultado
+    if (!mounted || hidden || dlgOpen || paused || e.ctrlKey || e.altKey || e.metaKey || typingNow()) return;
+    if (panelName === 'resolve' && panel && !panel.classList.contains('min') && (e.key === ' ' || e.key === 'Enter') && panel._end) { e.preventDefault(); e.stopImmediatePropagation(); if (!e.repeat) panel._end(); }
   }
   function toggleGoals() { if (isMobile()) el.left.classList.toggle('mob'); else el.left.classList.toggle('gone'); if (cb.insets) cb.insets(getInsets()); }
   function doReady() {
@@ -1364,14 +1461,38 @@
   }
 
   /* ---------- efectos ---------- */
-  function floatText(txt, type, where) {
-    if (!mounted) mount(); var n = D.createElement('div'); n.className = 'h-fl ' + (type || 'info') + (/PTS|PUNTOS|¡/.test(txt) ? ' big' : '');
-    n.textContent = txt; var rr = root.getBoundingClientRect(), x = rr.width / 2, y = rr.height * .4;
-    if (where && typeof where === 'object') { x = where.x; y = where.y; }
-    else if (where && el.sts[where]) { var b2 = el.sts[where].getBoundingClientRect(); x = b2.left - rr.left + b2.width / 2; y = b2.bottom - rr.top + 20; }
-    else { x += (Math.random() - .5) * 120; }
-    n.style.left = x + 'px'; n.style.top = y + 'px'; el.fx.appendChild(n); setTimeout(function () { n.remove(); }, 1700);
+  function floatText(txt, type, where) { // apilado bajo el banner (junto a toasts); con {x,y} flota libre
+    if (!mounted) mount(); var n = D.createElement('div');
+    if (where && typeof where === 'object') {
+      n.className = 'h-fl ' + (type || 'info') + (/PTS|PUNTOS|¡/.test(txt) ? ' big' : ''); n.textContent = txt; n.style.left = where.x + 'px'; n.style.top = where.y + 'px'; el.fx.appendChild(n); setTimeout(function () { n.remove(); }, 1700); return;
+    }
+    n.className = 'h-fl2 ' + (type || 'info'); n.textContent = txt; el.tst.appendChild(n);
+    var all = el.tst.querySelectorAll('.h-fl2'); if (all.length > 3) all[0].remove();
+    setTimeout(function () { n.remove(); }, 2000);
   }
+  /* popup de un compañero que habla (retrato + 1-2 líneas), abajo-centro; máx 2 a la vez */
+  function say(o, opt) {
+    if (!mounted) mount(); if (!o || !o.text || o.who === 'sys' || dlgOpen || paused) return;
+    var ms = (opt && opt.ms) || 4500, who = o.who || o.from || 'director', mood = o.mood || 'talk', b = roleInfo(who), txt = String(o.text);
+    var n = D.createElement('div'); n.className = 'h-sp'; n.style.setProperty('--c', b.color);
+    n.innerHTML = '<div class="fc bounce">' + bigFace(who, mood, 1) + '</div><div class="sb"><div class="nm">' + esc(b.name) + '</div><div class="sx">' + esc(txt.length > 150 ? txt.slice(0, 147) + '…' : txt) + '</div></div>';
+    while (el.sy.children.length >= 2) el.sy.firstChild.remove();
+    el.sy.style.setProperty('--sy-top', (el.gd.getBoundingClientRect().bottom - el.mid.getBoundingClientRect().top + 40) + 'px');
+    el.sy.appendChild(n);
+    var fc = n.querySelector('.fc'), sw = 0, iv = (mood === 'talk' || mood === 'neutral') ? setInterval(function () { if (++sw > 8 || !n.isConnected) { clearInterval(iv); fc.innerHTML = bigFace(who, mood === 'talk' ? 'neutral' : mood, 1); return; } fc.innerHTML = bigFace(who, sw % 2 ? 'talk' : 'neutral', 1); }, 150) : 0;
+    setTimeout(function () { clearInterval(iv); n.classList.add('out'); setTimeout(function () { n.remove(); }, 320); }, ms);
+  }
+  function paintCoach() {
+    if (!el.coach) return; var c = coachO, pv = coachPrev; coachPrev = c;
+    if (!c) { el.coach.className = 'h-coach'; el.coach.innerHTML = ''; if (pv && pv.total && pv.step >= pv.total) celebrate(); if (mounted && P) paintNow(); return; }
+    var step = c.step | 0, total = c.total | 0;
+    el.coach.innerHTML = (total ? '<div class="st">PASO ' + step + ' DE ' + total + '</div>' : '') + '<div class="tx">' + esc(c.text) + '</div><div class="ar">▼</div>';
+    el.coach.className = 'h-coach on';
+    if (pv && pv.step !== c.step) { celebrate(); void el.coach.offsetWidth; el.coach.classList.add('done'); }
+    if (mounted && P) paintNow();
+  }
+  function celebrate() { flash('#ffd27a'); sparks(.5, .15, 16); snd('confirm'); }
+  function setCoach(o) { coachO = o && o.text ? o : null; if (mounted) paintCoach(); }
   function sparks(fx, fy, n) {
     if (opts.noflash) return; var rr = root.getBoundingClientRect(), cols = ['#f2a93b', '#ffd27a', '#3fd0c0', '#b58cff', '#5fe39a'];
     n = n || 18;
@@ -1416,7 +1537,8 @@
     openDossier: openDossier, closeDossier: closeDossier, help: function () { helpFor(cur.phase, false); }, shake: shake, flash: flash, sparks: sparks, note: note,
     openPause: function () { if (!paused) openPause(); }, closePause: closePause,
     closePanel: function () { closePanel(true); }, isTyping: typingNow, resetHelp: function () { helpSeen = {}; lsSet('rcv3_hudhelp', helpSeen); },
-    reset: function () { this.chat.clear(); closePanel(true); closeDossier(); cur = { phase: null, round: 0 }; dispInit = false; waterLevelHit = 0; lastIntelLen = 0; intelSeen = 0; localReady = false; localVote = null; secretSel = null; secretSealed = false; P = null; V = null; nowOv = misOv = readyOv = null; nowKey = ''; airV = null; abilO = helpO = quickO = null; if (this.skipDialogue) this.skipDialogue(); setAir(null); paintAbil(); sayKey = ''; if (el.say) { el.say.classList.remove('on'); el.say.innerHTML = ''; } },
+    reset: function () { this.chat.clear(); closePanel(true); closeDossier(); cur = { phase: null, round: 0 }; dispInit = false; waterLevelHit = 0; lastIntelLen = 0; intelSeen = 0; localReady = false; localVote = null; secretSel = null; secretSealed = false; P = null; V = null; nowOv = misOv = readyOv = null; nowKey = ''; airV = null; abilO = helpO = quickO = null; if (this.skipDialogue) this.skipDialogue(); setAir(null); paintAbil(); coachO = null; miniUser = null; sayQ = []; if (el.sy) el.sy.innerHTML = ''; paintCoach(); },
+    say: say, setCoach: setCoach,
     onChat: function (f) { cb.chat = f; }, onShare: function (f) { cb.share = f; }, onVote: function (f) { cb.vote = f; }, onSecret: function (f) { cb.secret = f; },
     onReady: function (f) { cb.ready = f; }, onExit: function (f) { cb.exit = f; }, onSettings: function (f) { cb.settings = f; }, onPause: function (f) { cb.pause = f; },
     onAbility: function (f) { cb.ability = f; }, onAsk: function (f) { cb.ask = f; }, onDialogue: function (f) { cb.dialogue = f; },
