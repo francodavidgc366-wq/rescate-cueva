@@ -12,3 +12,7 @@ V4 (retratos 64x64, marcos, iconos rehechos, lamp_hang/lantern_floor/lamp_chain)
 V6 (reparto dibujado: pers_*, portrait_*_dead, retratos rehechos, dlg_frame, dlg_portrait_frame, npc_*): 100% procedural y propio (tools/art_portraits6.py), sin material de terceros, CC0 1.0. Hades/Hollow Knight solo como referencia de estilo, sin copiar nada.
 
 V7 (retratos 96x96 gotico, sprites de cuerpo rehechos): 100% procedural y propio (tools/art_portraits7.py, tools/gen-sprites.py), CC0 1.0. Blasphemous solo como referencia de estilo, sin copiar nada.
+
+## v8 (ART): face_*, face_frame, sprites de cuerpo
+- `face_<guia|medica|ing|lia>`, `face_<id>_dead`, `face_frame`: pixel art dibujado a mano en rejilla ASCII (tools/art_faces8.py), originales del proyecto, CC0 1.0. Estilo inspirado (no copiado) en los dialogos de Celeste.
+- `player_guia|medica|ing`, `lia`: rehechos en tools/gen-sprites.py (cabezas chibi ASCII), originales, CC0 1.0.

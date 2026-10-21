@@ -160,14 +160,29 @@ def gen_tiles():
 
 # ------------------------------------------------------------------ PERSONAJES 24x24
 ANIMS = [('idle', 4), ('run', 6), ('jump', 2), ('fall', 2), ('interact', 4)]
-SKIN_L = {'guia': '#b07a54', 'medica': '#e0b8a0', 'ing': '#8a5634'}  # v7: Mateo, Elena, Samuel
+SKIN_L = {'guia': '#e0a674', 'medica': '#f2d0b4', 'ing': '#9a6440'}  # v7: Mateo, Elena, Samuel
+
+# cabezas chibi 10x8 (v8), mirando a la derecha; letras -> HPAL
+HEADS = {
+ 'guia': ["..hhhhhh..", ".hhhhhhhLL", ".hhhhhsssl", "hhhsssswel", "hhhssssees", ".hbzzzssss", "..zzzzmzz.", "...zzzzz.."],
+ 'medica': ["hhhhhhhh..", "hhhhhhhhhh", "hhhhhhhsss", "hhhsssswes", "hhhssssees", "hhhsssbsss", "hhhsssmss.", "..hhsssss."],
+ 'ing': ["..yyYYYY..", ".yYYYaaYLL", "XXXXXXXXXX", "ggssssswes", "ggsssssees", "ggGsssssss", "gGGGGmGGG.", "..GGGGGG.."],
+}
+def _hp(skin, hair, extra):
+    sk = ramp(skin); hr = ramp(hair); d = dict(s=sk[1], l=sk[0], t=sk[2], h=hr[1], e=hx('#1a1018'), w=hx('#ffffff'), m=hx('#8a2a3a'), b=lerp(sk[1], hx('#e07070'), .5), L=hx('#fff4a8'))
+    d.update(extra); return d
+HPAL = {
+ 'guia': _hp('#e0a674', '#4a2c1c', dict(z=hx('#7a5238'))),
+ 'medica': _hp('#f2d0b4', '#241c30', {}),
+ 'ing': _hp('#9a6440', '#f6c820', dict(Y=hx('#f6c820'), y=hx('#ffe874'), X=hx('#c28a10'), a=hx('#4cc2d8'), g=hx('#c6c6ce'), G=hx('#d8d8de'))),
+}
 
 def draw_char(role, anim, i):
     im = Image.new('RGBA', (24, 24)); d = ImageDraw.Draw(im)
     skin = ramp(SKIN_L[role]); G = 22
-    if role == 'guia': top, pants, boot, hat = ramp('#7a4a2a'), ramp('#2a2630'), ramp('#2a1a14'), ramp('#1d130f')
-    elif role == 'medica': top, pants, boot, hat = ramp('#d8641c'), ramp('#3a4450'), ramp('#2a2024'), ramp('#14101a')
-    else: top, pants, boot, hat = ramp('#2c5aa8'), ramp('#24488a'), ramp('#3a2a22'), ramp('#e6b418')
+    if role == 'guia': top, pants, boot, hat = ramp('#b8702e'), ramp('#4a4a5c'), ramp('#4a2c1c'), ramp('#4a2c1c')
+    elif role == 'medica': top, pants, boot, hat = ramp('#f2eeea'), ramp('#46607a'), ramp('#4a3a40'), ramp('#241c30')
+    else: top, pants, boot, hat = ramp('#3a6cc0'), ramp('#2e56a0'), ramp('#5a3a28'), ramp('#f6c820')
     bob, lean = 0, 0; fp = bp = (0, 0); fa = ba = (-1, 6)  # pie/mano relativos
     fl = bl = 0
     if anim == 'idle':
@@ -205,20 +220,11 @@ def draw_char(role, anim, i):
         d.line([8 + lean, 16 + bob, 15 + lean, 16 + bob], fill=hx('#5a3a22'))
     limb(d, (hipx+1, hipy), (hipx+1 + fp[0], G - 1 + fp[1] - 1), 3, pants)
     d.rectangle([hipx+1+fp[0], G-2+fp[1], hipx+4+fp[0], G+fp[1]], fill=boot[1]); d.line([hipx+1+fp[0], G+fp[1], hipx+4+fp[0], G+fp[1]], fill=boot[2])
-    hy = 2 + bob; hx0 = 8 + lean
-    blk(d, hx0, hy, 8, 7, skin, side=True)
-    d.rectangle([hx0+5, hy+3, hx0+5, hy+4], fill=hx('#1a1020')); d.point((hx0+5, hy+3), fill=hx('#ffffff')) if False else None
-    d.point((hx0+6, hy+5), fill=skin[2]); d.line([hx0+4, hy+6, hx0+6, hy+6], fill=lerp(skin[1], hx('#a03040'), .5))
-    if role == 'guia':
-        blk(d, hx0-1, hy-2, 10, 4, hat, side=True); d.line([hx0-1, hy+2, hx0+8, hy+2], fill=hx('#3a3640'))
-        d.rectangle([hx0+6, hy, hx0+8, hy+1], fill=hx('#ffe8a0')); d.line([hx0+2, hy+6, hx0+6, hy+6], fill=hx('#2a1c1a'))  # frontal + barba
-    elif role == 'medica':
-        blk(d, hx0-1, hy-1, 9, 3, hat); d.rectangle([hx0, hy-3, hx0+3, hy-1], fill=hat[1]); d.rectangle([hx0-2, hy, hx0, hy+6], fill=hat[1])
-        d.rectangle([hx0-3, hy+4, hx0-2, hy+8], fill=hat[1]); d.line([hx0+5, hy+1, hx0+7, hy+1], fill=hat[1])
-        d.point((hx0+6, hy), fill=hx('#d8283c'))
-    else:
-        blk(d, hx0-1, hy-2, 10, 4, hat, side=True); d.rectangle([hx0+7, hy, hx0+9, hy+1], fill=hat[2])
-        d.rectangle([hx0+6, hy-2, hx0+7, hy-1], fill=hx('#fff4c0')); d.line([hx0+2, hy+6, hx0+7, hy+6], fill=hx('#b8b4b8')); d.line([hx0+4, hy+5, hx0+7, hy+5], fill=hx('#6a4a3a')) if False else None
+    hx0 = 7 + lean; hy = 1 + bob
+    HD = HEADS[role]; pal = HPAL[role]
+    for j, row in enumerate(HD):  # cabeza chibi 10x8 dibujada a mano, mira a la derecha
+        for k, c in enumerate(row):
+            if c != '.': d.point((hx0 + k, hy + j), fill=pal[c])
     fx, fy = sx_f, sy
     limb(d, (fx, fy), (fx + fa[0], fy + fa[1]), 2, top)
     d.rectangle([fx+fa[0], fy+fa[1], fx+fa[0]+1, fy+fa[1]+1], fill=skin[1])
@@ -234,7 +240,7 @@ def gen_players():
 
 def draw_lia(i):
     im = Image.new('RGBA', (24, 24)); d = ImageDraw.Draw(im)
-    br = [0, 1, 1, 0][i]; skin = ramp('#c8946c'); hair = ramp('#0e0b14'); bl = ramp('#c89a30')
+    br = [0, 1, 1, 0][i]; skin = ramp('#dba078'); hair = ramp('#1c1828'); bl = ramp('#e8b832')
     blk(d, 14, 19, 9, 4, ramp('#4a5a8a'), side=True)                       # piernas extendidas
     blk(d, 8, 12 + br, 8, 10 - br, bl, side=True)                          # torso con manta
     blk(d, 9, 17, 14, 6, bl); d.line([11, 19, 22, 19], fill=hx('#fff0b0')); d.line([11, 21, 22, 21], fill=hx('#fff0b0'))
@@ -476,5 +482,6 @@ if __name__ == '__main__':
     import art_portraits6; art_portraits6.gen6(); art_portraits6.preview6(os.path.join(OUT, '..', 'preview_cast6.png'))  # v6: reparto dibujado, marcos dlg, npc
     import art_portraits7; art_portraits7.gen7(); art_portraits7.preview7(os.path.join(OUT, '..', 'preview_cast7.png'))  # v7: retratos 96x96 gotico (sobrescribe portrait_*)
     META.update(artlib.META); art_icons4.props_baselines(META)
+    import art_faces8; META.update(art_faces8.gen())  # v8: face_<id> 48x48 Celeste + face_frame + preview_cast8.png
     json.dump(META, open(os.path.join(OUT, 'meta.json'), 'w'), indent=1)
     print('ok', {k: (v['w'], v['h']) for k, v in META.items()})

@@ -974,5 +974,131 @@
   "anchorY": 23,
   "baseY": 23,
   "note": "mini 16x24, 2 frames idle (respirar). Base en la ULTIMA fila (y=23); anclar en (8,23)"
+ },
+ "face_guia": {
+  "w": 192,
+  "h": 288,
+  "fw": 48,
+  "fh": 48,
+  "cols": 4,
+  "rows": 6,
+  "expressions": [
+   "neutral",
+   "feliz",
+   "preocupado",
+   "enfadado",
+   "sorprendido",
+   "triste"
+  ],
+  "frames": [
+   "closed",
+   "talk1",
+   "talk2",
+   "blink"
+  ],
+  "bg": "#3d4f73",
+  "name": "Mateo",
+  "note": "v8 Celeste: filas=expresion, cols=[closed,talk1,talk2,blink]; fondo transparente, color de recuadro en meta.bg"
+ },
+ "face_guia_dead": {
+  "w": 48,
+  "h": 48,
+  "note": "v8 gris frio, ojos cerrados"
+ },
+ "face_medica": {
+  "w": 192,
+  "h": 288,
+  "fw": 48,
+  "fh": 48,
+  "cols": 4,
+  "rows": 6,
+  "expressions": [
+   "neutral",
+   "feliz",
+   "preocupado",
+   "enfadado",
+   "sorprendido",
+   "triste"
+  ],
+  "frames": [
+   "closed",
+   "talk1",
+   "talk2",
+   "blink"
+  ],
+  "bg": "#5a7a6a",
+  "name": "Elena",
+  "note": "v8 Celeste: filas=expresion, cols=[closed,talk1,talk2,blink]; fondo transparente, color de recuadro en meta.bg"
+ },
+ "face_medica_dead": {
+  "w": 48,
+  "h": 48,
+  "note": "v8 gris frio, ojos cerrados"
+ },
+ "face_ing": {
+  "w": 192,
+  "h": 288,
+  "fw": 48,
+  "fh": 48,
+  "cols": 4,
+  "rows": 6,
+  "expressions": [
+   "neutral",
+   "feliz",
+   "preocupado",
+   "enfadado",
+   "sorprendido",
+   "triste"
+  ],
+  "frames": [
+   "closed",
+   "talk1",
+   "talk2",
+   "blink"
+  ],
+  "bg": "#9a6a3a",
+  "name": "Samuel",
+  "note": "v8 Celeste: filas=expresion, cols=[closed,talk1,talk2,blink]; fondo transparente, color de recuadro en meta.bg"
+ },
+ "face_ing_dead": {
+  "w": 48,
+  "h": 48,
+  "note": "v8 gris frio, ojos cerrados"
+ },
+ "face_lia": {
+  "w": 192,
+  "h": 288,
+  "fw": 48,
+  "fh": 48,
+  "cols": 4,
+  "rows": 6,
+  "expressions": [
+   "neutral",
+   "feliz",
+   "preocupado",
+   "enfadado",
+   "sorprendido",
+   "triste"
+  ],
+  "frames": [
+   "closed",
+   "talk1",
+   "talk2",
+   "blink"
+  ],
+  "bg": "#4a5a82",
+  "name": "Lia",
+  "note": "v8 Celeste: filas=expresion, cols=[closed,talk1,talk2,blink]; fondo transparente, color de recuadro en meta.bg"
+ },
+ "face_lia_dead": {
+  "w": 48,
+  "h": 48,
+  "note": "v8 gris frio, ojos cerrados"
+ },
+ "face_frame": {
+  "w": 16,
+  "h": 16,
+  "slice": 5,
+  "note": "v8 9-slice: oscuro 2px, claro 2px, filete lila 1px; centro transparente (poner meta.bg del retrato detras)"
  }
 }

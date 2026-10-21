@@ -58,6 +58,8 @@ function faceFallback(c, role, expr) {
 function portrait(role, expr, px) {
   const c = mk(48, 48); c.className = 'pix'; if (px) { c.style.width = c.style.height = px + 'px'; }
   faceFallback(c, role, expr);
+  const FR = { neutral: 0, feliz: 1, preocupado: 2, enfadado: 3 };
+  if (withImg('face_' + role, im => { const g = c.getContext('2d'); g.clearRect(0, 0, 48, 48); g.imageSmoothingEnabled = false; g.drawImage(im, 0, (FR[expr] || 0) * 48, 48, 48, 0, 0, 48, 48); })) return c;
   withImg('portrait_' + role, im => { const m = meta('portrait_' + role), fw = m.fw || 48, fh = m.fh || fw, i = EXPR[expr] || 0, cols = Math.max(1, Math.floor(im.width / fw));
     const g = c.getContext('2d'); g.clearRect(0, 0, 48, 48); g.imageSmoothingEnabled = false; g.drawImage(im, (i % cols) * fw, Math.floor(i / cols) * fh, fw, fh, 0, 0, 48, 48); });
   return c;
@@ -228,7 +230,7 @@ const css = `
 /* logros */
 #rcv3 .fates{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.9em;margin:.6em auto 0;max-width:1100px;width:100%}@media (max-width:640px){#rcv3 .fates{grid-template-columns:repeat(2,minmax(0,1fr))}}
 #rcv3 .fate{display:flex;flex-direction:column;text-align:center;gap:.5em;align-items:center;padding:.6em;background:rgba(20,14,40,.85);border:2px solid #3b2f66;border-radius:12px;animation:rrise .5s both}
-#rcv3 .fate .pt{flex:none;border-radius:12px;overflow:hidden;border:3px solid #7e62c8;background:radial-gradient(circle at 50% 100%,#4a3a8a,#150b30)}#rcv3 .fate .pt canvas{display:block;width:clamp(96px,12vw,150px);height:clamp(96px,12vw,150px);image-rendering:pixelated}
+#rcv3 .fate .pt{flex:none;border-radius:12px;overflow:hidden;border:3px solid #7e62c8;background:radial-gradient(circle at 50% 100%,#4a3a8a,#150b30)}#rcv3 .fate .pt canvas{display:block;width:144px;height:144px;image-rendering:pixelated}@media (max-width:640px){#rcv3 .fate .pt canvas{width:96px;height:96px}}
 #rcv3 .fate.vivo .pt{border-color:#5fe39a}#rcv3 .fate.herido .pt{border-color:#f2a93b}#rcv3 .fate.muerto{opacity:.9;border-color:#4a4658}#rcv3 .fate.muerto .pt{border-color:#6b6678;background:#1c1a24}#rcv3 .fate.muerto .pt canvas{filter:grayscale(1) brightness(.75)}
 #rcv3 .fate .st{display:inline-block;font-size:.72em;font-weight:800;letter-spacing:.5px;padding:2px 7px;border-radius:8px;margin:.2em 0}#rcv3 .fate.vivo .st{background:#1d4a30;color:#9affc0}#rcv3 .fate.herido .st{background:#4a3208;color:#ffd27a}#rcv3 .fate.muerto .st{background:#2c2a36;color:#b9b4c8}
 #rcv3 .fate .cdl{display:inline-block;width:6px;height:15px;background:#e8dcc0;position:relative;margin-left:.5em;vertical-align:middle;border-radius:1px}#rcv3 .fate .cdl:before{content:"";position:absolute;left:0;top:-8px;width:6px;height:8px;background:#ffb347;border-radius:50% 50% 40% 40%;animation:cflk .6s ease-in-out infinite alternate}@keyframes cflk{to{transform:scaleY(.8) translateY(1px);opacity:.8}}
@@ -262,22 +264,6 @@ const css = `
 @media(max-width:720px){#rcv3 .tcard{grid-template-columns:1fr}#rcv3 .grid2{grid-template-columns:1fr}#rcv3 .cards{gap:.4em}#rcv3 .rc{padding:.5em .3em;font-size:.82em}#rcv3 .tut{justify-content:flex-start;overflow-y:auto}#rcv3 .tart{min-height:0}}
 @media(prefers-reduced-motion:reduce){#rcv3 *{animation-duration:.01s!important}}
 #rcv3.rm *{animation-duration:.01s!important}
-
-/* v7 Blasphemous: marcos de oro viejo, rojos apagados */
-#rcv3{--bg:#0a0505;--bg2:#1a0b0c;--amb:#b8923a;--vio:#7a1a1a;--gold2:#d9c88f;--title:'Cinzel','Palatino Linotype',Georgia,serif}
-#rcv3 .scr{background:radial-gradient(ellipse at 50% 0%,#2a0e0f,#0a0505 70%)}
-#rcv3 h1,#rcv3 h2,#rcv3 .lab,#rcv3 .btn{font-family:var(--title);font-weight:700;text-transform:uppercase;letter-spacing:.16em}
-#rcv3 h1{color:#e8d9a8;text-shadow:0 3px 0 #000,0 0 22px rgba(122,26,26,.7);letter-spacing:.18em}
-#rcv3 h2,#rcv3 .lab{color:var(--gold2)}
-#rcv3 .btn{color:#e8d9a8;background:linear-gradient(#5a1818,#2c0a0b);border:2px solid #b8923a;border-radius:2px;box-shadow:0 3px 0 #000,inset 0 0 0 1px #000}
-#rcv3 .btn.sec{background:linear-gradient(#1f1210,#120a09);border-color:#5a4420}#rcv3 .btn.go{background:linear-gradient(#6b4f16,#3b2a0a);color:#f6e9bb;border-color:#d9c88f}
-#rcv3 .btn:hover,#rcv3 .btn:focus-visible,#rcv3 .btn.sel{box-shadow:0 5px 0 #000,0 0 14px rgba(184,146,58,.4)}
-#rcv3 .panel,#rcv3.hf .panel,#rcv3 .fate,#rcv3 .ach{border-image:none!important;padding:1em 1.2em;--co:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 26 26'%3E%3Cg fill='none' stroke='%23b8923a' stroke-width='1.6'%3E%3Cpath d='M2 24V9Q2 2 9 2H24'/%3E%3Cpath d='M10 10q5-1 5 4' stroke-width='1'/%3E%3Ccircle cx='2.5' cy='2.5' r='2' fill='%23d9c88f' stroke='none'/%3E%3C/g%3E%3C/svg%3E");background:var(--co) top 3px left 3px/20px no-repeat,radial-gradient(ellipse at 50% 0%,#2a0e0f,#120707 60%,#0a0505);border:2px solid #7a5f2a;border-radius:3px;box-shadow:inset 0 0 0 1px #000,inset 0 0 0 4px #160a08,inset 0 0 0 5px #4a3818}
-#rcv3 .fate{padding:1.1em .8em;animation:rrise .5s both}#rcv3 .fate .pt{border-radius:3px;border:2px solid #b8923a}#rcv3 .fate b{font-family:var(--title);letter-spacing:.14em;text-transform:uppercase;color:var(--gold2);font-size:1.15em}
-#rcv3 .fate .mut{display:block;font-size:.95em;line-height:1.35;color:#cfc3a8}
-#rcv3 .fate.vivo .pt{border-color:#b8923a}#rcv3 .fate.herido .pt{border-color:#a8605a}
-#rcv3 .fate .st,#rcv3 .fate.vivo .st,#rcv3 .fate.herido .st,#rcv3 .fate.muerto .st{border-radius:2px;letter-spacing:.14em}
-#rcv3 .fhead{font-family:var(--title);text-transform:uppercase;letter-spacing:.16em;color:var(--gold2)!important}
 `;
 
 /* ================= Raiz, pantallas, bucle ================= */
@@ -285,7 +271,7 @@ let root, scr = {}, cur = null, fx, fxg, parts = [], tks = new Set(), raf = 0, l
 function mount(el) {
   if (root) return root;
   const st = $('style', '', document.head); st.textContent = css;
-  if (!document.getElementById('rcv3-font')) { const l = $('link', '', document.head); l.id = 'rcv3-font'; l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Cinzel:wght@600;700&display=swap'; }
+  if (!document.getElementById('rcv3-font')) { const l = $('link', '', document.head); l.id = 'rcv3-font'; l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap'; }
   root = $('div', ''); root.id = 'rcv3'; (el || document.body).appendChild(root); applyLook();
   fx = $('canvas', '', root); fx.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:50'; fxg = fx.getContext('2d');
   toasts = $('div', 'toasts', root);
@@ -678,11 +664,13 @@ function showFinal(result, state) {
   b1.onclick = () => { sfx('confirm'); emit('restart', { changeRole: false }); }; b2.onclick = () => { sfx('click'); emit('restart', { changeRole: true }); showLobby({ mode: 'idle' }); }; b3.onclick = () => { sfx('back'); emit('menu', {}); showMenu(); };
   return s;
 }
-function fateFace(f) { // retrato segun estado: _dead / _hurt / hoja; si falta cae al generico o a un hueco
-  const c = mk(96, 96), A = (window.ASSETS && ASSETS.images) || {}, id = f.id, base = f.portrait || (['lia', 'guia', 'medica', 'ing'].includes(id) ? 'portrait_' + id : 'pers_' + id), root0 = base.replace(/_(dead|hurt)$/, '');
-  const suf = f.status === 'muerto' ? '_dead' : f.status === 'herido' ? '_hurt' : '', name = [root0 + suf, root0, 'portrait_' + id].find(n => A[n]);
+function fateFace(f) { // face_<id> (fila: vivo=feliz, herido=herido) / face_<id>_dead; sin ellos cae a portrait_/_dead/_hurt
+  const A = (window.ASSETS && ASSETS.images) || {}, id = f.id, dead = f.status === 'muerto', fn = 'face_' + id + (dead ? '_dead' : '');
+  if (A[fn]) { const c = mk(48, 48); c.className = 'pix'; withImg(fn, im => { const g = c.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(im, 0, dead ? 0 : (f.status === 'herido' ? 5 : 1) * 48, 48, 48, 0, 0, 48, 48); }); return c; }
+  const c = mk(96, 96), base = f.portrait || (['lia', 'guia', 'medica', 'ing'].includes(id) ? 'portrait_' + id : 'pers_' + id), root0 = base.replace(/_(dead|hurt)$/, '');
+  const suf = dead ? '_dead' : f.status === 'herido' ? '_hurt' : '', name = [root0 + suf, root0, 'portrait_' + id].find(n => A[n]);
   const g = c.getContext('2d'); g.fillStyle = '#2a2240'; g.fillRect(0, 0, 96, 96); g.fillStyle = '#9a90b8'; g.font = 'bold 50px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText((f.name || '?').charAt(0), 48, 50);
-  if (name) withImg(name, im => { const mt = meta(name), fw = mt.fw || 64, fh = mt.fh || Math.min(im.height, fw), cols = Math.max(1, Math.floor(im.width / fw)), i = name.endsWith('_dead') || name.endsWith('_hurt') || cols < 2 ? 0 : f.status === 'herido' ? 1 : f.status === 'muerto' ? 0 : Math.min(3, cols - 1); g.clearRect(0, 0, 96, 96); g.imageSmoothingEnabled = false; g.drawImage(im, i * fw, 0, fw, Math.min(fh, im.height), 0, 0, 96, 96); });
+  if (name) withImg(name, im => { const mt = meta(name), fw = mt.fw || 64, fh = mt.fh || Math.min(im.height, fw), cols = Math.max(1, Math.floor(im.width / fw)), i = name.endsWith('_dead') || name.endsWith('_hurt') || cols < 2 ? 0 : f.status === 'herido' ? 1 : dead ? 0 : Math.min(3, cols - 1); g.clearRect(0, 0, 96, 96); g.imageSmoothingEnabled = false; g.drawImage(im, i * fw, 0, fw, Math.min(fh, im.height), 0, 0, 96, 96); });
   return c;
 }
 function flashEl(col) { if (S.flash || (window.matchMedia && matchMedia('(prefers-reduced-motion:reduce)').matches)) return; const f = $('div', '', root); f.style.cssText = 'position:absolute;inset:0;box-shadow:inset 0 0 0 3px ' + col + ';opacity:.12;z-index:45;pointer-events:none;transition:opacity .14s'; requestAnimationFrame(() => f.style.opacity = 0); setTimeout(() => f.remove(), 200); }
