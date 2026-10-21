@@ -143,7 +143,7 @@ const strip = x => JSON.stringify(x, (k, v) => k === 't' ? undefined : v);
   // opciones del plan con ask/what/gain/risk
   await Story.roundStart(sh6); sh6.plan.options.forEach(o => { assert(/^¿.*\?$/.test(o.ask) && o.what.length > 15 && o.gain && o.risk); });
   // explainResult
-  const ex = await play('coop', 'normal', 5151, (st) => { const e = Story.explainResult(st); assert(e.headline && e.lines.length && e.why.length >= 2 && e.lines.every(l => ['agua', 'salud', 'material', 'confianza', 'info'].includes(l.icon) && l.text)); assert(/votos? de 3/.test(e.why[0])); }); assert(ex.st);
+  const ex = await play('coop', 'normal', 5151, (st) => { const e = Story.explainResult(st); assert(e.headline && e.lines.length && e.why.length >= 2 && e.lines.every(l => ['agua', 'salud', 'material', 'confianza', 'info'].includes(l.icon) && l.text)); assert(/\d\/3/.test(e.why[0])); }); assert(ex.st);
   // coach solo en zona 1, <=10 palabras, avanza
   const co = Story.newGame({ seed: 72, humans: ['ing'] }); await Story.roundStart(co); Story.setPhase(co, 'explore'); let c0 = Story.coach(co, 'ing'); assert(c0.step === 1 && c0.total === 8 && c0.text.split(/\s+/).length <= 10);
   Story.poiInteract(co, 'ing', co.pois.find(p => p.owner === 'ing').id); c0 = Story.coach(co, 'ing'); assert(c0.step === 4); Story.share(co, 'ing', co.priv.ing.intel[0].id); c0 = Story.coach(co, 'ing'); assert(c0.step === 6 && /Mateo/.test(c0.text) && c0.text.split(/\s+/).length <= 10, c0.text);
@@ -159,11 +159,11 @@ const strip = x => JSON.stringify(x, (k, v) => k === 't' ? undefined : v);
   assert(!/Nico|\bOna\b|Iv[áa]n|Sara|Marta|\bLeo\b|Hugo/.test(JSON.stringify([fx, Story.intro, Story.ROLES, Story.scene(fa.st, 'final'), Story.PROMPTS])), 'nombres antiguos/supervivientes en texto visible');
   // ===== v7: uses / explain / planBrief / red de seguridad =====
   const u7 = Story.newGame({ seed: 80, humans: ['ing'] }); await Story.roundStart(u7); Story.setPhase(u7, 'explore');
-  const iu = Story.poiInteract(u7, 'ing', u7.pois.find(p => p.kind === 'info' && p.owner === 'ing').id); assert(/votación/.test(iu.card.uses) && /^Has encontrado .* → .* → úsalo en: la votación/.test(iu.explain), iu.explain);
-  const rp7 = u7.pois.find(p => p.kind === 'recurso'); if (rp7.gate) Story.openGate(u7, u7.gates.find(g => g.id === rp7.gate).role, rp7.gate); const ru = Story.poiInteract(u7, 'guia', rp7.id); assert(ru.card.uses && /→ úsalo en:/.test(ru.explain)); const sp7 = u7.pois.find(p => p.kind === 'secreto'); if (sp7.gate) Story.openGate(u7, u7.gates.find(g => g.id === sp7.gate).role, sp7.gate); const hu = Story.poiInteract(u7, 'guia', sp7.id); assert(hu.card.uses && /→ úsalo en:/.test(hu.explain));
-  const u8 = Story.newGame({ seed: 82 }); await Story.roundStart(u8); Story.setPhase(u8, 'explore'); RK.forEach(k => assert(/^Si /.test(Story.mission(u8, k).now.why), Story.mission(u8, k).now.why));
-  Story.setPhase(u7, 'plan'); assert(u7.chat.some(m => m.from === 'director' && /Hay 3 caminos/.test(m.text)), 'resumen al empezar el plan');
-  const pb0 = Story.planBrief(u7); assert(pb0.text.split(/(?<=\.)\s/).length <= 3 && /Hay 3 caminos/.test(pb0.text) && pb0.best === null);
+  const iu = Story.poiInteract(u7, 'ing', u7.pois.find(p => p.kind === 'info' && p.owner === 'ing').id); assert(/^Voto/.test(iu.card.uses) && /voto/.test(iu.explain), iu.explain);
+  const rp7 = u7.pois.find(p => p.kind === 'recurso'); if (rp7.gate) Story.openGate(u7, u7.gates.find(g => g.id === rp7.gate).role, rp7.gate); const ru = Story.poiInteract(u7, 'guia', rp7.id); assert(ru.card.uses && /todos/.test(ru.explain)); const sp7 = u7.pois.find(p => p.kind === 'secreto'); if (sp7.gate) Story.openGate(u7, u7.gates.find(g => g.id === sp7.gate).role, sp7.gate); const hu = Story.poiInteract(u7, 'guia', sp7.id); assert(hu.card.uses && hu.explain);
+  const u8 = Story.newGame({ seed: 82 }); await Story.roundStart(u8); Story.setPhase(u8, 'explore'); RK.forEach(k => assert(Story.mission(u8, k).now.why.length > 5, Story.mission(u8, k).now.why));
+  Story.setPhase(u7, 'plan'); assert(u7.chat.some(m => m.from === 'director' && /pista/i.test(m.text)), 'resumen al empezar el plan');
+  const pb0 = Story.planBrief(u7); assert(pb0.text.split(/(?<=\.)\s/).length <= 3 && /Sin pistas/.test(pb0.text) && pb0.best === null);
   Story.setPhase(u7, 'explore'); const cu = iu.card, cdu = u7.hid.cards[cu.id], sh7 = Story.share(u7, 'ing', cu.id, {}); const pb1 = Story.planBrief(u7);
   assert(sh7.ok && pb1.known.length === 1 && pb1.known[0].includes(u7.plan.options[cdu.opt].n) && /Samuel/.test(pb1.known[0]), JSON.stringify(pb1)); assert(cdu.pol > 0 ? pb1.best === u7.plan.options[cdu.opt].id : pb1.best === null);
   // red de seguridad: un tramo malo no hunde (Normal/Fácil); en Everest sí; respiro avisado
@@ -180,7 +180,7 @@ const strip = x => JSON.stringify(x, (k, v) => k === 't' ? undefined : v);
     assert(!/Ahora no puedo/.test(JSON.stringify(Story.request(t, 'medica', t.gates.find(g => g.zone === z).role, { gateId: t.gates.find(g => g.zone === z).id }))));
     for (const g of t.gates.filter(x => x.zone === z)) { const a = Story.request(t, 'medica', g.role, { gateId: g.id }); if (g.role === 'medica') continue; assert(a.accept === true && a.delay <= 6000 && /Voy, tardo|Termino esta/.test(a.line), 'IA acepta siempre: ' + a.line); }
     t.hid.expT = 1e9; assert(Story.crisisReady(t).ready, 'el avance de zona siempre es posible'); }
-  { const t = Story.newGame({ seed: 130, humans: ['medica'] }); await Story.roundStart(t); Story.setPhase(t, 'explore'); const cr = Story.crisisReady(t); assert(cr.progress.goal && RK.every(k => cr.progress.roles[k].done === false)); const mm = Story.mission(t, 'medica'); assert(mm.team.goal.startsWith('Entre los tres') && mm.team.needs.length === 2 && /pídesela por el chat/.test(mm.team.needs[0].text));
+  { const t = Story.newGame({ seed: 130, humans: ['medica'] }); await Story.roundStart(t); Story.setPhase(t, 'explore'); const cr = Story.crisisReady(t); assert(cr.progress.goal && RK.every(k => cr.progress.roles[k].done === false)); const mm = Story.mission(t, 'medica'); assert(mm.team.goal.startsWith('Entre los tres') && mm.team.needs.length === 2 && /^Pide a /.test(mm.team.needs[0].text));
     for (const k of ['guia', 'ing']) Story.poiInteract(t, k, t.pois.find(p => p.owner === k).id); assert(!Story.crisisReady(t).ready && Story.crisisReady(t).progress.missing[0] === 'medica', 'no basta con que la IA haga 3'); const own = t.pois.find(p => p.owner === 'medica'); Story.poiInteract(t, 'medica', own.id); assert(Story.crisisReady(t).ready);
     const u = Story.newGame({ seed: 131, humans: ['medica'] }); await Story.roundStart(u); Story.setPhase(u, 'explore'); const gid = u.gates.find(g => g.zone === 1).id; const q1 = Story.request(u, 'medica', 'guia', { gateId: gid }), q2 = Story.request(u, 'medica', 'guia', { gateId: gid }); assert(q1.accept && q1.delay <= 6000 && q2.accept && !/no puedo/i.test(q1.line + q2.line));
     const bz = Story.newGame({ seed: 132, humans: ['medica'] }); bz.round = 2; await Story.roundStart(bz); Story.setPhase(bz, 'explore'); Story.request(bz, 'medica', 'guia', { gateId: 'z2_anclaje' }); const bq = Story.request(bz, 'medica', 'guia', { gateId: 'z1_anclaje' }); const qb = Story.request(bz, 'ing', 'guia', { gateId: 'z2_anclaje' }); assert(qb.accept);
@@ -200,5 +200,51 @@ const strip = x => JSON.stringify(x, (k, v) => k === 't' ? undefined : v);
     assert(pn.panels.length >= 5 && pn.panels.length <= 7 && pn.panels.every(p => p.text.length <= 110 && (win ? /^end_good_[123]$/ : /^end_bad_[123]$/).test(p.img) && (!p.mood || M.includes(p.mood))), 'paneles');
     assert(win ? /Encontramos a Lía/.test(pn.panels[0].text) : /^No encontramos|no logramos llegar/.test(pn.panels[0].text), 'primer panel deja claro si la encontraron'); }
   { const src = require('fs').readFileSync(require('path').join(__dirname, '../src/story.js'), 'utf8'); assert(!/Temblor de manos|Saturación de Lía|pulsioxímetro|apuntalamiento/.test(src), 'jerga en textos'); }
+  // ===== v14: dieta de texto (límites de caracteres) =====
+  { const lim = (w, s, n) => assert(typeof s !== 'string' || s.length <= n, w + ' (' + s.length + '>' + n + '): ' + s);
+    const D = Story._D, ex = s => s.replace(/\{poi\}/g, 'x'.repeat(20)).replace(/\{opt\}/g, 'x'.repeat(20)).replace(/\{who\}/g, 'xxxxxx').replace(/\{n\}/g, 'xx');
+    D.ROUND_D.forEach(R => { const nn = R.opts.map(o => o.n).sort((a, b) => b.length - a.length)[0];
+      R.ev.forEach(e => { lim('ev.text', e.text, 60); lim('ev.radio', e.radio, 55); });
+      R.opts.forEach(o => { lim('opt.t', o.t, 28); lim('opt.x', o.x, 60); lim('opt.k', o.k, 60); });
+      R.poi.forEach(p => { lim('poi.label', p.label + ' · pista', 28); RK.forEach(k => { lim('card.title', p.cards[k][1], 28); lim('card', p.cards[k][2].replace('{o}', nn).replace(/\b([Dd])e el /g, '$1el ').replace(/\b([Aa]) el /g, '$1l '), 85); }); });
+      lim('rec', R.rec.text, 85); lim('rec.label', R.rec.label + ' · salud', 28); lim('sec', R.sec.h.text, 85); lim('sec.label', R.sec.label + ' · hallazgo', 28); });
+    for (const r in D.SA) D.SA[r].forEach(a => a.forEach(x => lim('act', x.text, 52)));
+    const walk = (o, f) => { if (typeof o === 'string') f(o); else if (o && typeof o === 'object') for (const k in o) walk(o[k], f); };
+    walk({ a: D.BR, b: D.LN, c: D.LIA }, t => lim('chat bot', ex(t), 57)); Object.values(D.CONFESS).forEach(c => lim('confesión', c.msg, 55));
+    Story.GATES.forEach(g => { lim('gate.label', g.label, 28); lim('gate.why', g.why, 65); });
+    for (const dif of ['facil', 'everest']) for (const seed of [1, 2, 3]) {
+      const st = Story.newGame({ seed, difficulty: dif, demo: true });
+      for (let r = 1; r <= 5; r++) { st.round = r; await Story.roundStart(st); Story.setPhase(st, 'explore');
+        lim('event.text', st.event.text, 90); st.pois.forEach(p => { lim('poi.name', p.name, 28); lim('poi.label', p.label, 28); lim('poi.give', p.give, 70); lim('poi.act', p.act, 70); lim('poi.why', p.why, 65); });
+        st.plan.options.forEach(o => { lim('title', o.title, 28); lim('what', o.what, 60); lim('gain', o.gain, 35); lim('risk', o.risk, 35); lim('opt.text', o.text, 90); });
+        for (const k of RK) { const m = Story.mission(st, k); lim('now.text', m.now.text, 55); lim('now.why', m.now.why, 65); lim('now.hint', m.now.hint, 70); lim('now.short', m.now.short, 28); lim('desc', m.desc, 70); m.steps.forEach(x => lim('step', x.text, 70)); }
+        for (let it = 0; it < 40; it++) { let any = false; for (const k of RK) { const a = await Story.botAct(st, k, 'explore'); if (a) { any = true; Story.exec(st, k, a); } } if (!any) break; }
+        RK.forEach(k => st.priv[k].intel.forEach(c => { lim('card.text', c.text, 85); lim('card.uses', c.uses, 70); }));
+        st.chat.forEach(m => { if (m.kind === 'sys' || m.kind === 'event') lim('sys', m.text, 70); });
+        Story.setPhase(st, 'plan'); for (const k of RK) { const a = await Story.botAct(st, k, 'plan'); if (a) Story.exec(st, k, a); } Story.tally(st); Story.setPhase(st, 'secret'); for (const k of RK) { const a = await Story.botAct(st, k, 'secret'); if (a) Story.exec(st, k, a); }
+        Story.resolve(st); ['event', 'lia', 'plan', 'resolve'].forEach(kd => Story.scene(st, kd).forEach(l => lim('scene', l.text, 70)));
+        const tr = Story.travelScene(st); if (tr) { lim('travel', tr.caption, 60); tr.lines.forEach(l => lim('travel', l.text, 60)); }
+        const j = Story.journal(st); j.entries.forEach(e => { lim('journal', e.text, 80); lim('journal.use', e.use, 50); }); lim('journal.decision', j.decision.text, 80); lim('journal.note', j.note, 80); lim('journal.intro', j.intro, 80);
+        const e = Story.explainResult(st); lim('headline', e.headline, 70); e.lines.forEach(l => lim('explain', l.text, 70)); e.why.forEach(w => lim('explain.why', w, 70));
+        if (Story.isOver(st)) break; Story.advance(st); }
+      Story.scene(st, 'final').forEach(l => lim('scene final', l.text, 70)); Story.endingPanels(st).panels.forEach(p => lim('panel', p.text, 90)); }
+    assert(/55 caracteres/.test(Story.PROMPTS.bot) && /200 caracteres/.test(Story.PROMPTS.judge), 'prompts piden respuestas cortas'); }
+  // ===== v14: recompensas de minijuego y logros =====
+  { const mk = async (seed, round) => { const g = Story.newGame({ seed, humans: ['guia'] }); g.round = round || 1; await Story.roundStart(g); Story.setPhase(g, 'explore'); return g; };
+    const free = g => g.pois.filter(p => !g.gates.find(x => !g.gatesOpen[x.id] && 'r' + x.zone + '_' + x.poi === p.id));
+    const gI = await mk(300), pi = free(gI).find(p => p.kind === 'info'), gF = await mk(300), gP = await mk(300), gO = await mk(300);
+    const ok = Story.poiInteract(gO, 'guia', pi.id), pf = Story.poiInteract(gP, 'guia', pi.id, { quality: 'perfect' }), fl = Story.poiInteract(gF, 'guia', pi.id, { quality: 'fail' });
+    assert(ok.reward.quality === 'ok' && !ok.reward.bonus.length && ok.reward.streak === 0, 'ok sin bonus');
+    assert(pf.reward.quality === 'perfect' && pf.reward.streak === 1 && Story.streak(gP, 'guia') === 1 && pf.reward.bonus.length >= 2 && pf.reward.bonus.every(b => b.icon && b.text), 'perfect: racha y bonus');
+    assert(pf.card.reliability > ok.card.reliability && fl.card.reliability < ok.card.reliability && Math.abs(pf.card.reliability - ok.card.reliability - .15) < .02 + .0001 || pf.card.reliability >= .98, 'fiabilidad +-15');
+    assert(gP.score.info > gO.score.info + 15 && gP.s.material === gO.s.material + 3, 'perfect: +20 precisión y +3 material'); assert.strictEqual(fl.reward.streak, 0); assert(gF.priv.guia.ap === gO.priv.guia.ap, 'fail gasta acción');
+    const g = await mk(301), fp = free(g); Story.poiInteract(g, 'guia', fp[0].id, { quality: 'perfect' }); Story.poiInteract(g, 'guia', fp[1].id, { quality: 'perfect' }); const r3 = Story.poiInteract(g, 'guia', fp[2].id, { quality: 'perfect' }); assert.strictEqual(r3.reward.streak, 3);
+    Story.setPhase(g, 'plan'); Story.tally(g); const rs = Story.resolve(g); assert(rs.achievements.some(a => a.id === 'racha3' && a.role === 'guia') && rs.achievements.some(a => a.id === 'sin_fallos' && a.role === 'guia'), 'logros racha3 y sin_fallos');
+    const gb = await mk(302), fb = free(gb); Story.poiInteract(gb, 'guia', fb[0].id, { quality: 'perfect' }); assert.strictEqual(Story.poiInteract(gb, 'guia', fb[1].id, { quality: 'fail' }).reward.streak, 0, 'fail reinicia la racha');
+    const gt = await mk(303), gate = gt.gates.find(x => x.zone === 1), gt2 = await mk(303), gt3 = await mk(303), gt4 = await mk(303);
+    const a0 = Story.openGate(gt, gate.role, gate.id), a1 = Story.openGate(gt2, gate.role, gate.id, { quality: 'perfect' }), a2 = Story.openGate(gt3, gate.role, gate.id, { quality: 'fail' });
+    assert(a0.ok && a1.ok && a2.ok && a0.reward.quality === 'ok' && a1.reward.bonus.length && gt2.s.confianza === gt.s.confianza + 1 && gt2.score.total > gt.score.total, 'puerta perfect'); assert(gt3.s.material === gt.s.material - 3 && a2.reward.bonus.length, 'puerta fail cuesta 3 de material');
+    const g5 = await mk(304, 5); const cam = g5.pois.find(p => p.id === 'r5_0'), gc = g5.gates.find(x => x.zone === 5 && 'r5_' + x.poi === 'r5_0'); if (gc) Story.openGate(g5, gc.role, gc.id); assert(Story.poiInteract(g5, 'guia', 'r5_0', { quality: 'ok' }).ok); Story.setPhase(g5, 'plan'); Story.tally(g5);
+    assert(Story.resolve(g5).achievements.some(a => a.id === 'primero' && a.role === 'guia'), 'Primero en llegar'); ['racha3', 'manos_oro', 'sin_fallos', 'primero'].forEach(id => assert(Story.achievementsList().some(a => a.id === id && a.name.length <= 20))); }
 console.log('OK');
 })().catch(e => { console.error(e); process.exit(1); });

@@ -1,0 +1,14 @@
+# NOTES-hud14 (agente UI v14) - src/hud.js / src/ui.js
+## API nueva (hud.js)
+- `Hud.minigame({kind:'timing'|'mash'|'hold'|'sequence', title?, icon?, level:1..3, role?, streak?:false}) -> Promise<{result:'perfect'|'ok'|'fail', score:0..100}>`. Overlay 360x200 centrado, 2-5 s, auto-fallo por tiempo ('Tiempo'), Esc = fallo. Teclas en captura (keydown/keyup en window, stopImmediatePropagation) mientras esta abierto; clic/toque tambien. timing: Espacio/E/clic en zona verde (centro = perfect). mash: machacar E/Espacio/clic, la barra cae sola. hold: mantener E/Espacio/clic y soltar en la zona dorada. sequence: 3 (lv<3) o 4 flechas/WASD (o botones tactiles) en orden; fallo = reinicia la secuencia. Consola: `Hud.minigame({kind:'timing'}).then(console.log)`.
+  Defaults: timing ESCANEAR/ojo, mash ANCLAR/cuerda, hold VÁLVULA/agua, sequence PUENTE/material (`title`/`icon` sustituyen; `icon` = nombre de iconos o poi_icons). Los primeros 120 ms ignoran teclas. Sonidos `tick|confirm|achievement|error` por `Sound.sfx` (tolerante). Sacudida 3 px/150 ms, desactivada con reducir movimiento / `noflash`. Sin destellos de pantalla.
+  La racha se actualiza sola (perfect +1, otro resultado = 0) salvo `streak:false`.
+- `Hud.setStreak(n)`: «xN» con llama junto al HUD (0 lo oculta; anima al subir). `Hud.floatReward({icon,text,x?,y?})`: sube y se desvanece (centro del escenario si no hay x/y, en px del root).
+- Tab: mantener = mapa grande, soltar lo oculta; toque < 250 ms lo deja abierto (2º toque lo cierra). preventDefault; si el chat/textarea tiene texto no se captura. M sigue igual. Pista «TAB: mapa» abajo a la izquierda. Requiere fuente de minimapa (RC.eng().drawMinimap) como M.
+## Dieta de texto
+- Banner AHORA: titulo <= 60 car., «↳ por qué» <= 70 (con «…»); el completo va en CUADERNO > OBJETIVO («AHORA»). Quitada la linea `sub`/«Consejo».
+- Chat: tarjeta INTEL = titulo (<=24) + 1 linea (<=60, completa en `title`). Diario/recap: entrada = 1 linea (<=70), resto + «Nos sirvió» desplegable con clic (tras terminar de escribir). Intro/decision/nota recortadas.
+- Ayuda H: 5 iconos + tecla + palabra (E, T, J, TAB, Q). Fichas de rol y final recortadas (`cut`).
+- Tutorial (ui.js): 1 frase corta por paso (grande), sin «Consejo». Chat demo: filas de 34 px fijas, retrato `face_` con factor entero (48 px reales), burbuja a la derecha, sin solapes. Paso 5: pared con tiles reales + antorchas con luz (tcave), burbuja sin trazo (texto oscuro nitido), chispas al construir el puente.
+## No verificado
+- Con main/engine reales (minijuego con el mundo: si el motor registra keydown en captura ANTES que hud.js no se bloquea; teclas ya pulsadas al abrir pueden quedar «atascadas» en el motor), posicion de la racha con HUD en movil, «TAB: mapa» en movil, tutorial pasos 1, 3 y 6 (revisado solo a ojo/1 captura), diario/recap desplegable, final y fichas de rol (solo sintaxis), Firefox/Safari, sonidos reales, 1920x1080 del HUD (solo tutorial).

@@ -29,7 +29,7 @@
   }
   function makeEngine(authority) {
     if (eng) return;
-    eng = Engine.create(cv, { assets: window.ASSETS, getState: () => st, authority, localRole: myRole, water: 10, onInteract, onSfx: n => snd(n), onGate, onDrown, onUnreachable });
+    eng = Engine.create(cv, { assets: window.ASSETS, getState: () => st, authority, localRole: myRole, water: 10, onInteract, onSfx: n => snd(n), onGate, onDrown, onUnreachable, abilityMode: 'external', interactMode: 'external', onAbilityPrompt, onInteractPrompt });
     eng.start(); eng.fit(innerWidth, innerHeight);
     const ins = () => { try { eng.setViewInsets(Hud.getInsets()); } catch (e) { } }; ins(); Hud.onInsets && Hud.onInsets(ins);
   }
@@ -63,14 +63,38 @@
   const helpFor = {};
   function onGate(role, gateId) {
     if (isClient() || !st) return;
-    const o = Story.openGate(st, role, gateId, { helpFor: helpFor[gateId] }); if (!o || !o.ok) return;
+    const q = gateQ[gateId]; delete gateQ[gateId]; const o = Story.openGate(st, role, gateId, { helpFor: helpFor[gateId], quality: q }); if (!o || !o.ok) return; if (o.reward) showReward(o.reward, gateId);
     syncPois(); snd('gate_open'); Hud.floatText('PUERTA ABIERTA: ' + (o.kind || ''), 'info'); gKey = ''; push();
   }
   const sayOnce = (r, t) => { if (!st.chat.slice(-40).some(m => m.from === r && m.text === t)) Story.say(st, r, t, 'chat'); };
+  // ---------- Minijuegos (examinar, habilidades) ----------
+  const gateQ = {}, poiQ = {};
+  const POI_GAME = { pista: ['timing', 'Examinar', 'scan'], recurso: ['mash', 'Recoger', 'caja'], hallazgo: ['sequence', 'Con cuidado', 'lupa'], secreto: ['hold', 'Descubrir', 'ojo'] };
+  const GATE_GAME = { anclaje: ['timing', 'Clavar anclaje', 'cuerda'], puente: ['sequence', 'Montar puente', 'puente'], valvula: ['mash', 'Girar válvula', 'valvula'], reptadero: ['hold', 'Estabilizar paso', 'medica'], estabilizar: ['hold', 'Dar aire', 'medica'] };
+  const freeKeys = () => { Object.keys(keys).forEach(k => keys[k] = 0); pushInput(); };
+  async function play(g, level) {
+    if (!Hud.minigame) return 'ok'; freeKeys();
+    try { const r = await Hud.minigame({ kind: g[0], title: g[1], icon: g[2], level: level || Math.min(3, 1 + (st.round >> 1)), role: myRole }); freeKeys(); return (r && r.result) || 'ok'; } catch (e) { freeKeys(); return 'ok'; }
+  }
+  function showReward(rw, ref) {
+    if (!rw) return; try { Hud.setStreak && Hud.setStreak(rw.streak || 0); (rw.bonus || []).forEach(b => Hud.floatReward && Hud.floatReward({ icon: b.icon, text: b.text }));
+      if (rw.quality === 'perfect') { snd('achievement'); Hud.floatReward && Hud.floatReward({ icon: 'estrella', text: 'PERFECTO' }); } } catch (e) { }
+    try { const p = ref && (eng.getPoiPos(ref) || null); const kind = rw.quality === 'perfect' ? 'perfect' : rw.quality === 'fail' ? 'fail' : 'find'; const pos = p || (eng.snapshot().p[myRole] ? { x: eng.snapshot().p[myRole][0], y: eng.snapshot().p[myRole][1] } : null); if (pos) { eng.actionShot(pos.x, pos.y - 8, { kind, ms: 1400 }); if (rw.quality === 'perfect') eng.floatText(pos.x, pos.y - 24, 'PERFECTO', '#ffd34d'); } } catch (e) { }
+  }
+  async function onInteractPrompt(role, poiId) {
+    if (isClient() || !st || st.phase !== 'explore' || role !== myRole) return;
+    const p = (st.pois || []).find(x => x.id === poiId), g = POI_GAME[p && p.kind] || POI_GAME.pista;
+    const q = await play(g); if (st.phase !== 'explore') return; poiQ[poiId] = q; const ok = eng.commitInteract(role, poiId); if (!ok) delete poiQ[poiId];
+  }
+  async function onAbilityPrompt(role, d) {
+    if (isClient() || !st || st.phase !== 'explore' || role !== myRole || !d) return;
+    const g = GATE_GAME[d.kind] || GATE_GAME.anclaje, q = await play(g); if (st.phase !== 'explore') return;
+    if (d.gateId) { gateQ[d.gateId] = q; eng.openGate(d.gateId); } else if (d.target) { eng.stabilize(role, d.target); try { Hud.floatReward && Hud.floatReward({ icon: 'salud', text: '+aire' }); } catch (e) { } }
+  }
   function onUnreachable(role, poiId) { if (isClient() || !st) return; try { Story.botStuck(st, role, poiId); push(); } catch (e) { } }
   let lastPos = null, movedAcc = 0;
   function coachFlags(m) {
-    let near = false; try { const p = eng.snapshot()[myRole]; if (p) { if (lastPos) movedAcc += Math.abs(p[0] - lastPos[0]) + Math.abs(p[1] - lastPos[1]); lastPos = [p[0], p[1]]; const t = m && m.now && m.now.target, q = t && eng.getPoiPos(t); near = !!(q && Math.hypot(q.x - p[0], q.y - p[1]) < 40); } } catch (e) { }
+    let near = false; try { const p = eng.snapshot().p[myRole]; if (p) { if (lastPos) movedAcc += Math.abs(p[0] - lastPos[0]) + Math.abs(p[1] - lastPos[1]); lastPos = [p[0], p[1]]; const t = m && m.now && m.now.target, q = t && eng.getPoiPos(t); near = !!(q && Math.hypot(q.x - p[0], q.y - p[1]) < 40); } } catch (e) { }
     return { moved: movedAcc > 60, near, notebook: coachFlags.nb };
   }
   function onDrown(role) { if (isClient() || !st || st.phase !== 'explore') return; st.s.salud = Math.max(0, st.s.salud - 5); if (role === myRole) Hud.floatText('¡Te ahogas! -5 salud', 'bad'); }
@@ -251,9 +275,9 @@
   }
   function onInteract(role, poiId) { // solo host
     if (isClient() || !st || st.phase !== 'explore') return;
-    const out = Story.poiInteract(st, role, poiId);
+    const q = poiQ[poiId]; delete poiQ[poiId]; const out = Story.poiInteract(st, role, poiId, { quality: q });
     if (!out || !out.ok) { if (role === myRole) Hud.floatText(WHY[out && out.reason] || 'No se puede', 'bad'); return; }
-    syncPois(); fb(role, out); push();
+    syncPois(); fb(role, out); if (out.reward && role === myRole) showReward(out.reward, poiId); push();
   }
   function doChat(role, text) {
     text = String(text || '').slice(0, 300).trim(); if (!text) return; Story.say(st, role, text, 'chat');

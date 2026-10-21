@@ -6,6 +6,7 @@ const $ = (t, c, p, h) => { const e = document.createElement(t); if (c) e.classN
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) { } } };
 const jget = (k, d) => { try { return JSON.parse(store.get(k)) || d; } catch (e) { return d; } };
+const cut = (s, n) => { s = String(s == null ? '' : s); return s.length > n ? s.slice(0, n - 1).trimEnd() + '…' : s; };
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;
 const ease = t => { t = clamp(t, 0, 1); return t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; };
@@ -288,6 +289,7 @@ const css13 = `
 #rcv3 .en-fates .f.muerto canvas{border-color:#5a6478;filter:grayscale(1) brightness(.7)}
 #rcv3 .en-hint{position:absolute;right:3%;bottom:2.2%;font-size:clamp(10px,1.1vw,14px);color:#fff9;text-shadow:0 1px 2px #000;pointer-events:none;opacity:0;transition:opacity .8s}
 #rcv3 .en-hint.on{opacity:1}
+#rcv3 .tcard .ttext{display:flex;flex-direction:column;justify-content:center}#rcv3 .tcard .ttext p{font-size:clamp(22px,2.6vw,34px);line-height:1.25;margin:.5em 0 0;font-weight:700}
 `;
 
 /* ================= Raiz, pantallas, bucle ================= */
@@ -422,10 +424,10 @@ function showLobby(o) {
   function render() {
     s.innerHTML = ''; const top = $('div', 'row', s); top.style.justifyContent = 'space-between'; $('h2', '', top, U.mode === 'idle' ? 'PARTIDA EN SOLITARIO' : U.mode === 'host' ? 'TU SALA' : 'SALA DE ' + esc(U.code)); const bk = $('button', 'btn sec', top, 'Volver'); bk.onclick = back;
     if (U.mode === 'host' || U.mode === 'join') { const b = $('div', 'panel', s); $('div', 'lab', b, U.mode === 'host' ? 'COMPARTE ESTE CÓDIGO CON TUS AMIGOS' : 'CONECTADO A LA SALA'); $('div', 'code', b, esc(U.code || '. . . . .')); if (U.link) { const r = $('div', 'row', b); r.style.flexWrap = 'nowrap'; r.style.marginTop = '.6em'; const i = $('input', '', r); i.type = 'text'; i.readOnly = true; i.value = U.link; i.setAttribute('aria-label', 'Enlace'); const c = $('button', 'btn', r, 'Copiar'); c.onclick = () => { try { navigator.clipboard.writeText(U.link).then(() => { toast('Enlace copiado'); }, () => { i.select(); document.execCommand('copy'); toast('Enlace copiado'); }); } catch (x) { i.select(); toast('Copia el enlace a mano', { bad: 1 }); } }; } }
-    const p = $('div', 'panel', s); $('div', 'lab', p, 'ELIGE TU ROL (1 / 2 / 3) &middot; LOS HUECOS LOS LLEVAN COMPAÑEROS IA'); const cards = $('div', 'cards', p); cards.style.marginTop = '.7em';
-    RK.forEach((k, i) => { const d = rinfo(k), t = taken(k), b = $('button', 'rc' + (U.role === k ? ' sel' : '') + (t ? ' taken' : ''), cards); b.style.setProperty('--c', d.col); b.appendChild(portrait(k, U.role === k ? 'feliz' : 'neutral', 72)); $('b', '', b, esc(d.n)).style.color = d.col; $('span', 'mut', b, esc(d.t)); const sk = $('span', '', b, esc(d.skill)); sk.style.cssText = 'font-size:.85em;line-height:1.35'; $('span', 'tag' + (U.role === k ? ' me' : ''), b, U.role === k ? 'TU' : t ? esc(t.name || 'Jugador') : 'IA: ' + esc(d.ai)); b.onclick = () => pickRole(k); });
-    const hum = U.players.filter(x => x && !x.bot); if (U.mode !== 'idle') $('div', 'mut', p, (hum.length ? hum.map(x => '<span class="ok">●</span> ' + esc(x.name || x.id) + (x.host ? ' (anfitrión)' : '')).join(' &nbsp; ') : 'Esperando jugadores...') + '<br>Máximo 3 humanos. Si alguien se va, lo sustituye la IA.').style.marginTop = '.7em';
-    else $('div', 'mut', p, 'Juegas con ' + esc(rinfo(U.role).n) + '. Los otros dos son IA con personalidad propia: pueden callar, compartir o mentir. Rejuega con otro rol para ver la otra cara.').style.marginTop = '.7em';
+    const p = $('div', 'panel', s); $('div', 'lab', p, 'ELIGE TU ROL (1 / 2 / 3)'); const cards = $('div', 'cards', p); cards.style.marginTop = '.7em';
+    RK.forEach((k, i) => { const d = rinfo(k), t = taken(k), b = $('button', 'rc' + (U.role === k ? ' sel' : '') + (t ? ' taken' : ''), cards); b.style.setProperty('--c', d.col); b.appendChild(portrait(k, U.role === k ? 'feliz' : 'neutral', 72)); $('b', '', b, esc(d.n)).style.color = d.col; $('span', 'mut', b, esc(d.t)); const sk = $('span', '', b, esc(String(d.skill || '').split(/[.;]/)[0].slice(0, 40))); sk.style.cssText = 'font-size:.85em;line-height:1.35'; $('span', 'tag' + (U.role === k ? ' me' : ''), b, U.role === k ? 'TU' : t ? esc(t.name || 'Jugador') : 'IA: ' + esc(d.ai)); b.onclick = () => pickRole(k); });
+    const hum = U.players.filter(x => x && !x.bot); if (U.mode !== 'idle') $('div', 'mut', p, (hum.length ? hum.map(x => '<span class="ok">●</span> ' + esc(x.name || x.id) + (x.host ? ' (anfitrión)' : '')).join(' &nbsp; ') : 'Esperando jugadores...') + '<br>Máx. 3 humanos.').style.marginTop = '.7em';
+    else $('div', 'mut', p, 'Juegas con ' + esc(rinfo(U.role).n) + '. Los otros dos: IA.').style.marginTop = '.7em';
     if (U.mode !== 'join') { const dv = $('div', 'diff', s); $('span', 'lab', dv, 'DIFICULTAD'); [['facil', 'Fácil'], ['normal', 'Normal'], ['everest', 'Everest']].forEach(([k, n]) => { const c = $('button', 'chip' + (S.diff === k ? ' on' : ''), dv, n); c.onclick = () => { S.diff = k; saveS(); sfx('select'); render(); }; }); }
     const act = $('div', 'row', s); act.style.justifyContent = 'flex-end'; const go2 = $('button', 'btn go', act, U.mode === 'join' ? (U.ready ? 'No estoy listo' : 'Estoy listo') : 'Empezar'); go2.focus();
     go2.onclick = () => { snd('unlock'); sfx('confirm'); if (U.mode === 'join') { U.ready = !U.ready; emit('ready', U.ready); try { Net.send('ready', { ready: U.ready }); } catch (e) { } render(); } else emit('start', { role: U.role, host: U.mode === 'host', solo: U.mode === 'idle', difficulty: S.diff }); };
@@ -455,12 +457,13 @@ function tplayer(g, role, an, T, x, y, flip, fr) { // feet en (x,y)
   const im = getImg('player_' + role); if (!im || !im.ok) return person(g, role, x, y, 1, T * 8, flip);
   g.save(); g.imageSmoothingEnabled = false; g.translate(Math.round(x), Math.round(y)); if (flip) g.scale(-1, 1); g.drawImage(im, f * 24, m[0] * 24, 24, 24, -12, -22, 24, 24); g.restore();
 }
-function tcave(g, w, h, T, cam) { // fondo OSCURO (azul marino) + suelo CLARO con filo naranja: contraste fuerte
-  cam = cam || 0; g.fillStyle = '#0a1128'; g.fillRect(0, 0, w, h);
-  g.globalAlpha = .5; for (let x = -((cam * .5) % 16) - 16; x < w; x += 16) for (let y = 0; y < FLOOR; y += 16) ttile(g, ((x + cam * .5 | 0) / 16 + y / 16) % 3 === 0 ? 17 : 16, x, y); g.globalAlpha = 1;
-  g.fillStyle = 'rgba(10,17,40,.5)'; g.fillRect(0, 0, w, FLOOR);
+function tcave(g, w, h, T, cam) { // pared de cueva visible (tiles reales) + antorchas; suelo claro con filo naranja
+  cam = cam || 0; g.fillStyle = '#1a2447'; g.fillRect(0, 0, w, h);
+  for (let x = -(cam % 16) - 16; x < w; x += 16) for (let y = 0; y < FLOOR; y += 16) ttile(g, ((Math.round((x + cam) / 16) + y / 16) % 3 === 0) ? 18 : 16 + (Math.round((x + cam) / 16) & 1), x, y);
+  g.fillStyle = 'rgba(14,20,50,.28)'; g.fillRect(0, 0, w, FLOOR);
   for (let x = -(cam % 16) - 16; x < w; x += 16) { ttile(g, 1, x, FLOOR); ttile(g, 0, x, FLOOR + 16); }
   g.fillStyle = '#ffb347'; g.fillRect(0, FLOOR - 1, w, 1);
+  for (let k = Math.floor(cam / 90); k < Math.floor((cam + w) / 90) + 1; k++) { const tx = k * 90 + 70 - cam; if (tx < 4 || tx > w - 4) continue; const gr = g.createRadialGradient(tx, 54, 2, tx, 54, 34); gr.addColorStop(0, 'rgba(255,170,60,.45)'); gr.addColorStop(1, 'rgba(255,170,60,0)'); g.fillStyle = gr; g.fillRect(tx - 34, 20, 68, 68); tprop(g, 0, Math.floor(T * 6 + k) % 4, tx, 62); }
 }
 function tprop(g, row, fr, x, y) { return blit(g, 'props', fr * 16, row * 16, 16, 16, x - 8, y - 15); } // base en (x,y)
 function tpill(g, x, y, w, h, fill, bd) { g.fillStyle = '#10081c'; g.fillRect(x - 1, y - 1, w + 2, h + 2); g.fillStyle = bd; g.fillRect(x, y, w, h); g.fillStyle = fill; g.fillRect(x + 1, y + 1, w - 2, h - 2); }
@@ -475,22 +478,22 @@ function tarrow(g, cx, cy, dir, col, r) { g.save(); g.translate(Math.round(cx), 
 function ticon(g, name, cx, cy, big) { const m = meta('poi_icons'), i = m && m.names ? m.names.indexOf(name) : -1, s = big || 16; if (i >= 0 && blit(g, 'poi_icons', (i % 10) * 16, Math.floor(i / 10) * 16, 16, 16, cx - s / 2, cy - s / 2, s, s)) return; g.fillStyle = '#ffd24a'; g.fillRect(cx - 4, cy - 4, 8, 8); }
 const tr = r => r === 'lia' ? { col: '#7bf0a0', n: 'Lía' } : rinfo(r);
 function tface(g, role, ex, x, y, s) { // face_<id>: ampliacion ENTERA (48 px nativos * f); s = lado logico deseado
-  const row = { neutral: 0, happy: 1, worried: 2, angry: 3 }[ex] || 0, f = Math.max(1, Math.round(s * TK / 48)), sz = 48 * f / TK, col = tr(role).col || '#fff';
+  const row = { neutral: 0, happy: 1, worried: 2, angry: 3 }[ex] || 0, f = Math.max(1, Math.floor(s * TK / 48)), sz = 48 * f / TK, col = tr(role).col || '#fff';
   g.fillStyle = '#0a1128'; g.fillRect(x - 1, y - 1, sz + 2, sz + 2);
   if (!blit(g, 'face_' + role, 0, row * 48, 48, 48, x, y, sz, sz)) { g.fillStyle = col; g.fillRect(x, y, sz, sz); }
-  g.strokeStyle = col; g.lineWidth = 1; g.strokeRect(x - .5, y - .5, sz + 1, sz + 1);
+  g.strokeStyle = col; g.lineWidth = 1; g.strokeRect(x - .5, y - .5, sz + 1, sz + 1); return sz;
 }
 function tpoi(g, x, y, T, name, used) { // POI como en el motor: aro en el suelo + pastilla con icono flotando
   const rp = (T * .5) % 1, by = Math.round(Math.sin(T * 5) * 1.5), py = y - 26 + by; if (!used) { g.strokeStyle = 'rgba(255,210,74,' + (.6 * (1 - rp)) + ')'; g.beginPath(); g.ellipse(x, y, 4 + rp * 10, 1.5 + rp * 3, 0, 0, 7); g.stroke(); }
   tpill(g, x - 8, py - 8, 17, 17, used ? '#2a2638' : '#241a3a', used ? '#5a5870' : '#ffd24a'); g.globalAlpha = used ? .4 : 1; ticon(g, name, x, py); g.globalAlpha = 1; if (used) ttext(g, '✔', x + 6, py - 9, '#7dffb0', 9, 'center');
 }
 function tprompt(g, x, y, label, on, bd) { g.font = 'bold 8px monospace'; const w = 28 + g.measureText(label).width, bx = Math.round(x - w / 2); tpill(g, bx, y, w, 20, '#0c1630', bd || '#ffb347'); tkey(g, bx + 3, y + 2, 'E', on, 16, 16); ttext(g, label, bx + 23, y + 10.5, '#fff2d0', 8); }
-function tbubble(g, x, y, s, col) { g.font = 'bold 8px monospace'; const w = g.measureText(s).width + 10, bx = Math.round(x - w / 2); tpill(g, bx, y, w, 14, '#f6ecd6', col || '#888'); ttext(g, s, bx + 5, y + 7.5, '#2a1606', 8); g.fillStyle = col || '#888'; g.fillRect(x - 1, y + 14, 3, 2); }
+function tbubble(g, x, y, s, col) { g.font = 'bold 8px monospace'; const w = g.measureText(s).width + 10, bx = Math.round(x - w / 2); tpill(g, bx, y, w, 14, '#f6ecd6', col || '#888'); ttext(g, s, bx + 5, y + 7.5, '#2a1606', 8, 'left', 1); g.fillStyle = col || '#888'; g.fillRect(x - 1, y + 14, 3, 2); }
 function tsparks(g, x, y, k, col) { for (let i = 0; i < 10; i++) { const a = i * .63, d = 4 + k * 22; g.globalAlpha = 1 - k; g.fillStyle = col || '#ffd24a'; g.fillRect(x + Math.cos(a) * d, y + Math.sin(a) * d - k * 8, 2, 2); } g.globalAlpha = 1; }
 function twrap(g, s, maxw) { const out = []; let cur = ''; s.split(' ').forEach(w => { if (cur && g.measureText(cur + ' ' + w).width > maxw) { out.push(cur); cur = w; } else cur = cur ? cur + ' ' + w : w; }); if (cur) out.push(cur); return out; }
 
 const TSTEPS = [
-  { t: 'Muévete por la cueva', p: 'Controlas <b>un solo personaje</b>. Corre con <span class="key">A</span> <span class="key">D</span> o las flechas y salta con <span class="key">Espacio</span> y mantén <span class="key">Shift</span> para correr más rápido. La cueva es un mapa grande y continuo: puedes subir, bajar y volver atrás.', tip: 'Si caes al agua, nadas: presiona saltar para sacar la cabeza y respirar.',
+  { t: 'Muévete por la cueva', p: 'Corre, salta, explora.',
     art(p) { canvasArt(p, (g, T, w, h) => { const u = T % 9; let x, y, an = 'idle', fl = false, k = {};
       if (u < .6) { x = 24; y = FLOOR; } else if (u < 2.6) { x = lerp(24, 96, frac(u, .6, 2.6)); y = FLOOR; an = 'run'; k.r = 1; k.sh = 1; } else if (u < 3.5) { const f = frac(u, 2.6, 3.5); x = lerp(96, 122, f); y = FLOOR - 24 * f - 18 * Math.sin(Math.PI * f); an = f < .5 ? 'jump' : 'fall'; k.s = 1; k.r = 1; }
       else if (u < 5.2) { x = lerp(122, 168, frac(u, 3.5, 5.2)); y = FLOOR - 24; an = 'run'; k.r = 1; } else if (u < 6) { const f = frac(u, 5.2, 6); x = lerp(168, 186, f); y = FLOOR - 24 + 24 * f * f; an = 'fall'; k.r = 1; } else if (u < 7.2) { x = 186; y = FLOOR; } else { x = lerp(186, 60, frac(u, 7.2, 8.8)); y = FLOOR; an = 'run'; fl = true; k.l = 1; k.sh = 1; }
@@ -502,41 +505,42 @@ const TSTEPS = [
       tkey(g, 54, 5, 'W', k.s); tkey(g, 76, 5, 'ESPACIO', k.s, 52); ttext(g, 'SALTAR', 80, 30, '#ffd27a', 7, 'center', 1); ttext(g, 'W o ESPACIO', 90, 40, '#c8d4ff', 6, 'center', 1);
       tkey(g, 140, 5, 'SHIFT', k.sh, 44); ttext(g, 'CORRER', 162, 30, '#ffd27a', 7, 'center', 1); ttext(g, 'mantén SHIFT', 162, 40, '#c8d4ff', 6, 'center', 1);
       tkey(g, 196, 5, 'E', 0, 18); ttext(g, 'USAR', 205, 30, '#ffd27a', 6.5, 'center', 1); }, TW, TH); } },
-  { t: 'Examina cosas con E', p: 'Los <b>iconos que flotan</b> son pistas. Acércate hasta que salga el cartelito con <span class="key">E</span> y púlsala: tu personaje lo mira y consigues una <b>tarjeta de información</b>. Solo la ves tú.', tip: 'Tus tarjetas se guardan en el cuaderno (tecla <b>J</b>). Tú decides si se las cuentas al equipo.',
+  { t: 'Examina cosas con E', p: 'Pulsa E en los iconos.',
     art(p) { canvasArt(p, (g, T, w, h) => { const u = T % 9, px = 112; let x = u < 2.2 ? lerp(20, 88, u / 2.2) : 88, an = u < 2.2 ? 'run' : u < 3.3 ? 'idle' : u < 4.8 ? 'interact' : 'idle', used = u > 4.2;
       tcave(g, w, h, T, 0); tprop(g, 4, u > 4.2 ? 1 : 0, px, FLOOR); tpoi(g, px, FLOOR, T, 'mapa', used); tplayer(g, 'medica', an, T, x, FLOOR, false);
-      if (u > 2 && u < 4.4) tprompt(g, px, FLOOR - 58, 'Examinar mapa viejo', u > 3.2 && u < 3.7); if (u > 3.2 && u < 3.8) tsparks(g, px, FLOOR - 40, 0);
+      if (u > 2 && u < 4.4) tprompt(g, px, FLOOR - 58, 'Mapa', u > 3.2 && u < 3.7); if (u > 3.2 && u < 3.8) tsparks(g, px, FLOOR - 40, 0);
       if (u > 4.2 && u < 5) tsparks(g, px, FLOOR - 40, frac(u, 4.2, 5), '#2fd0b0');
-      if (u > 4.6) { const k = ease(frac(u, 4.6, 5.1)), y0 = 8 - (1 - k) * 40; tpill(g, 100, y0, 118, 64, '#14283a', '#2fd0b0'); ttext(g, 'NUEVA INFORMACIÓN', 106, y0 + 8, '#2fd0b0', 7); ticon(g, 'mapa', 114, y0 + 26, 16); ttext(g, 'Mapa viejo', 126, y0 + 24, '#fff', 8); ttext(g, '"El barro marca por', 106, y0 + 42, '#fff2d0', 7.5); ttext(g, 'dónde baja el agua"', 106, y0 + 53, '#fff2d0', 7.5); }
-      if (u > 5.6) ttext(g, 'Solo tú la ves  ·  J = cuaderno', 112, 84, '#ffd24a', 7, 'center'); }, TW, TH, 2); } },
-  { t: 'Sigue la flecha', p: 'Arriba siempre ves <b>un solo objetivo</b>: qué hacer y <b>por qué</b>. La <b>flecha amarilla</b> te lleva hasta allí y te dice cuántos metros faltan. La lista completa está en el cuaderno.', tip: 'No tienes que adivinar nada: haz lo que pone el cartel y deja que la flecha te guíe.',
+      if (u > 4.6) { const k = ease(frac(u, 4.6, 5.1)), y0 = 8 - (1 - k) * 40; tpill(g, 100, y0, 118, 44, '#14283a', '#2fd0b0'); ttext(g, 'INTEL', 106, y0 + 8, '#2fd0b0', 7); ticon(g, 'mapa', 114, y0 + 30, 20); ttext(g, 'Mapa viejo', 130, y0 + 30, '#fff', 8); }
+      if (u > 5.6) ttext(g, 'J = cuaderno', 112, 84, '#ffd24a', 7, 'center'); }, TW, TH, 2); } },
+  { t: 'Sigue la flecha', p: 'Sigue la flecha amarilla.',
     art(p) { canvasArt(p, (g, T, w, h) => { const u = T % 10, wx = lerp(20, 330, ease(frac(u, .5, 7.5))), cam = clamp(wx - 70, 0, 200), x = wx - cam, arrived = u > 7.6, tx = 330 - cam; tcave(g, w, h, T, cam);
       for (let i = 0; i < 3; i++) ttile(g, 27, tx - 56 + i * 16, FLOOR - 16); tpoi(g, tx, FLOOR, T, 'agua', arrived && u > 8.4); tplayer(g, 'ing', arrived ? 'idle' : 'run', T, x, FLOOR, false);
       if (!arrived) { const dist = Math.round(lerp(58, 0, frac(u, .5, 7.5))), ax = Math.min(x + 40, w - 30), by = Math.sin(T * 6) * 2; g.save(); g.translate(ax, FLOOR - 34 + by); g.fillStyle = '#10081c'; g.beginPath(); g.moveTo(14, 0); g.lineTo(-2, -11); g.lineTo(-2, 11); g.fill(); g.fillStyle = '#ffd24a'; g.beginPath(); g.moveTo(11, 0); g.lineTo(1, -8); g.lineTo(1, 8); g.fill(); g.fillRect(-9, -3, 10, 6); g.restore(); ttext(g, dist + ' M', ax - 4, FLOOR - 50 + by, '#ffd24a', 8, 'center'); }
       tpill(g, 6, 6, 154, 44, '#0c1630', arrived ? '#2fd0b0' : '#ffb347'); ttext(g, 'AHORA', 12, 13, '#2fd0b0', 6);
       tpill(g, 166, 6, 52, 44, '#0c1630', '#ffb347'); g.fillStyle = '#16264f'; g.fillRect(168, 8, 48, 22); g.fillStyle = '#6f8cff'; g.fillRect(172, 22, 14, 2); g.fillRect(186, 16, 2, 8); g.fillRect(186, 16, 18, 2); if (Math.floor(T * 3) % 2) { g.fillStyle = '#ffd24a'; g.fillRect(202, 15, 3, 3); } tkey(g, 168, 32, 'M', 0, 14, 14); ttext(g, 'mapa', 186, 39, '#ffd27a', 6.5, 'left', 1);
-      ttext(g, arrived ? 'Examina el barro (E)' : 'Ve al barro junto al río', 12, 24, '#ffd27a', 8); ttext(g, arrived ? 'Ahí verás por dónde baja' : 'Por qué: el barro marca por', 12, 35, '#d9f5ff', 7); ttext(g, arrived ? 'el agua.' : 'dónde baja el agua.', 12, 44, '#d9f5ff', 7); }, TW, TH, 2); } },
-  { t: 'Habla con tu equipo', p: 'Los otros dos rescatadores los lleva la IA (o amigos). Les hablas por el <b>chat</b> (tecla <span class="key">T</span>) y Lía te llama por <b>radio</b>. Cada cara cambia según cómo se sienten. Al presionar <b>Compartir</b>, tu tarjeta aparece en el chat para todos.', tip: 'Puedes contar lo que viste... o cambiarlo y mentir. Si te pillan, baja la confianza.',
-    art(p) { const MSG = [['lia', 'worried', 'Apúrense... el agua sube.', 'radio'], ['guia', 'neutral', 'Yo vi huellas al norte.'], ['medica', 'happy', 'Barro en la orilla: marca por dónde baja el agua.', 'share'], ['ing', 'angry', 'Eso no cuadra con lo que medí yo.']];
-      canvasArt(p, (g, T, w, h) => { const u = T % 14, n = clamp(Math.floor(u / 2.6) + 1, 0, 4); g.fillStyle = '#150f2a'; g.fillRect(0, 0, w, h); g.fillStyle = '#241c46'; g.fillRect(0, 0, w, 11); ttext(g, 'CHAT DEL EQUIPO', 6, 6, '#ffd27a', 6);
-        g.save(); g.beginPath(); g.rect(0, 12, w, 100); g.clip(); const rowH = [32, 32, 48, 34]; let s0 = 0, tot = 0; for (let i = 0; i < n; i++) tot += rowH[i]; while (tot > 100) tot -= rowH[s0++]; let y = 16;
-        for (let i = s0; i < n; i++) { const m = MSG[i], c = tr(m[0]).col, me = m[0] === 'medica', age = (u - i * 2.6), a = clamp(age / .3, 0, 1); g.globalAlpha = a; const x0 = me ? w - 37 : 4; tface(g, m[0], m[1], x0, y, 24);
-            g.font = 'bold 7px monospace'; const lines = twrap(g, m[2], 124), sh = m[3] === 'share', bh = sh ? 46 : 6 + lines.length * 10 + 4, bx = me ? w - 42 - 150 : 38;
-            tpill(g, bx, y, 150, bh - 2, m[3] === 'radio' ? '#06140f' : sh ? '#0a2a33' : me ? '#4a3210' : '#1c2650', m[3] === 'radio' ? '#4cd88a' : sh ? '#3fd0c0' : '#5a6ab0');
-            if (sh) { g.fillStyle = '#3fd0c0'; g.fillRect(bx, y, 4, bh - 2); }
-            ttext(g, tr(m[0]).n + (m[3] === 'radio' ? ' (radio)' : ''), bx + (sh ? 8 : 4), y + 7, c, 7.5);
-            if (sh) { g.fillStyle = '#06161c'; g.fillRect(bx + 6, y + 13, 140, 10); ticon(g, 'ojo', bx + 13, y + 18, 9); ttext(g, 'COMPARTISTE · INTEL', bx + 20, y + 18.5, '#7ff3e4', 6.5, 'left', 1); }
-            lines.forEach((l, k) => ttext(g, l, bx + (sh ? 8 : 4), y + (sh ? 29 : 17) + k * 10, m[3] === 'radio' ? '#9bffc0' : '#ffffff', 7, 'left', 1)); y += bh; g.globalAlpha = 1; }
-        g.restore(); const press = u > 4.6 && u < 5.4; tpill(g, 4, 118, 120, 17, press ? '#8a4f10' : '#1c2650', press ? '#ffd24a' : '#8fa0ff'); ttext(g, 'Les cuento lo que vi', 9, 126.5, '#fff', 7); tpill(g, 130, 118, 90, 17, '#0a0716', '#3b2f66'); ttext(g, 'Escribe al equipo...', 135, 126.5, '#8a82a8', 7); }, TW, TH, 2); } },
-  { t: 'Habilidad y ayuda', p: 'Cada rol tiene una <b>habilidad con la tecla</b> <span class="key">Q</span>: Mateo clava anclajes, Elena da aire y primeros auxilios, Samuel hace puentes y abre válvulas. Hay puertas que solo abre un rol concreto: si no eres tú, <b>pídeselo a tu compañero</b> con «Pedir ayuda».', tip: 'Tu compañero puede ayudarte... o negarse si no se fía de ti. Por eso hablar importa.',
+      ttext(g, arrived ? 'Examina el barro (E)' : 'Ve al barro', 12, 24, '#ffd27a', 8); ttext(g, 'Por qué: marca el agua', 12, 38, '#d9f5ff', 7); }, TW, TH, 2); } },
+  { t: 'Habla con tu equipo', p: 'Habla y comparte pistas.',
+    art(p) { const MSG = [['lia', 'worried', '(radio) ¡El agua sube!', 'radio'], ['guia', 'neutral', 'Vi huellas al norte.'], ['medica', 'happy', 'Barro: el agua baja ahí.', 'share'], ['ing', 'angry', 'No cuadra con mi dato.']];
+      canvasArt(p, (g, T, w, h) => { const u = T % 14, n = clamp(Math.floor(u / 2.6) + 1, 0, 4), RH = 34; g.fillStyle = '#150f2a'; g.fillRect(0, 0, w, h); g.fillStyle = '#241c46'; g.fillRect(0, 0, w, 11); ttext(g, 'CHAT', 6, 6, '#ffd27a', 6.5);
+        g.save(); g.beginPath(); g.rect(0, 12, w, 3 * RH); g.clip(); const s0 = Math.max(0, n - 3);
+        for (let i = s0; i < n; i++) { const m = MSG[i], c = tr(m[0]).col, age = u - i * 2.6, a = clamp(age / .3, 0, 1), y = 13 + (i - s0) * RH + (1 - a) * 6, sh = m[3] === 'share', rd = m[3] === 'radio'; g.globalAlpha = a;
+          const sz = tface(g, m[0], m[1], 4, y + 1, 30), bx = 4 + sz + 5, bw = w - bx - 4;
+          tpill(g, bx, y + 1, bw, RH - 5, rd ? '#06140f' : sh ? '#0a2a33' : '#1c2650', rd ? '#4cd88a' : sh ? '#3fd0c0' : '#5a6ab0');
+          ttext(g, tr(m[0]).n, bx + 5, y + 9, c, 7.5, 'left', 1);
+          if (sh) { ticon(g, 'ojo', bx + bw - 10, y + 9, 9); ttext(g, 'INTEL', bx + bw - 18, y + 9, '#7ff3e4', 6.5, 'right', 1); }
+          ttext(g, m[2], bx + 5, y + 21, rd ? '#9bffc0' : '#ffffff', 7, 'left', 1); g.globalAlpha = 1; }
+        g.restore(); const press = u > 4.6 && u < 5.4; tpill(g, 4, 118, 120, 17, press ? '#8a4f10' : '#1c2650', press ? '#ffd24a' : '#8fa0ff'); ttext(g, 'Compartir', 9, 126.5, '#fff', 7.5, 'left', 1); tpill(g, 130, 118, 90, 17, '#0a0716', '#3b2f66'); ttext(g, 'T: escribir', 135, 126.5, '#8a82a8', 7, 'left', 1); }, TW, TH, 2); } },
+  { t: 'Habilidad y ayuda', p: 'Q usa tu habilidad.',
     art(p) { canvasArt(p, (g, T, w, h) => { const u = T % 13, open = u > 8.2, GX = 168; tcave(g, w, h, T, 0);
-      if (!open) { for (let r = 0; r < 2; r++) ttile(g, 19, GX, FLOOR - 16 - r * 16); tpill(g, GX - 28, FLOOR - 54, 74, 13, '#2a2638', '#f2a93b'); ttext(g, 'PUENTE · solo Samuel', GX - 24, FLOOR - 47, '#ffd27a', 6.5); } else { for (let i = 0; i < 4; i++) ttile(g, 20, GX - 16 + i * 16, FLOOR - 16); }
+      if (!open) { for (let r = 0; r < 2; r++) ttile(g, 19, GX, FLOOR - 16 - r * 16); tpill(g, GX - 14, FLOOR - 58, 44, 14, '#2a2638', '#f2a93b'); ticon(g, 'cuerda', GX - 4, FLOOR - 51, 12); ttext(g, 'Samuel', GX + 3, FLOOR - 51, '#ffd27a', 6.5, 'left', 1); } else { for (let i = 0; i < 4; i++) ttile(g, 20, GX - 16 + i * 16, FLOOR - 16); }
       const ox = u < 2 ? lerp(20, 112, u / 2) : u < 9.5 ? 112 : lerp(112, 200, frac(u, 9.5, 11.5)); tplayer(g, 'medica', u < 2 || u > 9.5 ? 'run' : 'idle', T, ox, FLOOR, false);
       const ix = u < 4.2 ? -30 : u < 6 ? lerp(-30, 140, frac(u, 4.2, 6)) : 140; if (u > 4.2 && u < 10) tplayer(g, 'ing', u < 6 ? 'run' : u < 8.4 ? 'interact' : 'idle', T, ix, FLOOR, false);
-      if (u > 2.4 && u < 5) tbubble(g, 112, FLOOR - 50, 'No puedo pasar...', '#3fd0c0'); if (u > 6.2 && u < 8.2) tsparks(g, 152, FLOOR - 14, frac(u, 6.2, 8.2) % 1, '#b58cff'); if (u > 8.4 && u < 10.4) tbubble(g, 140, FLOOR - 40, '¡Hecho!', '#b58cff');
-      tpill(g, 6, 6, 112, 20, '#0c1630', '#ffb347'); tkey(g, 9, 8, 'Q', u > 6.2 && u < 8.2, 16, 16); ttext(g, 'Habilidad de rol', 30, 16.5, '#ffe2a8', 7.5);
-      const pr = u > 3.4 && u < 4.4, vis = u > 2.4 && u < 8.2; if (vis) { tpill(g, 6, 30, 126, 18, pr ? '#8a4f10' : '#1c2650', pr ? '#ffd24a' : '#8fa0ff'); ttext(g, 'Pedir a Samuel: puente', 12, 39.5, '#fff', 7.5); } if (u > 3 && u < 4.6) ttext(g, '▲ presiona aquí', 70, 58, '#ffd24a', 7, 'center'); }, TW, TH, 2); } },
-  { t: 'Agua, aire y reunión', p: 'El <b>agua sube</b>. Bajo el agua se gasta tu <b>aire</b>: sal a respirar antes de que llegue a 0. Cuando hayan investigado, presiona <b>Convocar reunión</b>: el equipo debate y <b>vota</b> el plan (teclas 1, 2 o 3). Cada crisis resuelta abre una zona nueva.', tip: 'Los puntos solo se cuentan al final, por categorías. Ahora céntrate en rescatar a Lía.',
+      if (u > 2.4 && u < 5) tbubble(g, 112, FLOOR - 50, '¿Puente?', '#3fd0c0');
+      if (u > 6.2 && u < 8.4) { for (let k = 0; k < 3; k++) tsparks(g, 154 + k * 6, FLOOR - 16 - k * 3, (frac(u, 6.2, 8.4) * 2 + k * .3) % 1, k % 2 ? '#ffd24a' : '#d6b8ff'); }
+      if (u > 8.4 && u < 10.6) tbubble(g, 140, FLOOR - 40, '¡Hecho!', '#b58cff');
+      tpill(g, 6, 6, 40, 20, '#0c1630', '#ffb347'); tkey(g, 9, 8, 'Q', u > 6.2 && u < 8.4, 16, 16); ticon(g, 'cuerda', 36, 16, 12);
+      const pr = u > 3.4 && u < 4.4, vis = u > 2.4 && u < 8.2; if (vis) { tpill(g, 6, 30, 70, 18, pr ? '#8a4f10' : '#1c2650', pr ? '#ffd24a' : '#8fa0ff'); ttext(g, 'Pedir ayuda', 11, 39.5, '#fff', 7.5, 'left', 1); } }, TW, TH, 2); } },
+  { t: 'Agua, aire y reunión', p: 'Respira, reúnete y vota.',
     art(p) { canvasArt(p, (g, T, w, h) => { const u = T % 20; tcave(g, w, h, T, 0);
       if (u < 14) { // AGUA GRANDE sube; el aire se vacia bajo el agua y se rellena en la BOLSA DE AIRE
         const wl = u < 7 ? lerp(132, 8, ease(frac(u, .2, 7))) : 8, PX0 = 140, PX1 = 206, PY1 = 46, f = frac(u, 2.6, 8.4), inPocket = u > 8.6 && u < 12.4;
@@ -558,12 +562,12 @@ const TSTEPS = [
         tpill(g, 6, 6, 118, 36, '#0a1230', low ? '#ff5d5d' : '#7fd0ff'); ticon(g, 'agua', 18, 16, 14); ttext(g, low ? 'SIN AIRE' : 'AIRE', 29, 16, low ? '#ff9a94' : '#d8f2ff', 9);
         g.fillStyle = '#04060f'; g.fillRect(12, 27, 106, 10); g.fillStyle = '#26345e'; g.fillRect(13, 28, 104, 8); g.fillStyle = low ? '#ff5d5d' : '#4fc3ff'; g.fillRect(13, 28, Math.round(104 * air / 100), 8); g.fillStyle = 'rgba(255,255,255,.4)'; g.fillRect(13, 28, Math.round(104 * air / 100), 2);
         ttext(g, Math.round(air) + '', 112, 16, '#fff', 8, 'right');
-        const cap = u < 2.8 ? ['¡EL AGUA SUBE!', '#8fd0ff'] : u < 8.6 ? ['BAJO EL AGUA, EL AIRE SE VACÍA', low ? '#ff9a94' : '#ffe2a8'] : ['EN LA BOLSA TE RECUPERAS', '#9bffc0']; g.font = 'bold 8px monospace'; const cw = g.measureText(cap[0]).width + 14; tpill(g, Math.round(w / 2 - cw / 2), 118, cw, 17, '#0a1230', cap[1]); ttext(g, cap[0], w / 2, 127, cap[1], 8, 'center', 1);
+        const cap = u < 2.8 ? ['¡EL AGUA SUBE!', '#8fd0ff'] : u < 8.6 ? ['¡SAL A RESPIRAR!', low ? '#ff9a94' : '#ffe2a8'] : ['AIRE +', '#9bffc0']; g.font = 'bold 8px monospace'; const cw = g.measureText(cap[0]).width + 14; tpill(g, Math.round(w / 2 - cw / 2), 118, cw, 17, '#0a1230', cap[1]); ttext(g, cap[0], w / 2, 127, cap[1], 8, 'center', 1);
         if (inPocket && u < 11.6) ttext(g, '¡Respira! +AIRE', px, PY1 + 36, '#9bffc0', 8, 'center'); }
-      else { const t0 = u - 14, press = t0 > 1.2 && t0 < 2; ttext(g, 'Y cuando sepan algo: reunión', w / 2, 10, '#ffd27a', 8, 'center');
+      else { const t0 = u - 14, press = t0 > 1.2 && t0 < 2; ttext(g, 'REUNIÓN', w / 2, 10, '#ffd27a', 8, 'center');
         if (t0 < 2.4) { tplayer(g, 'medica', 'idle', T, 40, FLOOR, false); tplayer(g, 'ing', 'idle', T, 70, FLOOR, true); tplayer(g, 'guia', 'idle', T, 100, FLOOR, false); const bw = 130; tpill(g, 46, 112, bw, 22, press ? '#8a4f10' : '#ffb347', '#ffe2a8'); ttext(g, 'Convocar reunión', 54, 123.5, '#2a1004', 8.5, 'left', 1); }
-        else { ttext(g, 'ELIJAN EL PLAN (1, 2 o 3)', w / 2, 10, '#ffd27a', 8, 'center'); ['1 · Cruzar', '2 · Rodear', '3 · Esperar'].forEach((s2, i) => { const x = 8 + i * 72, win = i === 1 && t0 > 4.8; tpill(g, x, 20, 68, 62, win ? '#10381f' : '#0c1630', win ? '#5fe39a' : '#8fa0ff'); ttext(g, s2, x + 5, 29, '#ffd27a', 7.5); ttext(g, i === 1 ? 'Lento, seguro' : i === 0 ? 'Rápido, arriesga' : 'Sin riesgo', x + 5, 42, '#d8d0ee', 6); });
-          [['guia', 1, 0, 3], ['ing', 0, 0, 3.8], ['medica', 1, 1, 4.4]].forEach(([r, c, k, at]) => { if (t0 > at) tface(g, r, 'neutral', 12 + c * 72 + k * 26, 50, 22); }); if (t0 > 4.8) ttext(g, 'Gana la mayoría: 2', w / 2, 98, '#5fe39a', 9, 'center'); } } }, TW, TH); } }
+        else { ttext(g, 'VOTA: 1 · 2 · 3', w / 2, 10, '#ffd27a', 8, 'center'); ['1 · Cruzar', '2 · Rodear', '3 · Esperar'].forEach((s2, i) => { const x = 8 + i * 72, win = i === 1 && t0 > 4.8; tpill(g, x, 20, 68, 62, win ? '#10381f' : '#0c1630', win ? '#5fe39a' : '#8fa0ff'); ttext(g, s2, x + 5, 29, '#ffd27a', 7.5);  });
+          [['guia', 1, 0, 3], ['ing', 0, 0, 3.8], ['medica', 1, 1, 4.4]].forEach(([r, c, k, at]) => { if (t0 > at) tface(g, r, 'neutral', 12 + c * 72 + k * 26, 50, 22); }); if (t0 > 4.8) ttext(g, 'Gana el 2', w / 2, 98, '#5fe39a', 9, 'center'); } } }, TW, TH); } }
 ];
 function showTutorial() {
   ensure(); return new Promise(res => {
@@ -576,7 +580,7 @@ function showTutorial() {
     TSTEPS.forEach((_, k) => { const d = $('i', '', dots); d.onclick = () => { i = k; draw(); }; });
     function draw() {
       offTick.splice(1).forEach(f => f()); card.innerHTML = ''; card.style.animation = 'none'; void card.offsetWidth; card.style.animation = ''; const t = TSTEPS[i]; seen.add(i);
-      const art = $('div', 'tart', card); t.art(art); const tx = $('div', 'ttext', card); $('div', 'lab', tx, 'PASO ' + (i + 1) + ' DE ' + TSTEPS.length); $('h2', '', tx, esc(t.t)); $('p', '', tx, t.p); $('div', 'tip', tx, '<b>Consejo:</b> ' + t.tip);
+      const art = $('div', 'tart', card); t.art(art); const tx = $('div', 'ttext', card); $('div', 'lab', tx, 'PASO ' + (i + 1) + ' DE ' + TSTEPS.length); $('h2', '', tx, esc(t.t)); $('p', '', tx, t.p);
       dots.querySelectorAll('i').forEach((d, k) => { d.className = k === i ? 'on' : seen.has(k) ? 'done' : ''; }); mid.textContent = ''; nx.textContent = i === TSTEPS.length - 1 ? '¡A jugar!' : 'Siguiente ›'; bp.style.visibility = i ? 'visible' : 'hidden';
     }
     function next() { sfx('click'); if (i >= TSTEPS.length - 1) return finish(); i++; draw(); }
@@ -764,12 +768,12 @@ function showRole(priv, role) {
     const d = rinfo(role), s = mkScr('role', 'role'); s.innerHTML = ''; s.style.setProperty('--c', d.col);
     go('role', { music: 'briefing', keys: e => { if (e.key === 'Enter' || e.key === ' ') { adv(); return; } return false; } }); bgc(s, 'entrada', { dark: .85, kind: 'ember', light: false, n: 45 });
     const c = $('div', 'rcard rel', s); c.style.setProperty('--c', d.col); $('div', 'lab', c, 'TU PAPEL EN EL RESCATE'); const pc = portrait(role, 'preocupado', 128); pc.className += ' big'; c.appendChild(pc); sfx('select');
-    const h = $('h1', '', c, 'ERES ' + esc(d.n.toUpperCase())); h.style.color = d.col; $('div', 'mut', c, esc(d.t) + ' &middot; ' + esc(d.skill));
+    const h = $('h1', '', c, 'ERES ' + esc(d.n.toUpperCase())); h.style.color = d.col; $('div', 'mut', c, esc(d.t) + ' &middot; ' + esc(cut(d.skill, 40)));
     const goal = priv.goal && (priv.goal.text || priv.goal), sec = priv.secret && (priv.secret.text || priv.secret), rb = Story_role(role);
-    const gb = $('div', 'sbox', c, '<div class="lab">' + ' TU OBJETIVO SECRETO' + (priv.goal && priv.goal.points ? ' (+' + priv.goal.points + ' pts)' : '') + '</div><div class="t">' + esc(goal || rb.goal || 'Ayuda al equipo.') + '</div>');
-    const sb = $('div', 'sbox hid', c, '<div class="lab">' + ' TU SECRETO (solo lo sabes tú)</div><div class="t">' + esc(sec || rb.secret || 'Guardas algo que el equipo no sabe.') + '</div>'); let shown = false;
+    const gb = $('div', 'sbox', c, '<div class="lab">' + ' TU OBJETIVO SECRETO' + (priv.goal && priv.goal.points ? ' (+' + priv.goal.points + ' pts)' : '') + '</div><div class="t">' + esc(cut(goal || rb.goal || 'Ayuda al equipo.', 70)) + '</div>');
+    const sb = $('div', 'sbox hid', c, '<div class="lab">' + ' TU SECRETO (solo lo sabes tú)</div><div class="t">' + esc(cut(sec || rb.secret || 'Guardas algo que el equipo no sabe.', 70)) + '</div>'); let shown = false;
     gb.firstChild.prepend(icon('estrella', 14), ' '); sb.firstChild.prepend(icon('candado', 14), ' '); // el icono se pinta async: debe estar en el DOM
-    $('div', 'mut', c, 'Nadie más ve esto. Decide si lo cuentas, lo callas o lo escondes bajo una mentira.');
+    $('div', 'mut', c, 'Solo tú lo ves.');
     const b = $('button', 'btn go', c, 'Revelar mi secreto'); b.onclick = adv; sb.onclick = () => adv(true);
     function adv(only) { if (!shown) { shown = true; sb.classList.remove('hid'); sfx('secret_reveal'); b.textContent = 'Entendido, a la cueva'; burst(innerWidth / 2, innerHeight * .6, d.col, 18); if (only) return; return; } sfx('confirm'); snd('music', 'explore'); s.classList.remove('on'); cur = null; res(); }
   });
@@ -793,7 +797,7 @@ function showFinal(result, state) {
   if (fates.length) {
     const ok = fates.filter(f => f.status !== 'muerto').length; $('div', 'lab', c, 'DESTINO DE LAS PERSONAS').style.textAlign = 'center'; $('div', '', c, 'Salvaron a <b>' + ok + '</b> de ' + fates.length).style.cssText = 'color:#fff;text-shadow:0 2px 0 #000,0 0 8px #000;text-align:center;font-size:1.25em;margin:.2em 0';
     const fg = $('div', 'fates', c); fates.forEach(f => { const dead = f.status === 'muerto', e = $('div', 'fate ' + (f.status || 'vivo'), fg); e.style.opacity = 0; const pt = $('div', 'pt', e); pt.appendChild(fateFace(f));
-      $('div', '', e, '<b>' + esc(f.name || f.id) + '</b>' + (dead ? '<i class="cdl"></i>' : '') + '<br><span class="st">' + (dead ? 'NO SOBREVIVIÓ' : f.status === 'herido' ? 'HERIDO' : 'A SALVO') + '</span><br><span class="mut">' + esc(f.why || '') + '</span>');
+      $('div', '', e, '<b>' + esc(f.name || f.id) + '</b>' + (dead ? '<i class="cdl"></i>' : '') + '<br><span class="st">' + (dead ? 'NO SOBREVIVIÓ' : f.status === 'herido' ? 'HERIDO' : 'A SALVO') + '</span><br><span class="mut">' + esc(cut(f.why, 40)) + '</span>');
       step(() => { e.style.opacity = 1; e.style.animation = 'rrise .5s both'; sfx('tick'); }, 450); });
   }
   const gh = $('div', 'grade', c, grade); gh.style.visibility = 'hidden'; $('div', 'lab', c, 'NOTA DEL EQUIPO').style.textAlign = 'center';
@@ -802,7 +806,7 @@ function showFinal(result, state) {
   $('div', 'lab', L, 'PUNTUACIÓN'); const names = { equipo: 'Equipo', info: 'Información', honestidad: 'Honestidad', riesgo: 'Riesgo calculado' };
   Object.keys(names).forEach(k => { if (sc[k] == null) return; const ln = $('div', 'ln', L, '<span>' + names[k] + '</span><b class="px" data-v="' + sc[k] + '">0</b>'); ln.style.opacity = 0; step(() => { ln.style.opacity = 1; count(ln.querySelector('b'), sc[k]); sfx('tick'); }, 280); });
   if (sc.total != null) { const ln = $('div', 'ln', L, '<b>TOTAL</b><b class="px" style="color:' + gc + '">0</b>'); ln.style.opacity = 0; step(() => { ln.style.opacity = 1; count(ln.lastChild, sc.total, 900); sfx('confirm'); }, 400); }
-  $('div', 'lab', R, 'OBJETIVOS INDIVIDUALES'); const obj = result.objectives || []; obj.forEach(o => { const d = rinfo(o.role), ln = $('div', 'ln', R, '<span style="color:' + d.col + '">' + esc(d.n) + '</span><span class="' + (o.ok ? 'ok' : 'no') + '">' + (o.ok ? '✔ ' : '✘ ') + esc(o.text || '') + '</span>'); ln.style.opacity = 0; step(() => { ln.style.opacity = 1; sfx(o.ok ? 'resolve_good' : 'resolve_bad'); }, 420); });
+  $('div', 'lab', R, 'OBJETIVOS INDIVIDUALES'); const obj = result.objectives || []; obj.forEach(o => { const d = rinfo(o.role), ln = $('div', 'ln', R, '<span style="color:' + d.col + '">' + esc(d.n) + '</span><span class="' + (o.ok ? 'ok' : 'no') + '">' + (o.ok ? '✔ ' : '✘ ') + esc(cut(o.text, 50)) + '</span>'); ln.style.opacity = 0; step(() => { ln.style.opacity = 1; sfx(o.ok ? 'resolve_good' : 'resolve_bad'); }, 420); });
   const mvp = result.mvp && (result.mvp.role || result.mvp); if (mvp && RD[mvp]) { const d = rinfo(mvp), m = $('div', 'row', R); m.style.marginTop = '.7em'; m.appendChild(portrait(mvp, 'feliz', 48)); $('div', '', m, '<span class="lab">MVP</span><br><b style="color:' + d.col + '">' + esc(d.n) + '</b>' + (result.mvp.why ? '<br><span class="mut">' + esc(result.mvp.why) + '</span>' : '')); m.style.opacity = 0; step(() => { m.style.opacity = 1; sfx('select'); }, 400); }
   // logros nuevos
   const got = jget('rcv3_ach', {}), list = achList(), ids = (result.achievements || state.achievements || []).map(a => typeof a === 'string' ? a : a.id), news = ids.filter(id => !got[id]); ids.forEach(id => { if (!got[id]) got[id] = Date.now(); }); store.set('rcv3_ach', JSON.stringify(got));
@@ -810,7 +814,7 @@ function showFinal(result, state) {
   // estadisticas
   const stt = result.stats || state.stats || null; if (stt) { const P = $('div', 'panel', c); P.style.marginTop = '1em'; $('div', 'lab', P, 'ESTADISTICAS'); Object.keys(stt).forEach(k => $('div', 'ln', P, '<span>' + esc(NICE[k] || k) + '</span><b>' + esc(stt[k]) + '</b>').style.animation = 'none'); }
   const vp = $('div', 'panel', c); vp.style.marginTop = '1em'; $('div', 'lab', vp, 'VEREDICTO'); const vt = $('div', '', vp, ''); vt.style.cssText = 'line-height:1.55;font-size:1.05em;margin-top:.4em;min-height:3em';
-  step(() => typeInto(vt, String(result.verdict || state.verdict || (result.saved === false ? 'No lo lograron esta vez. Cada decisión cuenta: vuelvan a jugar con otro rol.' : 'Lía está fuera. Lo que cada uno hizo en la oscuridad, quedará entre ustedes.')), 36), 500);
+  step(() => typeInto(vt, cut(result.verdict || state.verdict || (result.saved === false ? 'No lo lograron. Prueba otro rol.' : 'Lía está fuera. ¡Lo lograron!'), 120), 36), 500);
   const bt = $('div', 'row', c); bt.style.cssText = 'justify-content:center;margin-top:1.2em'; const b1 = $('button', 'btn go', bt, 'Otra partida<span class="k">R</span>'), b2 = $('button', 'btn', bt, 'Cambiar de rol'), b3 = $('button', 'btn sec', bt, 'Menu<span class="k">M</span>');
   b1.onclick = () => { sfx('confirm'); emit('restart', { changeRole: false }); }; b2.onclick = () => { sfx('click'); emit('restart', { changeRole: true }); showLobby({ mode: 'idle' }); }; b3.onclick = () => { sfx('back'); emit('menu', {}); showMenu(); };
   return s;

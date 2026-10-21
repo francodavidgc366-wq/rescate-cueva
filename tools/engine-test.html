@@ -110,6 +110,25 @@ T.dump=function(z){var o=[],g=inst.world.g;for(var r=0;r<40;r++){var l='';for(va
 T.rmap=function(z,role){var seen={},b=inst.bodies[role||'guia'],sp=inst.world.spawns[z-1];inst.setUnlocked(5);inst.gather(z);var st=Math.round(sp.y/16)*500+Math.floor(sp.x/16);var o=inst.nav.out;var q=[st];seen[st]=1;
   while(q.length){var n=q.shift();(o[n]||[]).forEach(function(e){if(!seen[e.to]){seen[e.to]=1;q.push(e.to)}})}
   var g=inst.world.g,L=[];for(var r=0;r<40;r++){var l='';for(var c=0;c<100;c++){var v=g[r*500+(z-1)*100+c],id=r*500+(z-1)*100+c;l+=v==1?(seen[id]?'o':'#'):v==2?(seen[id]?'+':'='):(seen[id]?'o':'.')}L.push(l)}return L.join('\n')};
+// v14: modo externo (abilityMode/interactMode) + actionShot
+T.external=function(){var r={},cv=document.createElement('canvas'),ab=[],ip=[],gl=[],errs=[];window.addEventListener('error',function(e){errs.push(e.message)});
+  var e2=Engine.create(cv,{assets:window.ASSETS,getState:function(){return state},localRole:'guia',noCurrent:true,abilityMode:'external',interactMode:'external',authority:true,
+   onAbilityPrompt:function(ro,o){ab.push([ro,o])},onInteractPrompt:function(ro,id){ip.push([ro,id])},onGate:function(ro,id,k){gl.push(id)},onInteract:function(ro,id){gl.push('I:'+id)}});
+  e2.stop();e2.setUnlocked(1);e2.gather(1);e2.setPois(1,T.pois(1));var g=e2.getGates().filter(function(x){return x.zone===1})[0],b=e2.bodies[g.role];
+  e2.setLocal(g.role);b.x=g.spot.x;b.y=g.spot.y;b.vx=b.vy=0;var down={ability:true};
+  e2.setInput(g.role,down);for(var i=0;i<5;i++)e2.step();e2.setInput(g.role,{});for(i=0;i<5;i++)e2.step();
+  e2.setInput(g.role,down);for(i=0;i<5;i++)e2.step();e2.setInput(g.role,{});
+  for(i=0;i<80;i++)e2.step();
+  r.promptsFlancos=ab.length;r.promptOK=ab[0]&&ab[0][1].gateId===g.id;r.sinAbrirSolo=!e2.getGates().filter(function(x){return x.id===g.id})[0].open&&gl.length===0;
+  r.openGate=e2.openGate(g.id);for(i=0;i<5;i++)e2.step();r.onGateUna=gl.filter(function(x){return x===g.id}).length;
+  var po=Object.keys(e2.pois)[0],p=e2.pois[po];e2.setLocal('guia');var bg=e2.bodies.guia;bg.x=p.x;bg.y=p.y;bg.vx=bg.vy=0;
+  e2.setInput('guia',{interact:true});for(i=0;i<3;i++)e2.step();e2.setInput('guia',{});
+  r.interPrompt=ip.length>0;r.interNoConsume=!p.used&&gl.indexOf('I:'+po)<0;
+  r.commit=e2.commitInteract('guia',po);r.commitOnInteract=gl.indexOf('I:'+po)>=0;
+  var cx=e2.cam.x,cy=e2.cam.y;e2.actionShot(bg.x,bg.y,{kind:'perfect'});e2.floatText(bg.x,bg.y-20,'+10','#ffd24a');var mx=0;
+  ['gate','find','fail'].forEach(function(k){e2.actionShot(bg.x,bg.y,{kind:k})});e2.actionShot(bg.x,bg.y,{kind:'perfect'});
+  for(i=0;i<130;i++){e2.step(1/60);e2.render();mx=Math.max(mx,Math.abs(e2.cam.x-cx),Math.abs(e2.cam.y-cy))}
+  var gg=e2.camGoalDbg;r.camDespues=[Math.round(e2.cam.x-cx),Math.round(e2.cam.y-cy)];r.camMax=Math.round(mx);r.errs=errs;return r};
 T.shot=function(z,role,col,row){T.round(z);inst.setLocal(role||'guia');var b=inst.bodies[inst.active];b.x=((z-1)*100+col)*16+8;b.y=row*16;b.vx=b.vy=0;inst.setBot('medica',false);inst.setBot('ing',false);inst.setBot('guia',false);for(var k=0;k<150;k++)inst.step();inst.render();return[b.x,b.y]};
 T.round(1);
 var keys={};

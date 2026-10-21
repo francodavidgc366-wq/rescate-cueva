@@ -784,7 +784,7 @@ function create(canvas, opts) {
     if (b.interT > 0) b.interT--;
     var pn = poiNear(b); if (ip && pn && !b.bot) usePoi(b, pn);
     var z = zoneNear(b);
-    if (inp.ability && !b.pq) useAbility(b.role); b.pq = !!inp.ability;
+    if (inp.ability && !b.pq) { if (opts.abilityMode === 'external' && !b.bot) abilityPrompt(b); else useAbility(b.role); } b.pq = !!inp.ability;
     if (b.role === 'medica' && inp.interact && z && z.id === 'lia' && b.grounded) {   // curar a Lia: accion larga
       b.holdT = (b.holdT || 0) + 1; b.interT = 3; b.holdZ = z;
       if (b.holdT % 12 === 0) spark(z.x + (rr() - 0.5) * 8, z.y - 8, 2);
@@ -856,6 +856,21 @@ function create(canvas, opts) {
     if (g0.open || g0.pend) return false;
     g0.pend = 38; g0.opener = b.role; b.interT = 42; b.face = g0.x > b.x ? 1 : -1; b.vx = 0; sfx('ability', b); spark(g0.x, g0.y, 10); return true;
   }
+  function stabTarget(b) {
+    var best = null; Object.keys(bodies).forEach(function (id) { var o = bodies[id]; if (o !== b && Math.abs(o.x - b.x) < 40 && Math.abs(o.y - b.y) < 24 && o.air < 70 && (!best || o.air < best.air)) best = o; });
+    return best;
+  }
+  function stabilize(role, target) {   // v14: +50 aire (lo que hace Q de Ona en 'auto'); el cliente lo llama tras su minijuego
+    var b = bodies[role], o = bodies[target]; if (!b || !o || !authority || o === b) return false;
+    o.air = Math.min(100, o.air + 50); b.interT = 40; sfx('ability', b); spark(o.x, o.y - 10, 10); return true;
+  }
+  function abilityPrompt(b) {   // v14: modo 'external': solo avisa (flanco de Q); no abre ni cura
+    if (!authority || !opts.onAbilityPrompt) return;
+    var g0 = gateNear(b);
+    if (g0) { if (g0.role === b.role) opts.onAbilityPrompt(b.role, { gateId: g0.id, kind: g0.kind, x: g0.x, y: g0.y }); return; }
+    var o = b.role === 'medica' && stabTarget(b);
+    if (o) opts.onAbilityPrompt(b.role, { kind: 'estabilizar', target: o.id, x: o.x, y: o.y });
+  }
   function useAbility(role) {
     var b = bodies[role]; if (!b) return { ok: false, reason: 'rol' };
     if (!authority) return { ok: false, reason: 'host' };
@@ -865,8 +880,8 @@ function create(canvas, opts) {
       startOpen(g0, b); return { ok: true, kind: g0.kind, gateId: g0.id };
     }
     if (role === 'medica') {
-      var best = null; Object.keys(bodies).forEach(function (id) { var o = bodies[id]; if (o !== b && Math.abs(o.x - b.x) < 40 && Math.abs(o.y - b.y) < 24 && o.air < 70 && (!best || o.air < best.air)) best = o; });
-      if (best) { best.air = Math.min(100, best.air + 50); b.interT = 40; sfx('ability', b); spark(best.x, best.y - 10, 10); return { ok: true, kind: 'estabilizar', target: best.id }; }
+      var best = stabTarget(b);
+      if (best) { stabilize(role, best.id); return { ok: true, kind: 'estabilizar', target: best.id }; }
     }
     return { ok: false, reason: 'sitio' };
   }
@@ -1251,8 +1266,37 @@ function create(canvas, opts) {
   function usePoi(b, p) {
     if (p.cd > tick) return false; p.cd = tick + 30;
     if (poiBlocked(b, p)) { sfx('error', b); if (apOf(b.role) <= 0 && !p.used) say(b.role, '!', { ms: 1200 }); return false; }
+    if (opts.interactMode === 'external' && !b.bot) { if (opts.onInteractPrompt) opts.onInteractPrompt(b.role, p.id); return false; }
+    return commitPoi(b, p);
+  }
+  function commitPoi(b, p) {
     b.interT = 36; b.face = p.x > b.x ? 1 : -1; sfx('interact', b); spark(p.x, p.y - 12, 8); p.pulse = 1; stats.interacts++;
     if (opts.onInteract) opts.onInteract(b.role, p.id); return true;
+  }
+  function commitInteract(role, id) {   // v14: lo que hacia E, diferido (valida igual que E salvo la distancia)
+    var b = bodies[role], p = pois[id]; if (!b || !p || poiBlocked(b, p)) return false;
+    return commitPoi(b, p);
+  }
+  /* v14: juice de acciones precisas */
+  var floats = [], shot = null, timeScale = 1;
+  function floatText(x, y, text, color) { floats.push({ x: Math.round(x), y: Math.round(y), text: String(text), c: color || '#fff2c0', t: 0 }); if (floats.length > 12) floats.shift(); }
+  function actionShot(x, y, o) {
+    o = o || {}; var kind = o.kind || 'perfect', n = Math.max(30, Math.round((o.ms || 1400) * 0.06)); x = +x; y = +y;
+    shot = { x: x, y: y, kind: kind, t: 0, n: Math.min(n, 90), lb: o.letterbox !== false };
+    timeScale = 0.6; addShake(1.5);
+    var i, a, c;
+    if (kind === 'perfect') for (i = 0; i < 18; i++) { a = i / 18 * 6.283; addP({ k: 'spark', x: x, y: y, vx: Math.cos(a) * (0.8 + rr()), vy: Math.sin(a) * (0.8 + rr()) - 0.5, g: 0.03, life: 40 + rr() * 20, sz: 2, c: rr() < 0.5 ? '255,215,70' : '255,245,170', glow: 1 }); }
+    else if (kind === 'gate') { var g0 = GBY[o.gateId], col = g0 && g0.solid ? '170,150,130' : '200,160,90'; for (i = 0; i < 14; i++) addP({ k: 'dust', x: x + (rr() - 0.5) * 16, y: y + (rr() - 0.5) * 16, vx: (rr() - 0.5) * 1.2, vy: -rr() * 0.8, g: 0.01, life: 30 + rr() * 20, sz: 2, c: col }); spark(x, y, 12); }
+    else if (kind === 'find') for (i = 0; i < 16; i++) { a = i / 16 * 6.283; addP({ k: 'spark', x: x + Math.cos(a) * 6, y: y + Math.sin(a) * 6, vx: Math.cos(a) * 0.5, vy: Math.sin(a) * 0.5 - 0.2, g: 0, life: 34, sz: 1, c: '200,255,245', glow: 1 }); }
+    else for (i = 0; i < 12; i++) addP({ k: 'dust', x: x + (rr() - 0.5) * 8, y: y, vx: (rr() - 0.5) * 0.4, vy: -0.3 - rr() * 0.5, g: -0.01, life: 40 + rr() * 20, sz: 2, c: '110,110,120' });
+  }
+  function shotDraw() {   // zoom 1 -> 1.3 -> 1 hacia el punto (suavizado) + barras finas; sin destellos
+    var p = shot.t / shot.n, z = 1 + 0.3 * Math.sin(Math.PI * Math.min(1, p)), fx = clamp(shot.x - cam.x, 0, W), fy = clamp(shot.y - cam.y, 0, H);
+    if (z > 1.004) {
+      if (!csZc) csZc = canvasOf(W, H); var zx = csZc.getContext('2d'); zx.clearRect(0, 0, W, H); zx.drawImage(out.canvas, 0, 0);
+      out.imageSmoothingEnabled = true; out.drawImage(csZc, fx - fx / z, fy - fy / z, W / z, H / z, 0, 0, W, H); out.imageSmoothingEnabled = false;
+    }
+    var bh = shot.lb ? Math.round(5 * Math.sin(Math.PI * Math.min(1, p))) : 0; if (bh) { out.fillStyle = '#000'; out.fillRect(0, 0, W, bh); out.fillRect(0, H - bh, W, bh); }
   }
   function say(role, text, o) {
     if (!bodies[role]) return; o = o || {}; text = String(text == null ? '' : text); if (!text) { delete bub[role]; return; }
@@ -1493,6 +1537,8 @@ function create(canvas, opts) {
     wd.torches.forEach(function (t) { if (t.x > vx0 && t.x < vx1 && t.y > cam.y - 20 && t.y < cam.y + H + 20 && outF.get(t) !== 1 && tick % 7 === 0 && rr() < 0.7) addP({ k: 'spark', x: t.x + (rr() - 0.5) * 3, y: t.y - 17, vx: (rr() - 0.5) * 0.3, vy: -0.5 - rr() * 0.4, g: -0.005, life: 30, sz: 1, c: '255,190,90', glow: 1 }); });
     updParts(); if (authority) waterTick(); poiTick(); if (tick % 4 === 0) fireTick(); if (tick % 300 === 0) { nav.rev = null; nav.fields = {}; }
     shake *= 0.9; if (shake < 0.1) shake = 0;
+    floats = floats.filter(function (f) { return ++f.t < 50; });
+    if (shot) { if (shot.t >= 18) timeScale = 1; if (++shot.t >= shot.n) { shot = null; timeScale = 1; } }
     if (flash > 0) flash = Math.max(0, flash - 0.02);
     updCam();
   }
@@ -1508,7 +1554,7 @@ function create(canvas, opts) {
   function nudge(b, d) { if (!hit(b.x + d, b.y)) b.x += d; }
   function step(dt) {
     if (dt === undefined) { doTick(); return; }
-    acc += dt; var n = 0;
+    acc += dt * timeScale; var n = 0;
     while (acc >= 1 / 60 - 1e-9 && n < 6) { doTick(); acc -= 1 / 60; n++; }
     if (n === 6) acc = 0;
   }
@@ -1942,6 +1988,8 @@ function create(canvas, opts) {
     if (flash > 0) { out.fillStyle = 'rgba(' + flashCol + ',' + flash * 0.6 + ')'; out.fillRect(0, 0, W, H); }
     drawOverlay(cxr, cyr, t, order);
     if (cs) csDraw(cxr, cyr);
+    floats.forEach(function (f) { var fy = f.y - Math.round(f.t * 0.4); if (f.t < 38 || f.t % 2) drawText(out, f.text, f.x - cxr - Math.floor(textW(f.text) / 2), fy - cyr, f.c, '#10081c'); });
+    if (shot) shotDraw();
     cam.x = cam.rx; cam.y = cam.ry;
   }
 
@@ -2418,7 +2466,7 @@ function create(canvas, opts) {
     setCameraFixed: function (x, y) { cam.mode = 'fixed'; cam.fx = x; cam.fy = y; }, setCameraFollow: function () { cam.mode = 'follow'; },
     setGuide: setGuide, getPoiPos: getPoiPos, getRoute: getRoute, focus: focus, setViewInsets: setViewInsets, drawMinimap: drawMinimap, setHint: function (t) { hintText = t ? String(t) : null; },
     setUnlocked: setUnlocked, getUnlocked: function () { return unlocked; }, getZone: function (role) { var b = bodies[role || active]; return b ? secOfX(b.x) + 1 : 1; },
-    swimNext: swimNext, findDry: findDry, fieldFor: fieldFor, getGates: getGates, openGate: openGate, nearGate: nearGate, useAbility: useAbility, botOpenGate: botOpenGate, getAir: getAir, setAir: function (role, v) { var b = bodies[role]; if (b) b.air = clamp(+v, 0, 100); }, setPoiHints: setPoiHints,
+    swimNext: swimNext, findDry: findDry, fieldFor: fieldFor, getGates: getGates, openGate: openGate, stabilize: stabilize, commitInteract: commitInteract, actionShot: actionShot, floatText: floatText, nearGate: nearGate, useAbility: useAbility, botOpenGate: botOpenGate, getAir: getAir, setAir: function (role, v) { var b = bodies[role]; if (b) b.air = clamp(+v, 0, 100); }, setPoiHints: setPoiHints,
     playTravel: playTravel, isCutscene: function () { return !!cs; }, skipCutscene: skipCutscene,
     bodies: bodies, cam: cam, zones: wd.zones, world: wd, tileAt: tileAt
   });
@@ -2468,7 +2516,7 @@ global.Engine = { create: create, demoLoop: demoLoop, waterY: waterY, W: W, H: H
   pan: function (r) { if (this.current) this.current.pan(r); },
   fx: function (t, x, y) { if (this.current) this.current.fx(t, x, y); },
   camShake: function (a) { if (this.current) this.current.camShake(a); },
-  sectionOf: function (x) { return clamp(Math.floor(x / SPW), 0, NS - 1) + 1; }, version: '13.0',
+  sectionOf: function (x) { return clamp(Math.floor(x / SPW), 0, NS - 1) + 1; }, version: '14.0',
   setGuide: function (t, o) { if (this.current) this.current.setGuide(t, o); },
   getPoiPos: function (id) { return this.current ? this.current.getPoiPos(id) : null; },
   getRoute: function (id) { return this.current ? this.current.getRoute(id) : null; },

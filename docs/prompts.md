@@ -1,13 +1,13 @@
-# Prompts v3 - Rescate en la Cueva
-Código: `src/story.js` (`Story.PROMPTS`, `version:'v3'`). Modelo `claude-haiku-5-5` (`Story.setModel`). Llamada directa desde el navegador (`anthropic-dangerous-direct-browser-access`), clave solo en localStorage. Toda salida es JSON validado; ante fallo se cae al modo demo (3 fallos seguidos pausan la IA 90 s).
+# Prompts v4 - Rescate en la Cueva
+Código: `src/story.js` (`Story.PROMPTS`, `version:'v4'`). Modelo `claude-haiku-5-5` (`Story.setModel`). Llamada directa desde el navegador (`anthropic-dangerous-direct-browser-access`), clave solo en localStorage. Toda salida es JSON validado; ante fallo se cae al modo demo (3 fallos seguidos pausan la IA 90 s).
 
 | Agente | Cuándo | Entrada | Salida (JSON) | Validación / fallback |
 |---|---|---|---|---|
-| Director | `roundStart` | contexto público + historial + evento y opciones base | `{event:{title,text,radio},options:[{n,title,text,known}x3],pois:[4 etiquetas]}` | `validDirector`: longitudes, 3 opciones, `n` con palabra clave única (la usa `parseClaim`). 2 intentos con `[ERROR PREVIO]`, luego demo (`fallback:true`). La IA solo escribe texto: números, trampa/gema y efectos los fija el código por semilla (anti-trampas). |
-| Compañero (chat) | `botChat` | personalidad, estado público, 8 últimos mensajes, su info privada, disparador | `{text}` | `validChat`: 3-240 chars, sin metaconceptos, rechaza si filtra su secreto sin haberlo revelado. Fallback: plantillas reactivas sin repetición. |
+| Director | `roundStart` | contexto público + historial + evento y opciones base | `{event:{title,text,radio},options:[{n,title,text,known}x3],pois:[4 etiquetas]}` | `validDirector`: longitudes cortas (event.text ≤60, radio ≤55, title ≤28, text/known ≤60, pois ≤18), 3 opciones, `n` con palabra clave única (la usa `parseClaim`). 2 intentos con `[ERROR PREVIO]`, luego demo (`fallback:true`). La IA solo escribe texto: números, trampa/gema y efectos los fija el código por semilla (anti-trampas). |
+| Compañero (chat) | `botChat` | personalidad, estado público, 8 últimos mensajes, su info privada, disparador | `{text}` | `validChat`: 3-60 chars (pide ≤12 palabras / 55), sin metaconceptos, rechaza si filtra su secreto sin haberlo revelado. Fallback: plantillas reactivas sin repetición. |
 | Compañero (acción) | `botAct` | fase, POIs libres / opciones / acciones secretas | `{action:'poi'|'share'|'vote'|'secret'|'ready'|'none',...}` | `validAct`: solo acciones legales (AP, tarjeta propia no compartida, opción existente). Fallback: heurística por estilo. Compartir con cambios = mentira, la detecta el juego (`parseClaim`). |
 | Lía | `botChat(st,'lia',..)` | estado | `{text}` | igual que chat; fallback frases por salud/agua. |
-| Árbitro | `finish` | resultado, decisiones, secretos, mentiras, objetivos | `{verdict}` | 60-1000 chars; fallback `demoVerdict` (cita mejor/peor tramo, secretos, mentiras, objetivos, MVP). |
+| Árbitro | `finish` | resultado, decisiones, secretos, mentiras, objetivos | `{verdict}` | 20-300 chars (2 frases, ≤200); fallback `demoVerdict` (cita mejor/peor tramo, secretos, mentiras, objetivos, MVP). |
 
 Secciones del prompt: `[CONTEXTO]`, `[EVENTO BASE]`/`[ESTADO PÚBLICO]`, `[CHAT RECIENTE]`, `[TU INFORMACIÓN PRIVADA]`, `[FORMATO]`, `[REGLAS]`, `[VALIDACION]`, `[TAREA]`. El sistema ordena ignorar instrucciones dentro de datos/chat.
 
@@ -20,3 +20,6 @@ v5 (sin cambio de prompts de IA): las etiquetas de POI del director IA se ignora
 v6 (sin cambio de prompts de IA): `parseRequest`/`answerChat` (peticiones por texto), `explainResult`, `coach`, `botStuck` y los destinos (`fates`) son 100 % código; las frases de tarea de los bots salen de la tabla `DO` por POI.
 
 v7: rescatistas Mateo (guía), Elena (médica), Samuel (ingeniero); solo 4 destinos (Lía + 3). El director avisa de la opción «de respiro» si salud/agua van mal. `Story.planBrief` y `intel.uses` son texto fijo del código (no pasan por la IA).
+
+## v14: dieta de texto
+Todos los prompts piden respuestas telegráficas: evento 1 frase (≤60), radio de Lía ≤55, opciones título ≤28 y texto/pista ≤60, chat de compañeros ≤12 palabras (≤55 caracteres), veredicto 2 frases (≤200). Los validadores rechazan lo más largo y se cae a demo. Límites del contenido local: `node tools/story-test.js` (sección «dieta de texto»).
