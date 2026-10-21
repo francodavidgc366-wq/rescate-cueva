@@ -46,7 +46,7 @@
     const k = JSON.stringify([m.now.text, !!g, m.steps.map(x => x.done), st.round, ex && myPriv.ap, !!g, cr.ready, gates.length]);
     if (k !== gKey) {
       gKey = k; const rl = Story.readyLabel(st.phase) || {};
-      Hud.setNow({ text: m.now.text, why: m.now.why || '', sub: m.now.hint || '', kind: ex ? (m.now.target ? 'go' : 'explore') : st.phase === 'plan' ? 'plan' : st.phase === 'secret' ? 'secret' : 'info' });
+      Hud.setNow({ text: m.now.text, why: m.now.why || '', sub: '', kind: ex ? (m.now.target ? 'go' : 'explore') : st.phase === 'plan' ? 'plan' : st.phase === 'secret' ? 'secret' : 'info' });
       Hud.setMission({ title: m.title, steps: m.steps.map(x => ({ text: x.text, done: x.done })) });
       Hud.setReady({ label: 'Hablar con el equipo y decidir', tip: 'Cuando estés listo, el equipo se reúne para votar el plan', pulse: !!cr.ready });
       const ab = { guia: 'Clavar anclaje', medica: 'Estabilizar / reptadero', ing: 'Puente / válvula' }[myRole];
@@ -206,7 +206,13 @@
         case 'resolve': Story.setPhase(st, 'summary'); break;
         case 'summary':
           if (Story.isOver(st)) { st.final = await Story.finish(st, { role: myRole }); break; }
-          Story.advance(st); await startRound(); return;
+          { let tr = null; try { tr = Story.travelScene(st); } catch (e) { }
+            Story.advance(st);
+            if (tr && eng.playTravel) await new Promise(res => { let d = false; const fin = () => { if (!d) { d = true; res(); } };
+              try { Hud.setNow({ text: tr.caption || 'Viajan a la siguiente zona', sub: '', kind: 'info' }); } catch (e) { }
+              const ok = eng.playTravel({ toZone: st.round, kind: tr.kind, outcome: tr.outcome, ms: 8000 }, fin); if (ok === false) return fin();
+              if (Hud.dialogue && tr.lines && tr.lines.length) Hud.dialogue(tr.lines, { auto: 2600 }); setTimeout(fin, 16000); }); }
+          await startRound(); return;
       }
     } catch (e) { console.error(e); }
     busyRound = false; push();

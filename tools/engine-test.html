@@ -83,6 +83,18 @@ T.airTest=function(){inst.stop();inst.setUnlocked(5);inst.gather(5);inst.setWate
   var sf={};T.sfx.forEach(function(e){sf[e.n]=(sf[e.n]||0)+1});var res={airPerSec:a.join(','),drowns:T.drown.length,sfx:sf};
   b.x=430*16+8;b.air=10;for(var k=0;k<120;k++){b.y=514;b.vy=0;inst.step()}res.pocketAir=Math.round(b.air);inst.setWater(10);for(var k=0;k<600;k++)inst.step();res.airDry=Math.round(b.air);
   inst.setBot('medica',false);inst.setBot('ing',false);inst.start();return res};
+
+// v12: cinematica de viaje. T.travel(agua, kind, outcome, ms, from): simula 4 transiciones 1->2..4->5; mide s hasta onDone, llegada de los 3 y llamadas a onDone.
+T.travel=function(water,kind,outcome,ms,from){inst.stop();inst.resetGates();inst.setWaterRate(0);var res=[];
+  [[1,2],[2,3],[3,4],[4,5]].forEach(function(z){var a=z[0],to=z[1];inst.resetGates();inst.setUnlocked(a);state.round=a;inst.gather(a);['guia','medica','ing'].forEach(function(x){inst.setBot(x,x!=='guia')});inst.setLocal('guia');inst.setWater(water);inst.setWaterRate(0);for(var k=0;k<300;k++)inst.step();
+    if(from==='far'){['guia','medica','ing'].forEach(function(r,i){var b=inst.bodies[r],sp=inst.world.spawns[a-1];b.x=sp.x+i*16+(a>0?500:0);b.y=sp.y})}
+    var atDone='',calls=0,done=-1,t0=inst.tick,ok=inst.playTravel({toZone:to,kind:kind,outcome:outcome,ms:ms},function(){calls++;done=inst.tick-t0;var sp0=inst.world.spawns[to-1];atDone=['guia','medica','ing'].map(function(r,i){var b=inst.bodies[r];return Math.round(Math.hypot(b.x-(sp0.x+i*16),b.y-sp0.y))}).join('/')});
+    var wasCs=inst.isCutscene(),unl=inst.getUnlocked(),mx=0,fadeBots=0,wr=inst.stats.warps;
+    for(var k=0;k<900&&inst.isCutscene();k++){inst.step();['guia','medica','ing'].forEach(function(r){if(inst.bodies[r].warp)fadeBots++})}
+    for(var k=0;k<30;k++)inst.step();
+    var sp=inst.world.spawns[to-1],d=['guia','medica','ing'].map(function(r,i){var b=inst.bodies[r];return Math.round(Math.hypot(b.x-(sp.x+i*16),b.y-sp.y))}),bots=['guia','medica','ing'].map(function(r){return inst.bodies[r].bot});
+    res.push({from:a,to:to,ok:ok,wasCs:wasCs,unl:unl,s:+(done/60).toFixed(1),calls:calls,atDone:atDone,dist:d,bots:bots.join(','),fadeBots:fadeBots,cam:Math.round(Math.abs(inst.cam.x-(inst.bodies.guia.x-160)))})});
+  inst.start();return res};
 T.dump=function(z){var o=[],g=inst.world.g;for(var r=0;r<40;r++){var l='';for(var c=0;c<100;c++){var v=g[r*500+(z-1)*100+c];l+=v==1?'#':v==2?'=':'.'}o.push(l)}return o.join('\n')};
 T.rmap=function(z,role){var seen={},b=inst.bodies[role||'guia'],sp=inst.world.spawns[z-1];inst.setUnlocked(5);inst.gather(z);var st=Math.round(sp.y/16)*500+Math.floor(sp.x/16);var o=inst.nav.out;var q=[st];seen[st]=1;
   while(q.length){var n=q.shift();(o[n]||[]).forEach(function(e){if(!seen[e.to]){seen[e.to]=1;q.push(e.to)}})}

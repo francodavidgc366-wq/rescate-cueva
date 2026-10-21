@@ -253,7 +253,7 @@ function setRoundContent(st, ev, optsTxt, poiLabels) {
   const xv = EVX[evT.id] || [0, evT.title], cap = xv[1], radio = (ev && ev.radio) || evT.radio;
   st.event = { id: evT.id, title: (ev && ev.title) || evT.title, text: ((ev && ev.text) || evT.text) + (x ? ' ' + x : ''), art: evT.art, radio, cat: evT.cat, caption: cap,
     focus: { poi: 'r' + r + '_' + xv[0], slot: S.slots[xv[0]], x: null }, lines: [(((ev && ev.title) || evT.title) + ': ' + cap), radio] };
-  st.plan = { options: [0, 1, 2].map(p => { const T = D.opts[S.perm[p]], ov = optsTxt && optsTxt[p]; return { id: 'ABC'[p], n: ov ? ov.n : T.n, title: ov ? ov.title : T.t, text: ov ? ov.text : T.x, known: ov ? ov.known : T.k, req: T.req ? { material: T.req } : undefined, ask: ZASK[r - 1], what: WHAT[T.n] || T.x, gain: optGain(T), risk: optRisk(T) }; }), ask: ZASK[r - 1], votes: {}, chosen: null };
+  st.plan = { options: [0, 1, 2].map(p => { const T = D.opts[S.perm[p]], ov = optsTxt && optsTxt[p]; return { id: 'ABC'[p], n: ov ? ov.n : T.n, title: ov ? ov.title : T.t, text: ov ? ov.text : T.x, known: ov ? ov.known : T.k, req: T.req ? { material: T.req } : undefined, ask: ZASK[r - 1], what: WHAT[T.n] || T.x, travel: TRAVEL[T.n], gain: optGain(T), risk: optRisk(T) }; }), ask: ZASK[r - 1], votes: {}, chosen: null };
   const lab = [D.poi[0].label, D.poi[1].label, D.rec.label, D.sec.label]; // las etiquetas de la IA se ignoran: nombre, why y puertas deben casar con la zona
   const meta = st.hid.poiMeta; st.pois = [];
   const types = [{ kind: 'info', idx: 0, icon: D.poi[0].icon }, { kind: 'info', idx: 1, icon: D.poi[1].icon }, { kind: 'recurso', icon: D.rec.icon }, { kind: 'secreto', icon: D.sec.icon }];
@@ -601,12 +601,13 @@ const POIV = [
    { why: 'Cuerda nueva atada junto a la cámara: sirve para asegurar el traslado.', hr: 'guia', hint: 'El nudo es de Lía: lo ató para no soltarse.' },
    { why: 'Entre las rocas asoma un papel: lo dejó Lía antes de caer.', hr: 'medica', hint: 'La letra tiembla: la escribió ya con frío y con dolor.' }]];
 // Puertas de habilidad: id z<zona>_<kind>. poi = índice (0..3) del POI de la zona que bloquean.
+// Regla anti-bloqueo: una puerta protege el POI COMÚN (extra) o el POI propio de quien la abre; nadie depende de otro para su tarea propia.
 const GATES = [
-  ['z1_anclaje', 1, 'guia', 'anclaje', 'Anclaje en la pared de la grieta', 3, 'La grieta está en alto: hay que clavar un anclaje para trepar.'],
+  ['z1_anclaje', 1, 'guia', 'anclaje', 'Anclaje en la pared de la grieta', 2, 'La grieta está en alto: hay que clavar un anclaje para trepar.'],
   ['z2_puente', 2, 'ing', 'puente', 'Puente sobre el foso del derrumbe', 1, 'Un foso corta el paso a la pared: hace falta un puente.'],
   ['z2_anclaje', 2, 'guia', 'anclaje', 'Anclaje en los escombros altos', 3, 'Los escombros están en un saliente: se sube con cuerda.'],
-  ['z3_reptadero', 3, 'medica', 'reptadero', 'Reptadero con gas', 3, 'Hay gas en el pasaje: hay que estabilizar a quien pasa.'],
-  ['z3_valvula', 3, 'ing', 'valvula', 'Válvula del pozo de ventilación', 1, 'La válvula cerrada impide que llegue aire al pozo.'],
+  ['z3_reptadero', 3, 'medica', 'reptadero', 'Reptadero con gas', 2, 'Hay gas en el pasaje: hay que estabilizar a quien pasa.'],
+  ['z3_valvula', 3, 'ing', 'valvula', 'Válvula del pozo de ventilación', 3, 'La válvula cerrada impide que llegue aire al pozo.'],
   ['z4_anclaje', 4, 'guia', 'anclaje', 'Anclaje en la cornisa', 1, 'Las cruces de Lía están en una cornisa: se llega con cuerda.'],
   ['z4_valvula', 4, 'ing', 'valvula', 'Válvula del desagüe', 3, 'El desagüe cerrado inunda el pasaje de las líneas pintadas.'],
   ['z5_puente', 5, 'ing', 'puente', 'Puente hasta la compuerta', 1, 'La compuerta queda al otro lado de un tramo inundado.'],
@@ -630,7 +631,7 @@ function openGate(st, role, gateId, o) {
   o = o || {}; const g = st.gates && gateOf(st, gateId);
   if (!g) return { ok: false, reason: 'puerta' }; if (g.role !== role) return { ok: false, reason: 'rol' }; if (g.zone > st.round) return { ok: false, reason: 'zona' };
   if (st.gatesOpen[g.id]) return { ok: false, reason: 'abierta' };
-  st.gatesOpen[g.id] = true; g.open = true; const hd = st.hid;
+  st.gatesOpen[g.id] = true; g.open = true; const hd = st.hid; if (hd.busy) delete hd.busy[role];
   addScore(st, role, 'equipo', 6); hd.pTrust[role] = clamp(hd.pTrust[role] + 3, 0, 100);
   if (o.helpFor && o.helpFor !== role) applyStat(st, [0, 0, 0, 1]);
   const up = st.pois.find(p => p.id === gatePoi(g)); return { ok: true, gateId: g.id, kind: g.kind, unlocks: gatePoi(g), use: 'puerta', explain: 'Has abierto «' + g.label + '» → sirve para que el equipo llegue a «' + (up ? up.name : 'un punto nuevo') + '» → úsalo en: ir allí a investigar y avisar al equipo.', msgs: [say(st, 'sys', ROLES[role].short + ' hizo: ' + KIND_VERB[g.kind] + '. Se abre «' + g.label + '».', 'sys')] };
@@ -639,12 +640,21 @@ function openGate(st, role, gateId, o) {
 function poiHints(st, role) { const o = {}; st.pois.forEach(p => { if (p.hintRole === role) o[p.id] = { icon: 'ojo', text: st.hid.poiMeta[p.id].hint }; }); return o; }
 // Crisis: hito (>= MILESTONE puntos investigados por el equipo) o tiempo (hid.expT acumulado por tickWater >= TIMES.explore, o tleft agotado)
 const MILESTONE = 3;
+// Meta de equipo por zona: se cumple sumando una aportación distinta por rol (la de su POI propio).
+const TEAM_GOAL = ['conseguir la ruta segura a la galería', 'conseguir el paso seguro del derrumbe', 'conseguir cómo cruzar la sala del gas', 'conseguir cómo cruzar el agua helada', 'conseguir el camino hasta Lía'];
+const TEAM_PART = { guia: ['la ruta y el anclaje', 'ruta'], medica: ['el estado de Lía y el aire', 'estado de Lía'], ing: ['la estructura, el agua y el puente', 'estructura'] };
+function teamInfo(st, role) {
+  const roles = {}, goal = 'Entre los tres: ' + TEAM_GOAL[clamp(st.round, 1, 5) - 1];
+  RK.forEach(k => { const p = st.pois.find(x => x.owner === k); roles[k] = { done: !!(p && ((p.seen && p.seen.includes(k)) || (p.kind === 'recurso' && p.used))), part: TEAM_PART[k][0], poiId: p && p.id }; });
+  const needs = RK.filter(k => k !== role && !roles[k].done).map(k => ({ role: k, text: 'Necesitas ' + TEAM_PART[k][0] + ' de ' + NAMES[k] + ': pídesela por el chat' }));
+  return { goal, roles, mine: roles[role] && { done: roles[role].done, text: roles[role].done ? 'Ya aportaste ' + roles[role].part : 'Falta tu aportación: ' + roles[role].part }, needs };
+}
 function crisisReady(st) {
   const total = st.pois.length, done = st.pois.filter(p => p.seen && p.seen.length > 0).length, t = TIMES.explore[dname(st.difficulty)];
-  const progress = { done, total, need: MILESTONE };
+  const tm = teamInfo(st, null), progress = { done, total, need: MILESTONE, goal: tm.goal, roles: tm.roles, missing: RK.filter(k => !tm.roles[k].done) };
   if (st.phase !== 'explore') return { ready: false, reason: null, progress };
-  const byTime = st.hid.expT >= t || (st.tleft <= 0 && st.hid.expT > 0);
-  return { ready: done >= MILESTONE || byTime, reason: done >= MILESTONE ? 'hito' : byTime ? 'tiempo' : null, progress };
+  const byTime = st.hid.expT >= t || (st.tleft <= 0 && st.hid.expT > 0), hito = done >= MILESTONE && !progress.missing.length;
+  return { ready: hito || byTime, reason: hito ? 'hito' : byTime ? 'tiempo' : null, progress };
 }
 function convene(st, role) {
   if (!st.players[role]) return { ok: false, reason: 'rol' };
@@ -658,12 +668,20 @@ const REQ_LINES = {
   no: ['Ahora no puedo, {to2}.', 'No me fío de ir allí, {to2}.', 'Prefiero guardar fuerzas.'],
   lie: ['Voy enseguida, {to2}.', 'Ya voy, tú sigue.']
 };
+// ¿La puerta desbloquea una tarea pendiente de un humano (el que pide o cualquier otro)?
+const needsHuman = (st, g, from) => !st.players[from].ai || RK.some(k => !st.players[k].ai && !st.hid.poiMeta[gatePoi(g)].seen.includes(k));
 function request(st, fromRole, toRole, o) {
   o = o || {}; const hd = st.hid, g = st.gates && gateOf(st, o.gateId || ''), P = st.players[toRole]; if (RK.includes(fromRole)) (hd.coachAsk = hd.coachAsk || {})[fromRole] = 1;
   if (!g || !RK.includes(fromRole) || !RK.includes(toRole) || fromRole === toRole) return { ok: false, reason: 'datos' };
   if (g.role !== toRole) return { ok: false, reason: 'rol' }; if (st.gatesOpen[g.id]) return { ok: false, reason: 'abierta' }; if (g.zone > st.round) return { ok: false, reason: 'zona' };
   if (!P.ai) { const m = say(st, fromRole, NAMES[toRole] + ', ¿puedes ' + KIND_VERB[g.kind] + '? ' + g.why, 'chat', { mood: 'talk' }); m.rnd = st.round; return { ok: true, human: true, accept: null, delay: 0, line: null, msg: m, msgs: [m] }; }
   const n = hd.reqN = (hd.reqN || 0) + 1, ln = (A, k) => A[hi(A.length, st.seed, 'rl', g.id, k, n)];
+  if (needsHuman(st, g, fromRole)) { // nunca dejar bloqueado a un humano: acepta siempre, con ETA corta; solo se encola si está abriendo OTRA puerta
+    const T = now(), bz = (hd.busy = hd.busy || {})[toRole], queued = bz && bz.until > T && bz.gateId !== g.id, delay = queued ? 15000 : 2500 + hi(3000, st.seed, 'rd', g.id, n);
+    const line = queued ? 'Termino esta y voy: 15 s, ' + NAMES[fromRole] + '.' : 'Voy, tardo unos segundos, ' + NAMES[fromRole] + '.';
+    hd.busy[toRole] = { gateId: g.id, until: T + delay }; const m = say(st, toRole, line, 'chat', { mood: 'talk' }); m.delay = delay; m.rnd = st.round; hd.pTrust[toRole] = clamp(hd.pTrust[toRole] + 2, 0, 100);
+    return { ok: true, accept: true, delay, line, queued: queued || undefined, msg: m, msgs: [m], gateId: g.id };
+  }
   const base = P.style === 'persona' ? ROLES[toRole].traits.coop : P.style === 'coop' ? .92 : P.style === 'ego' ? .35 : .55;
   let p = base + (hd.pTrust[fromRole] - 50) / 220 + dif(st).rel / 70 + (dname(st.difficulty) === 'facil' ? .12 : 0) + (o.typed ? .12 : 0) - (g.kind === 'puente' && toRole === 'ing' && st.s.material < st.priv.ing.goal.min + 8 ? .2 : 0) + (st.s.agua >= 70 ? .08 : 0);
   p = clamp(p, .05, .97); const accept = H(st.seed, 'req', g.id, fromRole, toRole, n) < p;
@@ -757,7 +775,7 @@ const readyLabel = phase => { const r = READY[phase] || ['Listo', 'Pasa a la sig
 // mission(st, role, opts?) -> {title, desc, steps, now:{text, why, short, target, gate?, hint}}. Un solo objetivo en now; steps solo para el cuaderno.
 function mission(st, role, o) {
   o = o || {}; const r = clamp(st.round, 1, ROUNDS), ph = st.phase, hd = st.hid, pv = st.priv[role], P = st.players[role], title = MGOAL[r - 1];
-  const mk = (desc, steps, now) => ({ title, desc, steps, now: Object.assign({ target: null, hint: '', why: '' }, now) });
+  const tm = ph === 'explore' ? teamInfo(st, role) : null, mk = (desc, steps, now) => ({ title, desc, steps, team: tm || undefined, now: Object.assign({ target: null, hint: '', why: '' }, now, tm && { hint: (now.hint || '') + ' · Meta: ' + tm.goal + (tm.needs[0] ? ' · ' + tm.needs[0].text : '') }) });
   const spoke = hd.spoke[role] === r || hd.shares.some(x => x.from === role && x.round === r);
   const pm = p => hd.poiMeta[p.id], avail = p => !pm(p).seen.includes(role) && !pm(p).used;
   const give = p => p.kind === 'info' ? 'pista de ruta, puede fallar' : p.kind === 'recurso' ? p.label.split(' · ')[1] + ' para el equipo' : 'hallazgo';
@@ -773,11 +791,12 @@ function mission(st, role, o) {
     const T = tasks(st, role)[0], tp = T && st.pois.find(x => x.id === T.poiId);
     const BEN = p => p.kind === 'info' ? 'Si encuentras esto, tendrás una pista privada para la votación: ' + p.why : p.kind === 'recurso' ? 'Si lo recoges, el equipo gana al instante: ' + p.give.replace(/^Da /, '').replace(/ \(solo.*$/, '') + '.' : 'Si lo miras, sumas un hallazgo con bonus para el equipo. ' + p.why;
     if (T && T.type === 'gate') return mk(desc, steps, { text: 'Tu tarea: pulsa Q en «' + myGate.label + '» para abrirla', why: 'Si la abres, llegarán a ' + (tp ? '«' + tp.name + '»' : 'un punto nuevo') + ' y tendrán una pista más para votar. ' + myGate.why, short: 'Abre: ' + myGate.label, gate: myGate.id, target: tp ? tp.id : null, task: 'puerta', hint });
-    if (T && T.type === 'help') return mk(desc, steps, { text: T.text + ' (escríbeselo en el chat)', why: 'Si te la abre, podrás llegar a «' + (tp ? tp.name : 'ese punto') + '» y conseguir su pista. ' + T.why, short: 'Pide ayuda: ' + st.gates.find(g => g.id === T.gateId).kind, gate: T.gateId, target: T.poiId, task: 'ayuda', hint });
+    if (T && T.type === 'help') return mk(desc, steps, { text: T.text + ' (escríbeselo en el chat)', why: 'Si te la abre, podrás llegar a «' + (tp ? tp.name : 'ese punto') + '» y conseguir su pista. ' + T.why, short: 'Pide ayuda: ' + st.gates.find(g => g.id === T.gateId).kind, alt: 'Mientras te la abren: pregunta a un compañero qué vio o convoca la reunión.', gate: T.gateId, target: T.poiId, task: 'ayuda', hint });
     if (T) return mk(desc, steps, { text: (T.type === 'own' ? 'Tu tarea: ' : T.type === 'common' ? 'Tarea de todos: ' : '') + T.text.charAt(0).toLowerCase() + T.text.slice(1) + ' (pulsa E)', why: tp ? BEN(tp) : T.why, short: 'Ve a ' + tp.name, target: T.poiId, task: T.type === 'own' ? 'propia' : T.type === 'common' ? 'comun' : 'otra', hint });
     const un = pv.intel.find(x => !x.shared && !x.item);
     if (un) return mk(desc, steps, { text: 'Cuenta en el chat lo que has visto', why: 'Si lo cuentas, el equipo sabrá algo que solo tú sabes y votarán con más datos: «' + un.title + '».', short: 'Comparte', hint });
-    return mk(desc, steps, { text: 'Habla con el equipo o pulsa «Convocar reunión»', why: 'Ya has hecho todo lo que podías aquí: decidir con los demás es lo siguiente.', short: 'Habla o convoca', hint });
+    if (tm.needs[0]) return mk(desc, steps, { text: tm.needs[0].text, why: 'Sin su aportación el equipo no completa la meta y votarán a ciegas.', short: 'Pide su aporte', target: null, hint, task: 'chat' });
+    return mk(desc, steps, { text: 'Convoca la reunión (o comparte tu tarjeta en el chat)', why: 'Ya hiciste tu parte: ahora el equipo decide con lo que sabe.', short: 'Convoca', hint });
   }
   if (ph === 'plan') {
     const v = st.plan.votes[role], steps = [{ id: 'chat', text: 'Habla en el chat con el equipo', done: !!spoke, kind: 'chat' }, { id: 'vote', text: 'Vota A, B o C (teclas 1, 2, 3)', done: !!v, kind: 'vote' }, { id: 'ready', text: readyLabel('plan').label, done: !!P.ready, kind: 'ready' }];
@@ -944,7 +963,7 @@ function demoAct(st, role, phase) {
   if (phase === 'explore') {
     if (pv.ap > 0) {
       const gt = gatesFor(st, role).find(g => g.zone === st.round && !mem['g' + g.id]); // los bots abren primero sus propias puertas (según cooperación)
-      if (gt) { mem['g' + gt.id] = 1; if (rr(st, role, 'gate', gt.id) < .35 + .65 * Math.min(1, sy.share + FAC(st, .25))) return { type: 'gate', gateId: gt.id, label: gt.label, say: gateSay(gt) }; }
+      if (gt) { mem['g' + gt.id] = 1; if (needsHuman(st, gt, role) && RK.some(k => !st.players[k].ai) || rr(st, role, 'gate', gt.id) < .35 + .65 * Math.min(1, sy.share + FAC(st, .25))) return { type: 'gate', gateId: gt.id, label: gt.label, say: gateSay(gt) }; }
       const free = st.pois.filter(p => !hd.poiMeta[p.id].seen.includes(role) && !hd.poiMeta[p.id].used && !blockedBy(st, p.id) && !mem['x' + p.id]), own = free.find(p => p.owner === role);
       if (own) return { type: 'poi', poiId: own.id, label: own.name, say: 'Voy a ' + own.name + ' a ' + own.todo + '.' };
       if (free.length) { const w = free.map(p => (sy.poi[p.kind] || 1) * (p.kind === 'recurso' && st.s.material > 60 && st.players[role].style !== 'ego' ? .5 : 1)); const p = free[wpick(st, w, role, 'poi', pv.ap)]; return { type: 'poi', poiId: p.id, label: p.name || p.label, say: 'Voy a ' + p.name + ' a ' + p.todo + '.' }; }
@@ -1140,6 +1159,31 @@ const WHAT = { 'la galería alta': 'Bajan por un camino largo y seco, con cuerda
   'el corredor de cristal': 'Cruzan un pasillo estrecho de cristales con buen aire.', 'la sima': 'Bajan a cuerda por un agujero vertical de 40 metros.', 'la ventilación': 'Montan un ventilador y esperan a que el aire sea respirable.',
   'el sifón': 'Nadan cuatro metros bajo el agua helada.', 'la cornisa': 'Avanzan por una repisa estrecha sobre el agua.', 'el bombeo': 'Vacían la galería con bombas antes de pasar.',
   'la repisa': 'Rodean la cámara por un camino alto y seco.', 'la cuerda doble': 'Montan dos anclajes con cuerda doble para subir a Lía.', 'la compuerta': 'Fuerzan la puerta de la mina para llegar a Lía.' };
+// Cómo viajan (para la cinemática): kind, caption, 2-3 líneas {who,mood,text}; bad = versión «se torció».
+const L = (who, mood, text) => ({ who, mood, text }), TV = (kind, caption, lines, bc, bl) => ({ kind, caption, lines, bad: { caption: bc, lines: bl } });
+const TRAVEL = {
+  'la galería alta': TV('galeria', 'Bajan por la galería alta, sujetos a las cuerdas fijas', [L('guia', 'talk', 'Cuerda a cuerda, sin prisa. Yo voy delante.'), L('ing', 'talk', 'Los anclajes aguantan. Sigan.')], 'Un tramo de la galería se desprende bajo sus pies', [L('guia', 'alert', '¡Cuidado, resbala!'), L('medica', 'hurt', 'Me torcí el pie, pero sigo.')]),
+  'el pozo': TV('pozo', 'Bajan por el pozo con las cuerdas', [L('guia', 'alert', 'Uno a uno. Despacio con los anclajes viejos.'), L('ing', 'talk', 'Aguantan... de momento.'), L('medica', 'talk', 'No miren abajo.')], 'Un anclaje cede y bajan de golpe por el pozo', [L('ing', 'alert', '¡El anclaje se soltó!'), L('guia', 'hurt', 'Me quemó la cuerda en las manos.')]),
+  'la balsa': TV('balsa', 'Navegan en la balsa por el río subterráneo', [L('ing', 'talk', 'La corriente nos lleva. Mantengan el peso al centro.'), L('guia', 'alert', 'Curva a la izquierda. ¡Remen!')], 'La balsa vuelca y el agua helada los empapa', [L('medica', 'alert', '¡Agarren a Lía!'), L('ing', 'hurt', 'Perdí material en el río.')]),
+  'el desvío seco': TV('galeria', 'Rodean el derrumbe por el desvío seco', [L('guia', 'talk', 'Más largo, pero la roca es firme.'), L('medica', 'talk', 'Prefiero eso a correr riesgos.')], 'Una roca suelta cae en el desvío y los frena', [L('ing', 'alert', '¡Atrás, cae piedra!'), L('guia', 'hurt', 'Un golpe en el hombro, nada más.')]),
+  'el paso estrecho': TV('paso', 'Se cuelan de lado por el paso estrecho con el agua a las rodillas', [L('guia', 'talk', 'De lado y sin mochila.'), L('ing', 'alert', 'El agua está helada. Rápido.')], 'Se atascan en el hueco y el agua sube mientras forcejean', [L('ing', 'alert', '¡Estoy atascado!'), L('medica', 'hurt', 'Me raspé las costillas al salir.')]),
+  'el apuntalamiento': TV('puntales', 'Colocan puntales y ensanchan el paso con la camilla', [L('ing', 'talk', 'Cuña aquí, puntal allá. Ya cabe la camilla.'), L('medica', 'talk', 'Con cuidado: Lía va encima.')], 'Un puntal cede y el techo suelta tierra sobre ellos', [L('ing', 'alert', '¡Fuera, se mueve!'), L('guia', 'hurt', 'Polvo en los ojos, pero pasamos.')]),
+  'el corredor de cristal': TV('corredor', 'Cruzan el corredor de cristal con cuidado', [L('guia', 'talk', 'No toquen los cristales con las manos.'), L('medica', 'talk', 'El aire aquí es bueno. Sigan.')], 'Los cristales cortan guantes y manos en el pasillo', [L('medica', 'alert', '¡Alto, estás sangrando!'), L('guia', 'hurt', 'Un corte en la mano. Sigo.')]),
+  'la sima': TV('cuerda', 'Descienden por la sima colgados de la cuerda', [L('guia', 'alert', 'Cuarenta metros. Bajo yo primero.'), L('ing', 'talk', 'Aseguro arriba. Ahora Lía.')], 'La cuerda se tensa y Lía se golpea contra la pared de la sima', [L('medica', 'alert', '¡Lía, aguanta!'), L('ing', 'hurt', 'Se me escapó la cuerda un momento.')]),
+  'la ventilación': TV('ventilador', 'Montan el ventilador y esperan a que el aire limpie la sala', [L('ing', 'talk', 'Conectado. Ya empieza a moverse el aire.'), L('medica', 'talk', 'Lía respira mejor. Un poco más.')], 'El ventilador falla y tienen que esperar con el aire viciado', [L('ing', 'alert', 'Se acabó la batería.'), L('medica', 'hurt', 'Me mareo. Hablen menos.')]),
+  'el sifón': TV('sifon', 'Nadan por el sifón bajo el agua helada', [L('guia', 'alert', 'Cuatro metros. Aguanten el aire.'), L('medica', 'alert', 'Yo llevo a Lía. ¡Ahora!')], 'Se quedan sin aire en el sifón y salen tosiendo, helados', [L('medica', 'hurt', 'No siento las manos.'), L('guia', 'alert', '¡Más rápido, que sale!')]),
+  'la cornisa': TV('cornisa', 'Avanzan pegados a la pared por la cornisa sobre el agua', [L('guia', 'talk', 'Pegados a la pared. Un pie y luego otro.'), L('ing', 'alert', 'No miren al agua.')], 'Un pie resbala en la cornisa y uno cae al agua', [L('guia', 'alert', '¡Resbalé!'), L('ing', 'hurt', 'Me mojé entero, pero sigo.')]),
+  'el bombeo': TV('bombeo', 'Bombean la galería hasta que baja el agua', [L('ing', 'talk', 'Las tres bombas funcionan. Baja el nivel.'), L('guia', 'talk', 'Ya se ve el suelo. Pasemos.')], 'Las bombas se atascan y el agua apenas baja', [L('ing', 'alert', '¡Otra vez atascada!'), L('guia', 'hurt', 'Pasamos con el agua a la cintura.')]),
+  'la repisa': TV('repisa', 'Suben por la repisa alta, rodeando la cámara por arriba', [L('guia', 'talk', 'Seco y estrecho. Tranquilos.'), L('medica', 'talk', 'Voy detrás de Lía.')], 'La repisa se desmorona y avanzan a rastras', [L('guia', 'alert', '¡Se rompe el borde!'), L('medica', 'hurt', 'Me raspé las rodillas.')]),
+  'la cuerda doble': TV('cuerda', 'Montan la cuerda doble con dos anclajes', [L('ing', 'talk', 'Dos anclajes, dos personas a la vez.'), L('guia', 'talk', 'Sube Lía. Despacio.')], 'Un anclaje cede y la cuerda doble queda floja', [L('ing', 'alert', '¡Uno se soltó!'), L('guia', 'hurt', 'Me quemó las manos, pero aguanta.')]),
+  'la compuerta': TV('compuerta', 'Fuerzan la compuerta atascada entre los tres', [L('ing', 'alert', 'A la una, a las dos... ¡ahora!'), L('guia', 'alert', 'Cede, ¡empujen!')], 'La compuerta se atasca y el agua entra a chorros', [L('ing', 'alert', '¡No cede!'), L('medica', 'hurt', 'Lía está empapada. Hay que salir ya.')])
+};
+// Cinemática de viaje: opción elegida + resultado real del tramo.
+function travelScene(st) {
+  const hd = st.hid, rs = Object.keys(hd.resolved).map(Number).sort((a, b) => b - a)[0], res = rs && hd.resolved[rs]; if (!res || !res.plan || !res.plan.travel) return null;
+  const t = res.plan.travel, ok = !!res.ok, v = ok ? t : t.bad;
+  return { kind: t.kind, caption: v.caption, lines: (ok ? t.lines : t.lines.slice(0, 1).concat(v.lines)).map(x => Object.assign({}, x)), toZone: Math.min(6, res.round + 1), outcome: ok ? 'bien' : 'mal' };
+}
 // gain + ', pero ' + risk  ->  «Rápido, pero el material baja mucho»
 const optGain = T => { const g = [], e = T.e; if (e[0] <= -5) g.push('Rápido'); else if (e[0] < 0) g.push('Algo más rápido'); if (e[1] >= 1) g.push('Cuida a Lía'); if (e[3] >= 3) g.push('El equipo se siente seguro'); if (T.r < .2) g.push('Camino tranquilo'); return g.slice(0, 2).map((x, i) => i ? x.charAt(0).toLowerCase() + x.slice(1) : x).join(' y ') || 'Camino conocido'; };
 const optRisk = T => { const r = [], e = T.e; if (e[2] <= -10) r.push('el material baja mucho'); else if (e[2] <= -4) r.push('gasta algo de material'); if (e[0] >= 3) r.push('el agua sube más'); if (e[1] <= -3) r.push('Lía sufre'); if (T.r >= .4) r.push('puede salir muy mal'); else if (T.r >= .25) r.push('puede salir mal'); if (T.req) r.push('hacen falta ' + T.req + ' de material'); return r.slice(0, 2).join(' y ') || 'sin pegas claras'; };
@@ -1153,7 +1197,7 @@ function tasks(st, role) {
   if (g0) out.push({ type: 'gate', gateId: g0.id, poiId: gp && gp.id, text: gateSay(g0), why: g0.why });
   const add = (type, p) => { const g = blockedBy(st, p.id); if (g) out.push({ type: 'help', gateId: g.id, poiId: p.id, text: 'Pide a ' + NAMES[g.role] + ' que abra «' + g.label + '»', why: g.why + ' Detrás está «' + p.name + '».' }); else out.push({ type, poiId: p.id, text: 'Ve a «' + p.name + '» a ' + p.todo, why: p.why }); };
   if (pv.ap > 0) { const L = st.pois.filter(avail); L.filter(p => p.owner === role).forEach(p => add('own', p)); L.filter(p => p.common).forEach(p => add('common', p)); L.filter(p => p.owner && p.owner !== role).forEach(p => add('other', p)); }
-  return out;
+  return out.sort((a, b) => (a.type === 'help') - (b.type === 'help')); // las que dependen de otro, al final
 }
 const taskLine = (st, role) => { const t = tasks(st, role)[0]; if (!t) return 'esperar a la reunión'; return t.type === 'gate' ? t.text.charAt(0).toLowerCase() + t.text.slice(1) : t.type === 'help' ? 'esperar a que ' + t.text.replace('Pide a ', '').replace(' que abra', ' abra') : t.text.replace('Ve a', 'ir a'); };
 // ---- Peticiones en texto libre ----
@@ -1271,7 +1315,7 @@ function fates(st, win) {
   return out;
 }
 
-const Story = { planBrief, tasks, taskLine, parseRequest, answerChat, botStuck, defaultDifficulty, explainResult, coach, SURVIVORS, ownerOf, TIMES, chatCadence: CAD, mission, readyLabel, ROLES, STATS, ROUNDS, LIM, RK, SK, NAMES, PROMPTS, intro, introShots, now: () => Date.now(),
+const Story = { travelScene, teamInfo, planBrief, tasks, taskLine, parseRequest, answerChat, botStuck, defaultDifficulty, explainResult, coach, SURVIVORS, ownerOf, TIMES, chatCadence: CAD, mission, readyLabel, ROLES, STATS, ROUNDS, LIM, RK, SK, NAMES, PROMPTS, intro, introShots, now: () => Date.now(),
   newGame, privOf, publicState, roundStart, setPhase, poiInteract, share, accuse, vote, tally, secretPick, ready, allReady, tickWater, waterRate, resolve, advance, isOver, saved, objectives, finish, verdict: async st => st.verdict || buildVerdict(st, saved(st), objectives(st), 'guia'),
   achievementsList: () => ACH.map(a => Object.assign({}, a)), loadAchievements: loadAch, difficulty, botAct, exec, botChat, botsReact, liaLine, say, roleBrief, dialogue, outro, parseClaim: (st, t) => parseClaim(st, t),
   request, botRequest, scene, endingTitle, chatSuggest, statusLabels, crisisReady, convene, allConvened, openGate, poiHints, ZONES, GATES: GATES.map(g => Object.assign({}, g)),

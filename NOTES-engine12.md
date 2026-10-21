@@ -1,0 +1,21 @@
+# NOTES-engine12 (engine.js, `Engine.version === '12.0'`)
+## API (instancia y fachada `Engine.*`)
+- `eng.playTravel({toZone, kind, outcome, ms}, onDone) -> bool` (solo HOST/autoritativo; en cliente devuelve false y no hace nada).
+  - `toZone` 1..5 (defecto: zona desbloqueada). `kind`: 'pozo' | 'balsa' | 'galeria' | 'cuerda' | 'puente' | 'tunel' | 'compuerta' | otro = generico. `outcome`: 'bien' (pasos con polvo firmes) | 'mal' (resbalon de Elena, chorro de agua + shake suave, Samuel se frota el brazo, sin bloquear) | otro = nada. `ms` se limita a 6000..9000 (defecto 7500); la escena dura exactamente `ms`.
+  - Al empezar: `setUnlocked(toZone)` (abre el sello, con estruendo), los 3 cuerpos pasan a bot (el jugador local incluido; su entrada se ignora y se repone al acabar), cada uno hace `botGoto` a `spawnOf(toZone-1, k)` (punto de entrada, 16 px de separacion). La camara sigue al centroide del grupo (suave).
+  - Si al 62 % de `ms` no han llegado los 3: fundido a negro de 20 ticks y a mitad se colocan los 3 en su punto final (sin `warp` de bots, que se desactiva en la escena). Saltar (Espacio/Enter/Esc, `skipCutscene()`): mismo fundido (~0.33 s) y fin.
+  - Al terminar (`onDone()` exactamente 1 vez, sincrono, protegido con try/catch): los 3 estan en el punto final (si alguno quedaba a >24 px se coloca), `bot` restaurado, entrada del jugador devuelta, camara snap al jugador.
+  - Llamar a playTravel durante otra escena: la anterior termina al instante (colocando a todos, llama su onDone) y empieza la nueva.
+- `eng.isCutscene() -> bool`, `eng.skipCutscene() -> bool` (host; en cliente false).
+- Visual (todo en canvas 320x180, enteros): bandas letterbox 22 px arriba/abajo con rotulo del tipo («DESCENDIENDO POR EL POZO»...) y «ESPACIO: SALTAR» (solo host), fundido negro, cuerdas tensadas (pozo), anclajes (cuerda), antorchas (galeria), tablones que caen/se asientan (balsa, puente), salpicaduras/ondas + balanceo de camara (balsa), polvo y estruendo (tunel/compuerta).
+- Snapshot: `snapshot().cs = 0 | [kind, outcome, t, n, ft]` (t ticks transcurridos, n ticks totales, ft fundido -1 o 1..19). `applySnapshot` en cliente crea/actualiza/borra la escena local (letterbox, fundido, efectos con su propio t; `setInput` se pone a cero mientras dure; `onDone` NO se llama en cliente). main.js deberia ocultar HUD/chat flotante mientras `isCutscene()` (no lo toque).
+- Salto por teclado: el motor registra un `keydown` en captura (window) solo durante la escena, ignora INPUT/TEXTAREA, hace stopPropagation (para que Esc/Espacio no lleguen a main.js). En clientes no se puede saltar.
+## Carteles borrosos (causa y arreglo)
+- Causa: `VIS` (recuadro visible) salia de `getBoundingClientRect()/k` = decimales (p.ej. y0 = 37/3.85 = 9.6). Los carteles se anclan a `VIS.y0 + 2` (cartel de puerta pegado arriba, flecha, nombres, pista) => `fillRect`/texto en y fraccionaria = antialias de 2 filas = letras dobles «fantasma». No era doble pasada ni sombra: el texto es un unico pase.
+- Arreglo: `recalcVis` redondea (x0,y0 hacia arriba; x1,y1 hacia abajo) y `drawText` redondea x,y. Comprobado hookeando `fillRect` durante `render()` con insets fraccionarios a 3.85x: ya no hay rectangulos fraccionarios en texto/pills (solo degradados de luz).
+## Herramientas
+`tools/engine-test.html`: `T.travel(agua, kind, outcome, ms, 'far'|'')` (4 transiciones, devuelve s, calls, distancias a 0 al terminar). `tools/engine-signs.js` (cartel a x3, x3.85, x4), `tools/engine-zoom.js` (ampliar canvas), `tools/engine-crop.js` (recortar captura).
+## Medido
+T.travel con agua 5/70/100, 8 tipos, 'bien'/'mal': 4/4 transiciones, `onDone` 1 vez, 3 cuerpos a 0 px del punto (dura = ms, 7-7.5 s <= 12 s), 0 errores de consola; fundidos de bots 0. Cliente simulado con applySnapshot: letterbox y fin sincronizados. Salto: 20 ticks.
+## No verificado
+Integracion real en main.js/net (no se toca; hay que llamar a playTravel tras la decision, ocultar HUD y dejar que la red replique `cs`); latencia real de red; sonidos nuevos (solo 'rumble'/'splash' existentes); escena iniciada con jugadores en aguas profundas/lejos de la zona; el ×3.85 fraccionario sigue teniendo pixeles de ancho desigual por naturaleza (escalado del navegador), solo se elimino el antialias por coordenadas fraccionarias.

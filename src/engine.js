@@ -37,7 +37,7 @@ var FONT = { A: [7,5,7,5,5], B: [6,5,6,5,6], C: [7,4,4,4,7], D: [6,5,5,5,6], E: 
   '0': [7,5,5,5,7], '1': [2,6,2,2,7], '2': [7,1,7,4,7], '3': [7,1,7,1,7], '4': [5,5,7,1,1], '5': [7,4,7,1,7], '6': [7,4,7,5,7], '7': [7,1,1,1,1], '8': [7,5,7,5,7], '9': [7,5,7,1,7], '!': [2,2,2,0,2], '?': [7,1,2,0,2], '.': [0,0,0,0,2], '-': [0,0,7,0,0], ' ': [0,0,0,0,0], ',': [0,0,0,2,4], ':': [0,2,0,2,0], ';': [0,2,0,2,4], '/': [1,1,2,4,4], '+': [0,2,7,2,0], '(': [1,2,2,2,1], ')': [4,2,2,2,4], "'": [2,2,0,0,0], '%': [5,1,2,4,5], '*': [0,5,2,5,0], '>': [4,2,1,2,4], '<': [1,2,4,2,1], '=': [0,7,0,7,0], '_': [0,0,0,0,7], '^': [2,7,0,0,0] };
 function textW(s) { return String(s).length * 4 - 1; }
 function drawText(c, s, x, y, col, outline, sc2) {
-  sc2 = sc2 || 1;
+  sc2 = sc2 || 1; x = Math.round(x); y = Math.round(y);   // v12: coordenadas enteras siempre (fraccionarias = bordes con antialias = letras «fantasma»)
   s = String(s).replace(/[¿]/g, '?').replace(/[¡]/g, '!').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
   for (var pass = outline ? 0 : 1; pass < 2; pass++) {
     c.fillStyle = pass ? col : outline;
@@ -913,7 +913,7 @@ function create(canvas, opts) {
     b.jh = []; failGoal(b);
     b.mac = null; b.pe = null; b.calm = 150; b.swimHold = 0; if (b.lastE) killEdge(b.lastE); b.idleT = 90;
     b.loopN = tick - (b.loopT || -9999) < 1800 ? (b.loopN || 0) + 1 : 1; b.loopT = tick;
-    if (b.loopN >= 2) { b.warp = { t: 0 }; stats.warps++; b.loopN = 0; }   // ultimo recurso: se disuelve y reaparece en un nodo seguro
+    if (b.loopN >= 2 && !cs) { b.warp = { t: 0 }; stats.warps++; b.loopN = 0; }   // ultimo recurso: se disuelve y reaparece en un nodo seguro
   }
   initGates();
   function zoneNear(b) {
@@ -1019,6 +1019,7 @@ function create(canvas, opts) {
   function botBrain(b) {
     var inp = NOI();
     if (!nav.built[clamp(Math.floor(b.x / SPW), 0, NS - 1)]) ensureNav(b.x);
+    if (cs && (b.csDone || !b.goal)) return inp;   // v12: en la cinematica el bot llegado se queda quieto (sin pasear ni fundirse)
     if (b.warp) { b.warp.t++; if (b.warp.t === 22) doWarp(b); if (b.warp.t > 44) b.warp = null; return inp; }
     if (b.busy > 0) { b.busy--; return inp; }
     if ((b.y - 5) > waterY(wlCur)) {                // en el agua (la navegacion simulada es en seco): braza hacia la salida seca mas util (la navegacion simulada es en seco)
@@ -1077,7 +1078,7 @@ function create(canvas, opts) {
     if (f[cur] < b.bestDv - 0.5) { b.bestDv = f[cur]; b.progT = tick; }
     if (tick - b.progT > 400) {                         // sin progreso 6.5 s: descarta la arista usada; si persiste, fundido
       b.progT = tick; b.stuckN = (b.stuckN || 0) + 1;
-      if (b.lastE && b.stuckN < 3) killEdge(b.lastE); else if (b.stuckN >= 3) { b.warp = { t: 0 }; b.stuckN = 0; stats.warps++; return inp; }
+      if (b.lastE && b.stuckN < 3) killEdge(b.lastE); else if (b.stuckN >= 3 && !cs) { b.warp = { t: 0 }; b.stuckN = 0; stats.warps++; return inp; }
     }
     if (b.pe && (tick - b.pe.t > 300 || !alive(b.pe.e) || Math.round(b.y / T) !== ((b.pe.src / LW) | 0) || Math.abs(cur % LW - b.pe.src % LW) > 8)) b.pe = null;
     if (!b.pe && best && best.k === 'j') b.pe = { e: best, src: cur, t: tick, back: false };
@@ -1183,6 +1184,7 @@ function create(canvas, opts) {
   // v6: tras 2 fallos seguidos hacia el mismo objetivo el bot lo suelta y avisa (opts.onUnreachable(role, poiId)) para que la historia lo marque
   var failN = {};
   function noteFail(role, id) {
+    if (cs && id === 'cs') return;
     var k = role + '|' + id; failN[k] = (failN[k] || 0) + 1; stats.unreach = (stats.unreach || 0) + 1;
     if (failN[k] >= 2) { failN[k] = 0; if (opts.onUnreachable && !SIM) { var cbu = opts.onUnreachable; setTimeout(function () { cbu(role, id); }, 0); } }
   }
@@ -1314,6 +1316,7 @@ function create(canvas, opts) {
     var wy = waterY(wlCur);
     for (var i = parts.length - 1; i >= 0; i--) {
       var p = parts[i]; p.life--; p.vy += p.g; p.x += p.vx; p.y += p.vy;
+      if (p.y0 !== undefined && p.y >= p.y0) { p.y = p.y0; p.vy = p.g = p.vx = 0; }   // v12: tablon que se asienta
       if (p.k === 'bub') { p.x += Math.sin(tick * 0.1 + p.ph) * 0.15; if (p.y < wy) p.life = 0; }
       if (p.k === 'conf') p.vx = Math.sin(tick * 0.12 + p.ph) * 0.6;
       if (p.die) {
@@ -1348,12 +1351,16 @@ function create(canvas, opts) {
   }
   function snapshot() {
     var p = {}; Object.keys(bodies).forEach(function (id) { var b = bodies[id]; p[id] = [Math.round(b.x * 10) / 10, Math.round(b.y * 10) / 10, Math.round(b.vx * 100) / 100, Math.round(b.vy * 100) / 100, b.face, b.exAnim, b.cl || 0, b.role, b.name, Math.round(b.air * 10) / 10, b.swim ? 1 : 0]; });
-    return { v: 3, t: tick, w: wlTarget, wc: Math.round(wlCur * 100) / 100, a: active, u: unlocked, gs: GT.map(function (g0) { return g0.open ? 1 : 0; }), air: (function () { var o = {}; ROLES.forEach(function (r) { o[r] = Math.round(bodies[r].air * 10) / 10; }); return o; })(), p: p };
+    return { v: 3, t: tick, w: wlTarget, wc: Math.round(wlCur * 100) / 100, a: active, u: unlocked, gs: GT.map(function (g0) { return g0.open ? 1 : 0; }), air: (function () { var o = {}; ROLES.forEach(function (r) { o[r] = Math.round(bodies[r].air * 10) / 10; }); return o; })(), cs: cs ? [cs.kind, cs.out, cs.t, cs.n, cs.ft] : 0, p: p };
   }
   function applySnapshot(s) {
     if (!s || !s.p) return;
     if (s.w !== undefined && s.w !== wlTarget) setWater(s.w);
     if (s.u && s.u !== unlocked) setUnlocked(s.u);
+    if (!authority) {   // v12: la cinematica la lleva el host; aqui solo se muestra (letterbox, fundido, efectos) y se bloquea la entrada
+      if (s.cs) { if (!cs) { cs = { kind: s.cs[0], out: s.cs[1], t: s.cs[2], n: s.cs[3], ft: s.cs[4] }; csZero(); } else { cs.t = s.cs[2]; cs.n = s.cs[3]; cs.ft = s.cs[4]; } }
+      else if (cs) csEnd();
+    }
     if (s.gs) s.gs.forEach(function (o, i) { var g0 = GT[i]; if (!g0) return; if (o && !g0.open) doOpen(g0, true); else if (!o && g0.open) { g0.open = false; g0.n = 0; setCells(g0.cells, g0.solid ? 1 : 0); navDirty(); } });
     Object.keys(s.p).forEach(function (id) {
       var q = s.p[id], b = bodies[id]; if (!b) return;
@@ -1364,15 +1371,99 @@ function create(canvas, opts) {
     });
   }
 
+
+  /* =====================================================================
+     v12: CINEMATICA DE VIAJE (playTravel). El host conduce (botGoto de los 3 cuerpos al punto de entrada de la zona
+     destino; si no llegan al 62 % de la duracion, fundido y se colocan); los clientes solo ven la bandera `cs` del snapshot.
+     ===================================================================== */
+  var cs = null, rawIn = {}, csKeyFn = null;
+  var CS_TXT = { pozo: 'DESCENDIENDO POR EL POZO', balsa: 'CRUZANDO EN BALSA', galeria: 'AVANZANDO POR LA GALERIA', cuerda: 'ASEGURANDO LA CUERDA', puente: 'CRUZANDO EL PUENTE', tunel: 'ABRIENDO PASO', compuerta: 'ABRIENDO PASO' };
+  function csZero() { ROLES.forEach(function (r) { inputs[r] = NOINP; }); }
+  function playTravel(o, cb) {
+    o = o || {}; if (!authority) return false;
+    if (cs) csEnd(true);
+    var to = clamp(+o.toZone || unlocked, 1, NS), n = Math.round(clamp(+o.ms || 7500, 6000, 9000) * 0.06), c = cs = { kind: String(o.kind || 'generico'), out: o.outcome === 'mal' ? 'mal' : o.outcome === 'bien' ? 'bien' : '', t: 0, n: n, ft: -1, to: to, cb: cb, tg: {}, bots: {}, skip: false, warped: false };
+    if (unlocked < to) setUnlocked(to);
+    cam.focus = null; cam.panT = 0;
+    ROLES.forEach(function (r, k) {
+      var b = bodies[r], tg = c.tg[r] = spawnOf(to - 1, k); c.bots[r] = b.bot; b.bot = true; b.goal = b.mac = b.pe = b.warp = null; b.busy = 0; b.csDone = false;
+      botGoto(r, { x: tg.x, y: tg.y, id: 'cs' });
+    });
+    csZero();
+    if (global.addEventListener) { csKeyFn = function (e) { var tn = e.target && e.target.tagName; if (!cs || tn === 'INPUT' || tn === 'TEXTAREA') return; if (e.key === ' ' || e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); skipCutscene(); } }; global.addEventListener('keydown', csKeyFn, true); }
+    return true;
+  }
+  function skipCutscene() { if (!cs || !authority) return false; cs.skip = true; return true; }
+  function csPlace() {
+    ROLES.forEach(function (r) { var b = bodies[r], tg = cs.tg[r]; puff(b.x, b.y, 5, 0); b.x = b.tx = tg.x; b.y = b.ty = tg.y; b.vx = b.vy = 0; b.climb = null; b.goal = b.mac = b.pe = null; b.busy = 0; b.csDone = true; puff(b.x, b.y, 6, 0); });
+    cam.focus = null; snapCam();
+  }
+  function csTick() {
+    var c = cs, all = true; c.t++;
+    ROLES.forEach(function (r) { var b = bodies[r], tg = c.tg[r]; if (!b.csDone && b.grounded && Math.abs(b.x - tg.x) < 10 && Math.abs(b.y - tg.y) < 14) b.csDone = true; if (!b.csDone) all = false; });
+    if (c.ft < 0 && !c.warped && (c.skip || (!all && c.t >= Math.round(c.n * 0.62)))) c.ft = 0;
+    if (c.ft >= 0) { c.ft++; if (c.ft === 10) csPlace(); if (c.ft >= 20) { c.ft = -1; c.warped = true; } }
+    if ((c.skip && c.ft < 0) || c.t >= c.n) csEnd();
+  }
+  function csEnd(force) {
+    var c = cs; if (!c) return; if (authority && force) csPlace(); else if (authority) ROLES.forEach(function (r) { var b = bodies[r], tg = c.tg[r]; if (Math.abs(b.x - tg.x) > 24 || Math.abs(b.y - tg.y) > 24) { b.x = b.tx = tg.x; b.y = b.ty = tg.y; b.vx = b.vy = 0; b.climb = null; } });
+    cs = null; if (csKeyFn && global.removeEventListener) { global.removeEventListener('keydown', csKeyFn, true); csKeyFn = null; }
+    ROLES.forEach(function (r) { var b = bodies[r]; if (authority) { if (c.bots) b.bot = c.bots[r]; b.goal = b.mac = b.pe = null; b.csDone = false; } if (rawIn[r]) inputs[r] = rawIn[r]; });
+    cam.trans = 0; cam.focus = null; snapCam();
+    if (c.cb) { try { c.cb(); } catch (e) { if (global.console) console.error(e); } }
+  }
+  function csFx() {   // efectos por tipo (host y clientes, a partir de kind/outcome/t)
+    var c = cs, t = c.t, k = c.kind, n = c.n, g = bodies.guia;
+    if (t === 1 && (k === 'tunel' || k === 'compuerta')) sfx('rumble');
+    ROLES.forEach(function (r, i) {
+      var b = bodies[r], mv = Math.abs(b.vx) > 0.3 && b.grounded, ph = t + i * 7;
+      if (k === 'pozo') { if (ph % 6 === 0) puff(b.x + (rr() - 0.5) * 6, b.y - 20 + rr() * 8, 1, 0); if (ph % 14 === 0) drip(b.x + (rr() - 0.5) * 10, b.y - 36); }
+      else if (k === 'balsa') { if (ph % 10 === 0) { splash(b.x, b.y, 2, 0); addRipple(b.x, 1.2); } if (ph % 30 === 0) addP({ k: 'dust', x: b.x + (rr() - 0.5) * 24, y: b.y - 16, vx: 0, vy: 0, g: 0.15, y0: b.y, life: 110, sz: 2, w: 8, c: '150,100,52' }); }
+      else if (k === 'galeria') { if (ph % 5 === 0) spark(b.x + b.face * 5, b.y - 17, 1); if (mv && ph % 14 === 0) puff(b.x, b.y, 1, -b.face); }
+      else if (k === 'cuerda') { if (ph % 26 === 0) spark(b.x + b.face * 12, b.y - 19, 3); }
+      else if (k === 'puente') { if (ph % 24 === 0) addP({ k: 'dust', x: b.x + b.face * 10, y: b.y - 22, vx: 0, vy: 0, g: 0.2, y0: b.y, life: 100, sz: 2, w: 9, c: '170,118,60' }); if ((ph + 15) % 24 === 0) puff(b.x + b.face * 10, b.y, 3, 0); }
+      else if (k === 'tunel' || k === 'compuerta') { if (ph % 18 === 0) puff(b.x + (rr() - 0.5) * 10, b.y - 20, 2, 0); }
+      else if (mv && ph % 14 === 0) puff(b.x, b.y, 1, -b.face);
+      if (c.out === 'bien' && mv && ph % 12 === 0) puff(b.x - b.face * 2, b.y, 1, -b.face);
+    });
+    if ((k === 'tunel' || k === 'compuerta') && t % 20 === 0) debris(2);
+    if ((k === 'tunel' || k === 'compuerta') && t % 70 === 0) { addShake(0.8); sfx('rumble'); }
+    if (c.out === 'mal') {
+      var t1 = Math.round(n * 0.35), t2 = Math.round(n * 0.45);
+      if (t === t1 || t === t1 + 14) { var s2 = bodies.medica; s2.sx = 1.3; s2.sy = 0.7; puff(s2.x, s2.y, 6, 0); }   // resbalon
+      if (t === t2) { addShake(2.2); sfx('splash'); }
+      if (t >= t2 && t < t2 + 40 && t % 2 === 0) addP({ k: 'drop', x: g.x + 26, y: g.y - 12, vx: -1.7 - rr() * 0.4, vy: -0.4 - rr() * 0.5, g: 0.1, life: 34, sz: 1, c: '170,225,255' });   // chorro de agua
+    }
+  }
+  function csDraw(cxr, cyr) {   // lo que va sobre la imagen: cuerdas/antorchas/anclajes, fundido, letterbox y rotulo (enteros, un solo pase de texto)
+    var c = cs, t = c.t, k = c.kind;
+    ROLES.forEach(function (r, i) {
+      var b = bodies[r], x = Math.round(b.x - cxr), y = Math.round(b.y - cyr), f = b.face || 1;
+      if (x < -20 || x > W + 20) return;
+      if (k === 'pozo') { out.fillStyle = '#6a4a2a'; out.fillRect(x + 1, 0, 1, y - 15); out.fillStyle = '#d8b878'; out.fillRect(x, 0, 1, y - 15); }
+      else if (k === 'cuerda') { var ax = x + f * 12; out.fillStyle = '#d8b878'; out.fillRect(Math.min(ax, x), y - 18, Math.abs(ax - x), 1); out.fillStyle = '#10081c'; out.fillRect(ax - 1, y - 21, 4, 4); out.fillStyle = '#c8ccd8'; out.fillRect(ax, y - 20, 2, 2); }
+      else if (k === 'galeria') { var fx = x + f * 5; out.fillStyle = '#6a4a2a'; out.fillRect(fx, y - 15, 1, 5); out.fillStyle = ((t + i) >> 2) & 1 ? '#ffd24a' : '#ff8a3a'; out.fillRect(fx, y - 18, 2, 3); }
+      if (c.out === 'mal' && r === 'ing' && t >= Math.round(c.n * 0.5) && t < Math.round(c.n * 0.5) + 80) { var ry = y - 11 + (Math.round(t * 0.5) % 2 ? 1 : 0); out.fillStyle = '#f2c9a0'; out.fillRect(x + f * 3, ry, 2, 2); out.fillStyle = '#ff5a4a'; out.fillRect(x - f * 4 + (f < 0 ? -1 : 0), y - 28, 1, 3); out.fillRect(x - f * 4 + (f < 0 ? -1 : 0), y - 24, 1, 1); }
+    });
+    if (c.ft >= 0) { out.fillStyle = 'rgba(0,0,0,' + (1 - Math.abs(c.ft - 10) / 10).toFixed(2) + ')'; out.fillRect(0, 0, W, H); }
+    var bh = Math.max(0, Math.round(Math.min(22, t * 0.8, (c.n - t) * 0.8)));
+    if (bh) {
+      out.fillStyle = '#000'; out.fillRect(0, 0, W, bh); out.fillRect(0, H - bh, W, bh);
+      if (bh >= 14) { var ty = H - bh + Math.round((bh - 5) / 2); drawText(out, CS_TXT[k] || 'EN CAMINO', 8, ty, '#e8d8b0'); if (authority) drawText(out, 'ESPACIO: SALTAR', W - 8 - textW('ESPACIO: SALTAR'), ty, '#8a86a0'); }
+    }
+  }
+
   /* ---------- tick global ---------- */
   function doTick() {
     tick++; if (tick % 6 === 0) mmExplore();
     wSlopeT = zoneSlope(); wSlope += clamp(wSlopeT - wSlope, -0.004, 0.004);
-    if (authority) { syncBodies(); gateTick(); Object.keys(bodies).forEach(function (id) { tickBody(bodies[id]); }); separate(); writeBack(); }
+    if (authority) { syncBodies(); gateTick(); if (cs) csTick(); Object.keys(bodies).forEach(function (id) { tickBody(bodies[id]); }); separate(); writeBack(); }
     else {
       Object.keys(bodies).forEach(function (id) { var b = bodies[id]; b.x += (b.tx - b.x) * 0.35; b.y += (b.ty - b.y) * 0.35; b.fr++; b.grounded = b.exAnim !== 'jump' && b.exAnim !== 'fall'; });
       if (!st() && false) return;
+      if (cs) { cs.t++; if (cs.ft >= 0 && cs.ft < 20) cs.ft++; }
     }
+    if (cs) csFx();
     if (tick % 20 === 0) { var wq = Math.round(waterY(wlCur) / 8); if (wq !== nav.wq) { nav.wq = wq; nav.fields = {}; } }
     wlCur += (wlTarget - wlCur) * 0.012 + Math.sign(wlTarget - wlCur) * 0.004; if (Math.abs(wlTarget - wlCur) < 0.01) wlCur = wlTarget;
     if (wlCur !== wlTarget && tick % 20 === 0) { addShake(0.6); }
@@ -1414,7 +1505,7 @@ function create(canvas, opts) {
       var par = canvas.parentElement, pr = par ? par.getBoundingClientRect() : { left: 0, top: 0, right: global.innerWidth, bottom: global.innerHeight }, cr = canvas.getBoundingClientRect();
       if (cr.width > 10 && cr.height > 10) {
         var k = cr.width / W, L = pr.left + insets.left, Rr = pr.right - insets.right, Tp = pr.top + insets.top, Bt = pr.bottom - insets.bottom;
-        v = { x0: clamp((L - cr.left) / k, 0, W), x1: clamp((Rr - cr.left) / k, 0, W), y0: clamp((Tp - cr.top) / k, 0, H), y1: clamp((Bt - cr.top) / k, 0, H) };
+        v = { x0: Math.ceil(clamp((L - cr.left) / k, 0, W)), x1: Math.floor(clamp((Rr - cr.left) / k, 0, W)), y0: Math.ceil(clamp((Tp - cr.top) / k, 0, H)), y1: Math.floor(clamp((Bt - cr.top) / k, 0, H)) };   // v12: VIS entero (los carteles se anclan a VIS.y0+2: fraccionario = texto borroso)
         if (v.x1 - v.x0 < 120 || v.y1 - v.y0 < 70) v = { x0: 0, y0: 0, x1: W, y1: H };
       }
     } catch (e) { }
@@ -1425,7 +1516,8 @@ function create(canvas, opts) {
   function followBody() { return bodies[active]; }
   function camGoal() {
     var vcx = (VIS.x0 + VIS.x1) / 2, vcy = (VIS.y0 + VIS.y1) / 2 + 14, tx, ty, f = followBody();
-    if (cam.focus) { tx = cam.focus.x - vcx; ty = cam.focus.y - vcy + 14; }
+    if (cs) { var mx = 0, my = 0; ROLES.forEach(function (r) { mx += bodies[r].x; my += bodies[r].y; }); tx = mx / 3 - vcx; ty = my / 3 - vcy; }   // v12: cinematica: sigue al grupo
+    else if (cam.focus) { tx = cam.focus.x - vcx; ty = cam.focus.y - vcy + 14; }
     else if (cam.panT > 0) { tx = cam.panX - vcx; ty = f ? f.y - vcy - 10 : cam.y; }
     else if (cam.mode === 'fixed') { tx = cam.fx; ty = cam.fy; }
     else if (f) { tx = f.x - vcx + f.face * 22 * (VIS.x1 - VIS.x0 > 200 ? 1 : 0.4); ty = f.y - vcy; }
@@ -1654,6 +1746,7 @@ function create(canvas, opts) {
   function render() {
     var t = tick, cx0 = cam.x, cy0 = cam.y;
     var sh = shake ? [Math.round((rr() - 0.5) * 2 * shake), Math.round((rr() - 0.5) * 2 * shake)] : [0, 0];
+    if (cs && cs.kind === 'balsa') { sh[0] += Math.round(Math.sin(tick * 0.07)); sh[1] += Math.round(Math.sin(tick * 0.11)); }   // balanceo
     cam.rx = cam.x; cam.ry = cam.y;
     var cxr = Math.round(cam.x) + sh[0], cyr = clamp(Math.round(cam.y) + sh[1], 0, PH - H);
     cam.x = cxr; cam.y = cyr;                    // dibujamos con la camara entera (pixel-perfect)
@@ -1760,7 +1853,7 @@ function create(canvas, opts) {
       var x = Math.round(p.x - cxr), y = Math.round(p.y - cyr); if (x < -4 || x > W + 4 || y < -4 || y > H + 4) return;
       var a = clamp(p.life / p.max * (p.k === 'mote' ? 1.4 : 1.6), 0, 1);
       if (p.k === 'mote') a *= 0.5 + 0.5 * Math.sin(p.life * 0.2);
-      sc.fillStyle = 'rgba(' + p.c + ',' + (p.k === 'dust' ? a * 0.55 : a) + ')'; sc.fillRect(x, y, p.sz, p.sz);
+      sc.fillStyle = 'rgba(' + p.c + ',' + (p.k === 'dust' ? a * 0.55 : a) + ')'; sc.fillRect(x, y, p.w || p.sz, p.sz);
       if (p.glow) L.push({ x: x, y: y, r: 7, c: p.c.split(',').map(Number), a: 0.35 * a });
     });
 
@@ -1832,6 +1925,7 @@ function create(canvas, opts) {
     out.drawImage(wd.vig, 0, 0);
     if (flash > 0) { out.fillStyle = 'rgba(' + flashCol + ',' + flash * 0.6 + ')'; out.fillRect(0, 0, W, H); }
     drawOverlay(cxr, cyr, t, order);
+    if (cs) csDraw(cxr, cyr);
     cam.x = cam.rx; cam.y = cam.ry;
   }
 
@@ -2050,7 +2144,7 @@ function create(canvas, opts) {
     if (tick - gcache.t > 8) { gcache.t = tick; gcache.r = routeFrom(b, tp); }
     var r = gcache.r || { ok: false, dist: Math.hypot(tp.x - b.x, tp.y - b.y) / T, direct: true, wp: null }, m = Math.max(1, Math.round(r.dist));
     var tx = tp.x - cxr, ty = tp.y - cyr, onS = tx > VIS.x0 + 8 && tx < VIS.x1 - 8 && ty > VIS.y0 + 14 && ty < VIS.y1 - 4;
-    var useWp = r.ok && !r.direct && r.wp, col = '255,214,90', lab = (guideOpt.label ? (function (t) { t = String(t); if (t.length <= 34) return t; var c = t.slice(0, 34), i = c.lastIndexOf(' '); return (i > 10 ? c.slice(0, i) : c) + '..'; })(guideOpt.label) + ' ' : '') + m + ' M';
+    var useWp = r.ok && !r.direct && r.wp, col = '255,214,90', lab = (guideOpt.label ? (function (t) { t = String(t); if (t.length <= 26) return t; var c = t.slice(0, 26), i = c.lastIndexOf(' '); return (i > 10 ? c.slice(0, i) : c) + '..'; })(guideOpt.label) + ' ' : '') + m + ' M';
     var bob = Math.abs(Math.sin(t * 0.13)) * 5, rp = (t * 0.025) % 1;
     if (onS) {   // anillo pulsante en el objetivo
       out.strokeStyle = 'rgba(255,230,140,' + (0.9 * (1 - rp)) + ')'; out.lineWidth = 1; out.beginPath(); out.ellipse(tx, ty - 12, 6 + rp * 14, 8 + rp * 14, 0, 0, TAU); out.stroke();
@@ -2222,7 +2316,8 @@ function create(canvas, opts) {
   function stop() { running = false; cancelAnimationFrame(raf); }
   function setInput(id, inp) {
     if (!bodies[id]) return;
-    inputs[id] = { left: !!inp.left, right: !!inp.right, jump: !!inp.jump, interact: !!inp.interact, up: !!inp.up, down: !!inp.down, ability: !!(inp.ability || inp.q), run: !!(inp.run || inp.shift) };
+    inputs[id] = rawIn[id] = { left: !!inp.left, right: !!inp.right, jump: !!inp.jump, interact: !!inp.interact, up: !!inp.up, down: !!inp.down, ability: !!(inp.ability || inp.q), run: !!(inp.run || inp.shift) };
+    if (cs) inputs[id] = NOINP;
   }
   // un humano = un rol. setLocal fija cual; el resto son companeros IA (setBot). setActive/setFollow quedan como alias inofensivos.
   function setLocal(role) {
@@ -2254,6 +2349,7 @@ function create(canvas, opts) {
     setGuide: setGuide, getPoiPos: getPoiPos, getRoute: getRoute, focus: focus, setViewInsets: setViewInsets, drawMinimap: drawMinimap, setHint: function (t) { hintText = t ? String(t) : null; },
     setUnlocked: setUnlocked, getUnlocked: function () { return unlocked; }, getZone: function (role) { var b = bodies[role || active]; return b ? secOfX(b.x) + 1 : 1; },
     swimNext: swimNext, findDry: findDry, fieldFor: fieldFor, getGates: getGates, openGate: openGate, nearGate: nearGate, useAbility: useAbility, botOpenGate: botOpenGate, getAir: getAir, setAir: function (role, v) { var b = bodies[role]; if (b) b.air = clamp(+v, 0, 100); }, setPoiHints: setPoiHints,
+    playTravel: playTravel, isCutscene: function () { return !!cs; }, skipCutscene: skipCutscene,
     bodies: bodies, cam: cam, zones: wd.zones, world: wd, tileAt: tileAt
   });
   Object.defineProperties(self, { water: { get: function () { return wlCur; } }, poiMap: { get: function () { return pois; } }, waterRate: { get: function () { return waterRate; } }, tick: { get: function () { return tick; } }, active: { get: function () { return active; } } });
@@ -2302,7 +2398,7 @@ global.Engine = { create: create, demoLoop: demoLoop, waterY: waterY, W: W, H: H
   pan: function (r) { if (this.current) this.current.pan(r); },
   fx: function (t, x, y) { if (this.current) this.current.fx(t, x, y); },
   camShake: function (a) { if (this.current) this.current.camShake(a); },
-  sectionOf: function (x) { return clamp(Math.floor(x / SPW), 0, NS - 1) + 1; }, version: '6.0',
+  sectionOf: function (x) { return clamp(Math.floor(x / SPW), 0, NS - 1) + 1; }, version: '12.0',
   setGuide: function (t, o) { if (this.current) this.current.setGuide(t, o); },
   getPoiPos: function (id) { return this.current ? this.current.getPoiPos(id) : null; },
   getRoute: function (id) { return this.current ? this.current.getRoute(id) : null; },
@@ -2313,5 +2409,6 @@ global.Engine = { create: create, demoLoop: demoLoop, waterY: waterY, W: W, H: H
   getGates: function () { return this.current ? this.current.getGates() : []; }, openGate: function (id, now) { return this.current ? this.current.openGate(id, now) : false; },
   nearGate: function (r) { return this.current ? this.current.nearGate(r) : null; }, useAbility: function (r) { return this.current ? this.current.useAbility(r) : { ok: false, reason: 'sin motor' }; },
   botOpenGate: function (r, id, cb) { return this.current ? this.current.botOpenGate(r, id, cb) : false; }, getAir: function (r) { return this.current ? this.current.getAir(r) : 100; },
-  setPoiHints: function (h) { if (this.current) this.current.setPoiHints(h); } };
+  setPoiHints: function (h) { if (this.current) this.current.setPoiHints(h); },
+  playTravel: function (o, cb) { return this.current ? this.current.playTravel(o, cb) : false; }, isCutscene: function () { return this.current ? this.current.isCutscene() : false; }, skipCutscene: function () { return this.current ? this.current.skipCutscene() : false; } };
 })(window);
