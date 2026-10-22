@@ -158,7 +158,7 @@
     if (sk !== lastScene) {
       lastScene = sk; const kind = st.phase === 'briefing' ? 'event' : null;
       if (kind && Hud.dialogue) { let ls = []; try { ls = Story.scene(st, kind) || []; } catch (e) { } if (st.round === 1 && kind === 'event') { try { ls = ls.concat(Story.scene(st, 'lia') || []); } catch (e) { } }
-        Hud.dialogue(ls, { skippable: !isClient() }).then(() => { if (kind === 'event' && mode !== 'client' && st && st.phase === 'briefing') advance(); }); }
+        Hud.dialogue(ls).then(() => { if (kind === 'event' && mode !== 'client' && st && st.phase === 'briefing') advance(); }); }
     }
     const res = st.lastRes;
     if (st.phase === 'resolve' && res && shownRes !== st.round) {
@@ -193,9 +193,24 @@
     try { await UI.playCinematic('intro'); if (myPriv) await UI.showRole(myPriv, myRole); } catch (e) { console.error(e); } // nunca dejar al cliente colgado fuera de la partida
     UI.hide(); showGame(); S.music && S.music('briefing');
   }
-  async function waitIntro() { // host: espera a los clientes humanos (máx. 90 s)
-    const t0 = Date.now(), pend = () => RK.some(r => { const o = st.players[r].owner; return o && o !== myId && o !== 'solo' && !introReady[o]; });
-    while (Date.now() - t0 < 90000 && pend()) await new Promise(r => setTimeout(r, 500));
+  // Barrera de inicio: cada uno ve su intro a su ritmo; nadie juega hasta que todos pulsan 'Entendido, a la cueva'.
+  let waitEl = null, waitLast = null, introDone = false, forceGo = false;
+  function hideWait() { if (waitEl) { waitEl.remove(); waitEl = null; } }
+  function showWait(i, host) {
+    if (!waitEl) { waitEl = document.createElement('div'); waitEl.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(13,11,22,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:#e8d8b0;font:bold 16px monospace;text-align:center;padding:16px'; document.body.appendChild(waitEl); }
+    waitEl.innerHTML = ''; const a = document.createElement('div'); a.textContent = 'Esperando a los demás…' + (i.n ? ' (' + i.d + '/' + i.n + ')' : ''); a.style.cssText = 'font-size:20px;color:#ffd34d';
+    const b = document.createElement('div'); b.textContent = i.miss.length ? 'Falta: ' + i.miss.join(', ') : ''; waitEl.append(a, b);
+    if (host && i.late) { const x = document.createElement('button'); x.className = 'btn go'; x.textContent = 'Empezar ya'; x.style.cssText = 'font:inherit;padding:10px 18px;cursor:pointer'; x.onclick = () => { forceGo = true; }; waitEl.appendChild(x); }
+  }
+  async function waitIntro() { // host: espera a los humanos conectados; tras ~120 s puede 'Empezar ya'
+    const t0 = Date.now(); forceGo = false;
+    for (;;) {
+      const miss = RK.filter(r => { const o = st.players[r].owner; return o && o !== myId && o !== 'solo' && !introReady[o]; });
+      if (!miss.length || forceGo) break;
+      const total = RK.filter(r => { const o = st.players[r].owner; return o && o !== 'solo'; }).length, i = { d: total - miss.length, n: total, miss: miss.map(r => st.players[r].pname || r), late: Date.now() - t0 > 120000 };
+      try { Net.broadcast('wait', i); } catch (e) { } showWait(i, true); await new Promise(r => setTimeout(r, 500));
+    }
+    hideWait(); try { Net.broadcast('wait', { end: 1 }); } catch (e) { }
   }
 
   // ---------- Host: partida ----------
@@ -349,15 +364,15 @@
         mode = 'client'; myId = Net.localId; const me = Net.players.find(p => p.id === myId); myRole = (me && me.role) || RK.find(r => s.players[r].owner === myId) || 'medica';
         started = true; UI.hide(); ensureGame(); makeEngine(false); setupBots();
       }
+      if (s.phase !== 'intro') hideWait();
       if (prev && prev.phase !== s.phase) { if (prev.phase === 'briefing' && Hud.isDialogue && Hud.isDialogue()) Hud.skipDialogue(); pushInput(); } // el host saltó/terminó el diálogo del Director
-      if (s.phase === 'intro' && (!prev || prev.phase !== 'intro')) playIntro().then(() => Net.send('ready', { act: 'intro' }));
+      if (s.phase === 'intro' && (!prev || prev.phase !== 'intro')) { introDone = false; playIntro().then(() => { introDone = true; Net.send('ready', { act: 'intro' }); if (st && st.phase === 'intro') showWait(waitLast || { d: 0, n: 0, miss: [] }); }); }
       else if (s.phase !== 'intro') render();
     });
     Net.on('priv', d => { myPriv = d; if (st) render(); });
     Net.on('phase', d => { if (d && d.travel && mode === 'client') { Hud.closePanel(); try { Hud.setNow({ text: 'Viajan a la siguiente zona', sub: '', kind: 'info' }); } catch (e) { } } if (d && d.note) { Hud.floatText(d.note, 'info'); snd(d.sfx || 'intel'); } });
     Net.on('snapshot', s => { if (mode === 'client' && eng) eng.applySnapshot(s); });
-    Net.on('cine', d => { if (mode === 'client' && d && d.act === 'skip') { try { UI.skipCine(); } catch (e) { } } });
-    UI.on('cineskip', () => { if (Net.role === 'host') Net.broadcast('cine', { act: 'skip' }); });
+    Net.on('wait', d => { if (mode !== 'client' || !d) return; if (d.end) { waitLast = null; return hideWait(); } waitLast = { d: +d.d || 0, n: +d.n || 0, miss: (Array.isArray(d.miss) ? d.miss : []).slice(0, 3).map(x => Net.cleanName(x) || 'Jugador'), late: false }; if (introDone) showWait(waitLast); });
     Net.on('leave', d => { if (d && d.host) { UI.toast('El anfitrión se ha ido. Volviendo al inicio…', { bad: true }); setTimeout(() => location.reload(), 2500); } });
   }
 

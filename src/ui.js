@@ -285,7 +285,7 @@ const css18 = `
 #rcv3 .role{padding:8px;gap:.5em}#rcv3 .final{padding:8px}
 #rcv3 .tut{padding:6px}#rcv3 .tcard{grid-template-columns:1fr 1fr;gap:.6em}#rcv3 .tart{min-height:120px}#rcv3 .tcard .ttext p{font-size:clamp(13px,2.4vw,18px)}#rcv3 .tut{overflow-y:auto;justify-content:flex-start}#rcv3 .tut>*{flex:none;margin-left:auto;margin-right:auto}
 #rcv3 .btn,#rcv3 .opt{min-height:44px}
-#rcv3 .lobby.hc{display:grid;grid-template-columns:minmax(0,40%) minmax(0,1fr);align-content:start;gap:8px 14px;padding:8px 12px;width:100%;box-sizing:border-box}
+#rcv3 .lobby.hc.on{display:grid;grid-template-columns:minmax(0,40%) minmax(0,1fr);align-content:start;gap:8px 14px;padding:8px 12px;width:100%;box-sizing:border-box}
 #rcv3 .lobby.hc>*{width:auto}#rcv3 .lobby>.row:first-child{grid-column:1/-1}#rcv3 .lobby>.lcode{grid-column:1;grid-row:2/6;margin-top:0;align-self:start}#rcv3 .lobby.hc>:not(.row:first-child):not(.lcode){grid-column:2}
 #rcv3 .lobby .code{font-size:clamp(14px,3vw,22px)}#rcv3 .lobby .qr{margin-top:6px}#rcv3 .lobby .lcode .lab{display:none}#rcv3 .lobby>.row:first-child .btn{min-height:36px}#rcv3 .lobby .qr canvas,#rcv3 .lobby .qrsk{width:min(42vh,200px)}#rcv3 .lobby .qr{font-size:0;gap:0}#rcv3 .lobby .lcode input,#rcv3 .lobby .lcode .btn{min-height:36px;padding:.3em .6em}#rcv3 .lobby .lcode{padding:.5em .8em}#rcv3 .lobby .cards{gap:.4em}#rcv3 .lobby .rc{padding:.4em}
 }
@@ -686,7 +686,7 @@ function playCinematic(id, o) {
     const shots = buildShots(id, o); await Promise.all(shots.map(s => loadStill(s.still)));
     const s = mkScr('cine', 'cine'); s.innerHTML = ''; const W = 640, H = 360;
     const vw = $('div', 'cvw', s), cv = $('canvas', '', vw); cv.width = W; cv.height = H; const g = cv.getContext('2d'), sub = $('div', 'sub3', vw), fl = $('div', 'fl', vw), cd = $('div', 'cdots', vw);
-    shots.forEach(() => $('i', '', cd)); const skip = $('button', 'btn sec skip', s, 'Saltar »'); if (isCl()) { skip.disabled = true; skip.textContent = 'Solo el anfitrión salta'; } sub.remove(); (matchMedia('(max-aspect-ratio:1/1)').matches ? s : vw).appendChild(sub);
+    shots.forEach(() => $('i', '', cd)); const skip = $('button', 'btn sec skip', s, 'Saltar »'); sub.remove(); (matchMedia('(max-aspect-ratio:1/1)').matches ? s : vw).appendChild(sub);
     const prev = mk(W, H), pg = prev.getContext('2d'), nz = mk(160, 90), nzg = nz.getContext('2d'); let gt = 0, done = false, i = -1, t = 0, dur = 6, typed = 0, text = '', fade = 0, flash = 0, thunderAt = -1, wait = 0, shake = 0, P = [], ty = 0, tmo = 0;
     const noise = () => { const d = nzg.createImageData(160, 90); for (let k = 0; k < d.data.length; k += 4) { const v = Math.random() * 255; d.data[k] = d.data[k + 1] = d.data[k + 2] = v; d.data[k + 3] = 255; } nzg.putImageData(d, 0, 0); };
     function nextShot() {
@@ -701,9 +701,9 @@ function playCinematic(id, o) {
       if (S.narr && text) snd('speak', text, { who: (sh.who || 'narrador') });
     }
     function end() { if (done) return; done = true; cineSkip = null; stopT(); snd('stopSpeak'); s.style.transition = 'opacity .6s'; s.style.opacity = 0; setTimeout(() => { s.style.opacity = ''; s.style.transition = ''; s.classList.remove('on'); cur = null; res(); }, 650); }
-    function advance() { if (isCl()) return; const sh = shots[i]; if (!sh) return; if (typed < text.length) { typed = text.length; return; } if (t > 1.2) { sfx('click'); nextShot(); } }
+    function advance() { const sh = shots[i]; if (!sh) return; if (typed < text.length) { typed = text.length; return; } if (t > 1.2) { sfx('click'); nextShot(); } }
     let stopT = () => { };
-    const skipReq = rem => { if (isCl() && !rem) return; if (!rem) emit('cineskip', { k: 'cine' }); sfx('back'); end(); }; cineSkip = () => skipReq(true);
+    const skipReq = () => { sfx('back'); end(); };
     go('cine', { music: 'briefing', keys: e => { if (e.key === 'Escape') { skipReq(); return; } if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight') { advance(); return; } return false; } });
     s.onclick = e => { if (e.target === skip) return; advance(); }; skip.onclick = e => { e.stopPropagation(); skipReq(); };
     nextShot(); noise();
@@ -769,7 +769,7 @@ function playEnding(o) {
     const src = (i) => { const k = keys[i], im = k && getImg(k); return im && im.ok ? im : scene(saved ? (i ? 'rescate' : 'radio') : (i ? 'derrota' : 'radio')); };
     const s = mkScr('end', 'endv'); s.innerHTML = ''; const W = 960, H = 540, col = saved ? '#ffd34d' : '#9fb4d8';
     const vw = $('div', 'cvw', s), cv = $('canvas', '', vw); cv.width = W; cv.height = H; const g = cv.getContext('2d'); const sub = $('div', 'en-sub', vw), title = $('div', 'en-title ' + (saved ? 'good' : 'bad'), vw, saved ? 'LÍA ESTÁ A SALVO' : 'NO LLEGAMOS A TIEMPO'), fatesEl = $('div', 'en-fates', vw), pathEl = $('div', 'en-path', vw, pathRow(o.path)), hint = $('div', 'en-hint', vw, 'Clic / Espacio: continuar');
-    const skip = $('button', 'btn sec skip', s, 'Saltar »'); if (isCl()) { skip.disabled = true; skip.textContent = 'Solo el anfitrión salta'; } const prev = mk(W, H), pg = prev.getContext('2d'), nz = mk(160, 90), nzg = nz.getContext('2d');
+    const skip = $('button', 'btn sec skip', s, 'Saltar »'); const prev = mk(W, H), pg = prev.getContext('2d'), nz = mk(160, 90), nzg = nz.getContext('2d');
     const faceCv = mk(48, 48); faceCv.className = 'en-face'; const fg = faceCv.getContext('2d'); let faceId = null, faceMood = 'neutral';
     let i = -1, t = 0, dur = 6, typed = 0, text = '', fade = 0, done = false, closing = false, tC = 0, black = 0, lt = 0, gt = 0, pt = [], first = true; const bars = { v: 0 };
     for (let k = 0; k < 70; k++) pt.push({ x: Math.random() * W, y: Math.random() * H, z: .3 + Math.random() * .9, p: Math.random() * 6 });
@@ -786,8 +786,8 @@ function playEnding(o) {
       const fates = Array.isArray(o.fates) ? o.fates.filter(f => f && f.id) : []; if (fates.length) { fates.slice(0, 4).forEach(f => { const e = $('div', 'f ' + (f.status || 'vivo'), fatesEl); const c = fateFace(f); e.appendChild(c); $('div', '', e, '<b>' + esc(f.name || (f.id === 'lia' ? 'Lía' : rinfo(f.id).n)) + '</b>'); }); }
       setTimeout(() => { if (!done) { title.classList.add('on'); pathEl.classList.add('on'); } }, 1800); setTimeout(() => { if (!done) { fatesEl.classList.add('on'); hint.classList.add('on'); } }, 4200); }
     let stopT = () => { }; function end() { if (done) return; done = true; cineSkip = null; stopT(); snd('stopSpeak'); s.style.transition = 'opacity 1.1s'; s.style.opacity = 0; setTimeout(() => { s.style.opacity = ''; s.style.transition = ''; s.classList.remove('on'); cur = null; res(); }, 1150); }
-    function advance() { if (closing) { if (tC > 4.5) end(); return; } if (isCl()) return; if (typed < text.length) { if (t < 1.2) return; typed = text.length; if (sub._a) { sub._a.textContent = text; sub._b.textContent = ''; } return; } if (t > 3.5) { sfx('click'); nextPanel(); } }
-    const skipReq = rem => { if (isCl() && !rem) return; if (closing) return end(); if (!rem) emit('cineskip', { k: 'end' }); sfx('back'); i = panels.length; startClose(); }; cineSkip = () => skipReq(true);
+    function advance() { if (closing) { if (tC > 4.5) end(); return; } if (typed < text.length) { if (t < 1.2) return; typed = text.length; if (sub._a) { sub._a.textContent = text; sub._b.textContent = ''; } return; } if (t > 3.5) { sfx('click'); nextPanel(); } }
+    const skipReq = () => { if (closing) return end(); sfx('back'); i = panels.length; startClose(); };
     go('end', { music: saved ? 'win' : 'lose', keys: e => { if (e.key === 'Escape') { skipReq(); return; } if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight') { advance(); return; } return false; } });
     s.onclick = e => { if (e.target === skip) return; advance(); }; skip.onclick = e => { e.stopPropagation(); skipReq(); };
     nextPanel(); noise();
