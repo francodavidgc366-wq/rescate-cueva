@@ -84,6 +84,8 @@
     s = String(s || '').trim(); var m = s.match(/sala=([^&\s]+)/i); if (m) s = m[1];
     return s.toUpperCase().split('').filter(function (ch) { return ALPHA.indexOf(ch) >= 0; }).join('').slice(0, 5);
   };
+  // nombre visible: sin HTML/control, máx. 14. El host valida al recibir; el cliente vuelve a limpiar el roster.
+  Net.cleanName = function (n) { return String(n == null ? '' : n).replace(/[\u0000-\u001f\u007f<>&"'`\\]/g, '').replace(/\s+/g, ' ').trim().slice(0, 14); };
   Net.codeFromHash = function () { var c = Net.parseCode(location.hash); return c.length === 5 ? c : null; };
   function newCode() { var c = ''; for (var i = 0; i < 5; i++) c += ALPHA[Math.floor(Math.random() * ALPHA.length)]; return c; }
 
@@ -130,7 +132,7 @@
     return retrying(function () { return openPeer(PREFIX + code, function () { code = newCode(); return PREFIX + code; }); }).then(function (p) {
       peer = p; Net.role = 'host'; Net.localId = 'p0'; Net.roomCode = code; conns = {}; Net.locked = false;
       Net.link = location.origin + location.pathname + '#sala=' + code;
-      Net.players = [{ id: 'p0', name: opts.name || name, role: ROLES[0], bot: false, ready: false, host: true, connected: true }]; hideTok(Net.players[0], token);
+      Net.players = [{ id: 'p0', name: Net.cleanName(opts.name) || Net.cleanName(name) || 'Anfitrión', role: ROLES[0], bot: false, ready: false, host: true, connected: true }]; hideTok(Net.players[0], token);
       p.on('connection', onIncoming);
       p.on('disconnected', function () { if (!leaving && peer === p) { log('broker caído, reconectando'); setTimeout(function () { try { p.reconnect(); } catch (e) {} }, 1500); } });
       p.on('error', function (e) { if (e.type === 'peer-unavailable') return; log('peer error', e.type); });
@@ -154,7 +156,7 @@
         var humans = Net.players.filter(function (p) { return !p.bot && p.connected; }).length;
         if (Net.players.length >= MAX || humans >= MAX || !freeRole()) { send1(c, { t: 'reject', d: 'La sala está llena (máx. 3 jugadores).' }); return setTimeout(function () { c.close(); }, 300); }
         var n = 1; while (Net.players.some(function (p) { return p.id === 'p' + n; })) n++;
-        pl = { id: 'p' + n, name: (c.metadata.name || 'Jugador').slice(0, 16), role: freeRole(), bot: false, ready: false, host: false, connected: true };
+        pl = { id: 'p' + n, name: Net.cleanName(c.metadata && c.metadata.name) || ('Jugador ' + n), role: freeRole(), bot: false, ready: false, host: false, connected: true };
         hideTok(pl, tok); Net.players.push(pl);
       } else { // reconexión: recupera su hueco
         if (conns[pl.id] && conns[pl.id].r !== c) try { conns[pl.id].r.close(); } catch (x) {}
@@ -187,7 +189,7 @@
     if (m.t === 'ping') return send1(ent.r, { t: 'pong', d: m.d });
     if (m.t === 'pong') return;
     if (m.t === 'bye') return dropPlayer(id, 'salió');
-    if (m.t === 'hello') { if (pl && m.d && m.d.name) { pl.name = String(m.d.name).slice(0, 16); pushPlayers(); } return; }
+    if (m.t === 'hello') { if (pl && m.d && m.d.name) { pl.name = Net.cleanName(m.d.name) || pl.name; pushPlayers(); } return; }
     if (m.t === 'setrole') return Net.setRole(m.d, id);
     if (m.t === 'ready' && pl) { pl.ready = !!(m.d && m.d.ready); pushPlayers(); }
     if (m.t === 'input' && m.d) { m.d.id = id; }
@@ -216,7 +218,7 @@
     if (other && other !== me) other.role = me.role;
     me.role = role; pushPlayers(); return true;
   };
-  Net.setName = function (n) { name = String(n || 'Jugador').slice(0, 16); if (Net.role === 'host') { Net.players[0].name = name; pushPlayers(); } else if (hostConn) send1(hostConn.r, { t: 'hello', d: { name: name } }); };
+  Net.setName = function (n) { name = Net.cleanName(n) || 'Jugador'; if (Net.role === 'host') { Net.players[0].name = name; pushPlayers(); } else if (hostConn) send1(hostConn.r, { t: 'hello', d: { name: name } }); };
   Net.lock = function (v) { Net.locked = !!v; }; // host: bloquea nuevas uniones (reconexiones con token siguen permitidas)
 
   // ---------- CLIENTE ----------
@@ -226,7 +228,7 @@
     var code = Net.parseCode(codeOrLink);
     if (code.length !== 5) return Promise.reject(fail('Código de sala no válido (5 caracteres).'));
     Net.leave(); leaving = false; brokerIdx = 0; hostCode = code; retries = 0;
-    if (opts.name) name = String(opts.name).slice(0, 16);
+    if (opts.name) name = Net.cleanName(opts.name) || name;
     return retrying(function () { return connectToHost(code, false); });
   };
 
@@ -278,7 +280,7 @@
   function clientRecv(m) {
     if (m.t === 'ping') return send1(hostConn.r, { t: 'pong', d: m.d });
     if (m.t === 'pong') { Net.rtt = Date.now() - m.d; return; }
-    if (m.t === 'players') { Net.players = m.d; }
+    if (m.t === 'players') { Net.players = (Array.isArray(m.d) ? m.d : []).map(function (p) { p.name = Net.cleanName(p && p.name) || 'Jugador'; return p; }); m.d = Net.players; }
     if (m.t === 'snapshot') { if (m.s <= lastSeq && lastSeq - m.s < 1000) return; lastSeq = m.s; }
     emit(m.t, m.d, 'p0');
   }

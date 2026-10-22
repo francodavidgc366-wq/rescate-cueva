@@ -4524,6 +4524,8 @@ global.Engine = { create: create, demoLoop: demoLoop, waterY: waterY, W: W, H: H
     s = String(s || '').trim(); var m = s.match(/sala=([^&\s]+)/i); if (m) s = m[1];
     return s.toUpperCase().split('').filter(function (ch) { return ALPHA.indexOf(ch) >= 0; }).join('').slice(0, 5);
   };
+  // nombre visible: sin HTML/control, máx. 14. El host valida al recibir; el cliente vuelve a limpiar el roster.
+  Net.cleanName = function (n) { return String(n == null ? '' : n).replace(/[\u0000-\u001f\u007f<>&"'`\\]/g, '').replace(/\s+/g, ' ').trim().slice(0, 14); };
   Net.codeFromHash = function () { var c = Net.parseCode(location.hash); return c.length === 5 ? c : null; };
   function newCode() { var c = ''; for (var i = 0; i < 5; i++) c += ALPHA[Math.floor(Math.random() * ALPHA.length)]; return c; }
 
@@ -4570,7 +4572,7 @@ global.Engine = { create: create, demoLoop: demoLoop, waterY: waterY, W: W, H: H
     return retrying(function () { return openPeer(PREFIX + code, function () { code = newCode(); return PREFIX + code; }); }).then(function (p) {
       peer = p; Net.role = 'host'; Net.localId = 'p0'; Net.roomCode = code; conns = {}; Net.locked = false;
       Net.link = location.origin + location.pathname + '#sala=' + code;
-      Net.players = [{ id: 'p0', name: opts.name || name, role: ROLES[0], bot: false, ready: false, host: true, connected: true }]; hideTok(Net.players[0], token);
+      Net.players = [{ id: 'p0', name: Net.cleanName(opts.name) || Net.cleanName(name) || 'Anfitrión', role: ROLES[0], bot: false, ready: false, host: true, connected: true }]; hideTok(Net.players[0], token);
       p.on('connection', onIncoming);
       p.on('disconnected', function () { if (!leaving && peer === p) { log('broker caído, reconectando'); setTimeout(function () { try { p.reconnect(); } catch (e) {} }, 1500); } });
       p.on('error', function (e) { if (e.type === 'peer-unavailable') return; log('peer error', e.type); });
@@ -4594,7 +4596,7 @@ global.Engine = { create: create, demoLoop: demoLoop, waterY: waterY, W: W, H: H
         var humans = Net.players.filter(function (p) { return !p.bot && p.connected; }).length;
         if (Net.players.length >= MAX || humans >= MAX || !freeRole()) { send1(c, { t: 'reject', d: 'La sala está llena (máx. 3 jugadores).' }); return setTimeout(function () { c.close(); }, 300); }
         var n = 1; while (Net.players.some(function (p) { return p.id === 'p' + n; })) n++;
-        pl = { id: 'p' + n, name: (c.metadata.name || 'Jugador').slice(0, 16), role: freeRole(), bot: false, ready: false, host: false, connected: true };
+        pl = { id: 'p' + n, name: Net.cleanName(c.metadata && c.metadata.name) || ('Jugador ' + n), role: freeRole(), bot: false, ready: false, host: false, connected: true };
         hideTok(pl, tok); Net.players.push(pl);
       } else { // reconexión: recupera su hueco
         if (conns[pl.id] && conns[pl.id].r !== c) try { conns[pl.id].r.close(); } catch (x) {}
@@ -4627,7 +4629,7 @@ global.Engine = { create: create, demoLoop: demoLoop, waterY: waterY, W: W, H: H
     if (m.t === 'ping') return send1(ent.r, { t: 'pong', d: m.d });
     if (m.t === 'pong') return;
     if (m.t === 'bye') return dropPlayer(id, 'salió');
-    if (m.t === 'hello') { if (pl && m.d && m.d.name) { pl.name = String(m.d.name).slice(0, 16); pushPlayers(); } return; }
+    if (m.t === 'hello') { if (pl && m.d && m.d.name) { pl.name = Net.cleanName(m.d.name) || pl.name; pushPlayers(); } return; }
     if (m.t === 'setrole') return Net.setRole(m.d, id);
     if (m.t === 'ready' && pl) { pl.ready = !!(m.d && m.d.ready); pushPlayers(); }
     if (m.t === 'input' && m.d) { m.d.id = id; }
@@ -4656,7 +4658,7 @@ global.Engine = { create: create, demoLoop: demoLoop, waterY: waterY, W: W, H: H
     if (other && other !== me) other.role = me.role;
     me.role = role; pushPlayers(); return true;
   };
-  Net.setName = function (n) { name = String(n || 'Jugador').slice(0, 16); if (Net.role === 'host') { Net.players[0].name = name; pushPlayers(); } else if (hostConn) send1(hostConn.r, { t: 'hello', d: { name: name } }); };
+  Net.setName = function (n) { name = Net.cleanName(n) || 'Jugador'; if (Net.role === 'host') { Net.players[0].name = name; pushPlayers(); } else if (hostConn) send1(hostConn.r, { t: 'hello', d: { name: name } }); };
   Net.lock = function (v) { Net.locked = !!v; }; // host: bloquea nuevas uniones (reconexiones con token siguen permitidas)
 
   // ---------- CLIENTE ----------
@@ -4666,7 +4668,7 @@ global.Engine = { create: create, demoLoop: demoLoop, waterY: waterY, W: W, H: H
     var code = Net.parseCode(codeOrLink);
     if (code.length !== 5) return Promise.reject(fail('Código de sala no válido (5 caracteres).'));
     Net.leave(); leaving = false; brokerIdx = 0; hostCode = code; retries = 0;
-    if (opts.name) name = String(opts.name).slice(0, 16);
+    if (opts.name) name = Net.cleanName(opts.name) || name;
     return retrying(function () { return connectToHost(code, false); });
   };
 
@@ -4718,7 +4720,7 @@ global.Engine = { create: create, demoLoop: demoLoop, waterY: waterY, W: W, H: H
   function clientRecv(m) {
     if (m.t === 'ping') return send1(hostConn.r, { t: 'pong', d: m.d });
     if (m.t === 'pong') { Net.rtt = Date.now() - m.d; return; }
-    if (m.t === 'players') { Net.players = m.d; }
+    if (m.t === 'players') { Net.players = (Array.isArray(m.d) ? m.d : []).map(function (p) { p.name = Net.cleanName(p && p.name) || 'Jugador'; return p; }); m.d = Net.players; }
     if (m.t === 'snapshot') { if (m.s <= lastSeq && lastSeq - m.s < 1000) return; lastSeq = m.s; }
     emit(m.t, m.d, 'p0');
   }
@@ -5216,25 +5218,36 @@ function showMenu() {
   $('div', 'foot', s, '1-7 elegir &middot; flechas/W-S mover &middot; Enter aceptar &middot; D dificultad &middot; M sonido');
   return s;
 }
+const cname = n => window.Net && Net.cleanName ? Net.cleanName(n) : String(n || '').replace(/[<>&"'`\u0000-\u001f]/g, '').trim().slice(0, 14);
+function askName() { // '¿Cómo te llamas?' -> nombre limpio (o null si se cancela); recordado en localStorage
+  return new Promise(res => { let v = null; modal((p, close) => { $('h2', '', p, '¿Cómo te llamas?'); const i = $('input', '', p); i.type = 'text'; i.maxLength = 14; i.autocomplete = 'nickname'; i.setAttribute('aria-label', 'Tu nombre'); i.style.cssText = 'width:100%;margin:.6em 0;font-size:16px'; i.value = cname(store.get('rcv3_name') || '');
+    const r = $('div', 'row', p), a = $('button', 'btn sec', r, 'Cancelar'), b = $('button', 'btn go', r, 'Entrar'); a.onclick = () => { sfx('back'); close(); };
+    b.onclick = () => { v = cname(i.value) || 'Jugador ' + (1 + Math.floor(Math.random() * 99)); store.set('rcv3_name', v); sfx('confirm'); close(); }; i.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); b.click(); } }; setTimeout(() => { i.focus(); i.select(); }, 60); }, () => res(v)); });
+}
+async function joinCode(code) { // desde el menú o desde un enlace #sala=
+  const name = await askName(); if (name === null) return; showLobby({ mode: 'join', code, name });
+}
 async function startFlow(mode) {
+  let name = null; if (mode !== 'solo') { name = await askName(); if (name === null) return; }
   if (!store.get('rcv3_tut')) { const r = await ask('Primera vez?', 'Hay mucho que entender: roles secretos, chat, votos. El tutorial dura menos de 2 minutos y te evita perderte.', [{ t: 'Ver tutorial', v: 'y', cls: 'go' }, { t: 'Ya se jugar', v: 'n', cls: 'sec' }]); if (r === null) return; if (r === 'y') { await showTutorial(); } else store.set('rcv3_tut', '1'); }
   if (mode === 'solo') emit('solo', { difficulty: S.diff }); else emit('host', { difficulty: S.diff });
-  showLobby({ mode: mode === 'solo' ? 'idle' : 'host' });
+  showLobby({ mode: mode === 'solo' ? 'idle' : 'host', name });
 }
 function joinDialog() {
   modal((p, close) => { $('h2', '', p, 'Unirse a una sala'); $('p', 'mut', p, 'Pega el enlace o escribe el código de 5 letras que te pasa el anfitrion.'); const i = $('input', '', p); i.type = 'text'; i.placeholder = 'ABCDE'; i.maxLength = 200; i.style.cssText = 'width:100%;margin:.6em 0;text-transform:uppercase'; i.setAttribute('aria-label', 'Código de sala'); try { const h = window.Net && Net.codeFromHash && Net.codeFromHash(); if (h) i.value = h; } catch (e) { }
-    const r = $('div', 'row', p), a = $('button', 'btn sec', r, 'Cancelar'), b = $('button', 'btn go', r, 'Unirme'); a.onclick = () => { sfx('back'); close(); }; b.onclick = () => { const v = i.value.trim(); if (!v) { sfx('error'); return toast('Escribe un código o pega el enlace', { bad: 1 }); } close(); showLobby({ mode: 'join', code: v }); }; i.onkeydown = e => { if (e.key === 'Enter') b.click(); }; });
+    const r = $('div', 'row', p), a = $('button', 'btn sec', r, 'Cancelar'), b = $('button', 'btn go', r, 'Unirme'); a.onclick = () => { sfx('back'); close(); }; b.onclick = () => { const v = i.value.trim(); if (!v) { sfx('error'); return toast('Escribe un código o pega el enlace', { bad: 1 }); } close(); joinCode(v); }; i.onkeydown = e => { if (e.key === 'Enter') b.click(); }; });
 }
 
 /* ================= LOBBY ================= */
+let cineSkip = null; const isCl = () => !!(window.Net && Net.role === 'client'); // solo el anfitrión salta cinemáticas; los clientes las saltan cuando llega 'cine' {act:'skip'}
 let U = { mode: 'idle', code: '', link: '', players: [], role: 'guia', ready: false };
 let lobbyOff = null;
 function showLobby(o) {
   ensure(); o = o || {}; const s = mkScr('lobby', 'lobby scroll'); U = Object.assign({ mode: 'idle', code: '', link: '', players: [], role: U.role || 'guia', ready: false }, { mode: o.mode || 'idle' });
   go('lobby', { music: 'menu', keys: e => { if (e.key === 'Escape') { back(); return; } const i = '123'.indexOf(e.key); if (i >= 0) pickRole(RK[i]); else if (e.key === 'Enter') { s.querySelector('.go') && s.querySelector('.go').click(); } else return false; } });
   if (window.Net && Net.on && !lobbyOff) { const f = () => { U.players = Net.players || []; if (cur === 'lobby') render(); }; Net.on('players', f); lobbyOff = () => { try { Net.off && Net.off('players', f); } catch (e) { } lobbyOff = null; }; own(lobbyOff); }
-  if (U.mode === 'host') { toast('Creando sala…'); Promise.resolve(window.Net && Net.host ? Net.host({ name: 'Anfitrión' }) : Promise.reject(new Error('Multijugador no disponible'))).then(r => { U.code = r.roomCode; U.link = r.link; try { Net.setRole && Net.setRole(U.role); } catch (e) { } emit('host', r); render(); }).catch(e => { sfx('error'); toast((e && e.message) || 'No se pudo crear la sala', { bad: 1 }); U.mode = 'idle'; render(); }); }
-  if (U.mode === 'join') { toast('Conectando...'); Promise.resolve(Net.join(o.code, { name: 'Jugador' })).then(r => { U.code = r.roomCode || o.code; if (r.role) U.role = r.role; if (r.id) localId = r.id; emit('join', r); render(); }).catch(e => { sfx('error'); toast((e && e.message) || 'No se pudo unir', { bad: 1 }); showMenu(); }); }
+  if (U.mode === 'host') { toast('Creando sala…'); Promise.resolve(window.Net && Net.host ? Net.host({ name: o.name || cname(store.get('rcv3_name')) || 'Anfitrión' }) : Promise.reject(new Error('Multijugador no disponible'))).then(r => { U.code = r.roomCode; U.link = r.link; try { Net.setRole && Net.setRole(U.role); } catch (e) { } emit('host', r); render(); }).catch(e => { sfx('error'); toast((e && e.message) || 'No se pudo crear la sala', { bad: 1 }); U.mode = 'idle'; render(); }); }
+  if (U.mode === 'join') { toast('Conectando...'); Promise.resolve(Net.join(o.code, { name: o.name || cname(store.get('rcv3_name')) || 'Jugador' })).then(r => { try { if (/sala=/.test(location.hash)) history.replaceState(null, '', location.pathname + location.search); } catch (e) { } U.code = r.roomCode || o.code; if (r.role) U.role = r.role; if (r.id) localId = r.id; emit('join', r); render(); }).catch(e => { sfx('error'); toast((e && e.message) || 'No se pudo unir', { bad: 1 }); showMenu(); }); }
   showLobby.rerender = render; render(); return s;
   function back() { sfx('back'); if (U.mode !== 'idle') { try { Net.leave && Net.leave(); } catch (e) { } } emit('menu', { lobby: 1 }); showMenu(); }
   function pickRole(k) { const t = taken(k); if (t) { sfx('error'); return toast('Ese rol ya lo juega ' + (t.name || 'otro jugador'), { bad: 1 }); } U.role = k; sfx('select'); emit('role', k); try { Net.role && Net.setRole && Net.setRole(k); } catch (e) { } render(); }
@@ -5244,7 +5257,7 @@ function showLobby(o) {
     if (U.mode === 'host' || U.mode === 'join') { const b = $('div', 'panel', s); $('div', 'lab', b, U.mode === 'host' ? 'COMPARTE ESTE CÓDIGO CON TUS AMIGOS' : 'CONECTADO A LA SALA'); $('div', 'code', b, esc(U.code || '. . . . .')); if (U.link) { const r = $('div', 'row', b); r.style.flexWrap = 'nowrap'; r.style.marginTop = '.6em'; const i = $('input', '', r); i.type = 'text'; i.readOnly = true; i.value = U.link; i.setAttribute('aria-label', 'Enlace'); const c = $('button', 'btn', r, 'Copiar'); c.onclick = () => { try { navigator.clipboard.writeText(U.link).then(() => { toast('Enlace copiado'); }, () => { i.select(); document.execCommand('copy'); toast('Enlace copiado'); }); } catch (x) { i.select(); toast('Copia el enlace a mano', { bad: 1 }); } }; } }
     const p = $('div', 'panel', s); $('div', 'lab', p, 'ELIGE TU ROL (1 / 2 / 3)'); const cards = $('div', 'cards', p); cards.style.marginTop = '.7em';
     RK.forEach((k, i) => { const d = rinfo(k), t = taken(k), b = $('button', 'rc' + (U.role === k ? ' sel' : '') + (t ? ' taken' : ''), cards); b.style.setProperty('--c', d.col); b.appendChild(portrait(k, U.role === k ? 'feliz' : 'neutral', 72)); $('b', '', b, esc(d.n)).style.color = d.col; $('span', 'mut', b, esc(d.t)); const sk = $('span', '', b, esc(String(d.skill || '').split(/[.;]/)[0].slice(0, 40))); sk.style.cssText = 'font-size:.85em;line-height:1.35'; $('span', 'tag' + (U.role === k ? ' me' : ''), b, U.role === k ? 'TU' : t ? esc(t.name || 'Jugador') : 'IA: ' + esc(d.ai)); b.onclick = () => pickRole(k); });
-    const hum = U.players.filter(x => x && !x.bot); if (U.mode !== 'idle') $('div', 'mut', p, (hum.length ? hum.map(x => '<span class="ok">●</span> ' + esc(x.name || x.id) + (x.host ? ' (anfitrión)' : '')).join(' &nbsp; ') : 'Esperando jugadores...') + '<br>Máx. 3 humanos.').style.marginTop = '.7em';
+    const hum = U.players.filter(x => x && !x.bot); if (U.mode !== 'idle') $('div', 'mut', p, (hum.length ? hum.map(x => '<span class="ok">●</span> ' + esc(x.name || x.id) + (RK.includes(x.role) ? ' · ' + esc(rinfo(x.role).n) : '') + (x.host ? ' (anfitrión)' : '')).join(' &nbsp; ') : 'Esperando jugadores...') + '<br>Máx. 3 humanos.').style.marginTop = '.7em';
     else $('div', 'mut', p, 'Juegas con ' + esc(rinfo(U.role).n) + '. Los otros dos: IA.').style.marginTop = '.7em';
     if (U.mode !== 'join') { const dv = $('div', 'diff', s); $('span', 'lab', dv, 'DIFICULTAD'); [['facil', 'Fácil'], ['normal', 'Normal'], ['everest', 'Everest']].forEach(([k, n]) => { const c = $('button', 'chip' + (S.diff === k ? ' on' : ''), dv, n); c.onclick = () => { S.diff = k; saveS(); sfx('select'); render(); }; }); }
     const act = $('div', 'row', s); act.style.justifyContent = 'flex-end'; const go2 = $('button', 'btn go', act, U.mode === 'join' ? (U.ready ? 'No estoy listo' : 'Estoy listo') : 'Empezar'); go2.focus();
@@ -5439,7 +5452,7 @@ function playCinematic(id, o) {
     const shots = buildShots(id, o); await Promise.all(shots.map(s => loadStill(s.still)));
     const s = mkScr('cine', 'cine'); s.innerHTML = ''; const W = 640, H = 360;
     const vw = $('div', 'cvw', s), cv = $('canvas', '', vw); cv.width = W; cv.height = H; const g = cv.getContext('2d'), sub = $('div', 'sub3', vw), fl = $('div', 'fl', vw), cd = $('div', 'cdots', vw);
-    shots.forEach(() => $('i', '', cd)); const skip = $('button', 'btn sec skip', s, 'Saltar »'); sub.remove(); (matchMedia('(max-aspect-ratio:1/1)').matches ? s : vw).appendChild(sub);
+    shots.forEach(() => $('i', '', cd)); const skip = $('button', 'btn sec skip', s, 'Saltar »'); if (isCl()) { skip.disabled = true; skip.textContent = 'Solo el anfitrión salta'; } sub.remove(); (matchMedia('(max-aspect-ratio:1/1)').matches ? s : vw).appendChild(sub);
     const prev = mk(W, H), pg = prev.getContext('2d'), nz = mk(160, 90), nzg = nz.getContext('2d'); let gt = 0, done = false, i = -1, t = 0, dur = 6, typed = 0, text = '', fade = 0, flash = 0, thunderAt = -1, wait = 0, shake = 0, P = [], ty = 0, tmo = 0;
     const noise = () => { const d = nzg.createImageData(160, 90); for (let k = 0; k < d.data.length; k += 4) { const v = Math.random() * 255; d.data[k] = d.data[k + 1] = d.data[k + 2] = v; d.data[k + 3] = 255; } nzg.putImageData(d, 0, 0); };
     function nextShot() {
@@ -5453,11 +5466,12 @@ function playCinematic(id, o) {
       if (fxl.includes('drip')) sfx('drip'); if (fxl.includes('rain') && !fxl.includes('lightning')) sfx('rumble');
       if (S.narr && text) snd('speak', text, { who: (sh.who || 'narrador') });
     }
-    function end() { if (done) return; done = true; stopT(); snd('stopSpeak'); s.style.transition = 'opacity .6s'; s.style.opacity = 0; setTimeout(() => { s.style.opacity = ''; s.style.transition = ''; s.classList.remove('on'); cur = null; res(); }, 650); }
+    function end() { if (done) return; done = true; cineSkip = null; stopT(); snd('stopSpeak'); s.style.transition = 'opacity .6s'; s.style.opacity = 0; setTimeout(() => { s.style.opacity = ''; s.style.transition = ''; s.classList.remove('on'); cur = null; res(); }, 650); }
     function advance() { const sh = shots[i]; if (!sh) return; if (typed < text.length) { typed = text.length; return; } if (t > 1.2) { sfx('click'); nextShot(); } }
     let stopT = () => { };
-    go('cine', { music: 'briefing', keys: e => { if (e.key === 'Escape') { sfx('back'); end(); return; } if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight') { advance(); return; } return false; } });
-    s.onclick = e => { if (e.target === skip) return; advance(); }; skip.onclick = e => { e.stopPropagation(); sfx('back'); end(); };
+    const skipReq = rem => { if (isCl() && !rem) return; if (!rem) emit('cineskip', { k: 'cine' }); sfx('back'); end(); }; cineSkip = () => skipReq(true);
+    go('cine', { music: 'briefing', keys: e => { if (e.key === 'Escape') { skipReq(); return; } if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight') { advance(); return; } return false; } });
+    s.onclick = e => { if (e.target === skip) return; advance(); }; skip.onclick = e => { e.stopPropagation(); skipReq(); };
     nextShot(); noise();
     stopT = tick(dt => {
       if (done) return; t += dt; const sh = shots[i]; if (!sh) return; const fxl = sh._fx, p = clamp(t / dur, 0, 1);
@@ -5521,7 +5535,7 @@ function playEnding(o) {
     const src = (i) => { const k = keys[i], im = k && getImg(k); return im && im.ok ? im : scene(saved ? (i ? 'rescate' : 'radio') : (i ? 'derrota' : 'radio')); };
     const s = mkScr('end', 'endv'); s.innerHTML = ''; const W = 960, H = 540, col = saved ? '#ffd34d' : '#9fb4d8';
     const vw = $('div', 'cvw', s), cv = $('canvas', '', vw); cv.width = W; cv.height = H; const g = cv.getContext('2d'); const sub = $('div', 'en-sub', vw), title = $('div', 'en-title ' + (saved ? 'good' : 'bad'), vw, saved ? 'LÍA ESTÁ A SALVO' : 'NO LLEGAMOS A TIEMPO'), fatesEl = $('div', 'en-fates', vw), pathEl = $('div', 'en-path', vw, pathRow(o.path)), hint = $('div', 'en-hint', vw, 'Clic / Espacio: continuar');
-    const skip = $('button', 'btn sec skip', s, 'Saltar »'); const prev = mk(W, H), pg = prev.getContext('2d'), nz = mk(160, 90), nzg = nz.getContext('2d');
+    const skip = $('button', 'btn sec skip', s, 'Saltar »'); if (isCl()) { skip.disabled = true; skip.textContent = 'Solo el anfitrión salta'; } const prev = mk(W, H), pg = prev.getContext('2d'), nz = mk(160, 90), nzg = nz.getContext('2d');
     const faceCv = mk(48, 48); faceCv.className = 'en-face'; const fg = faceCv.getContext('2d'); let faceId = null, faceMood = 'neutral';
     let i = -1, t = 0, dur = 6, typed = 0, text = '', fade = 0, done = false, closing = false, tC = 0, black = 0, lt = 0, gt = 0, pt = [], first = true; const bars = { v: 0 };
     for (let k = 0; k < 70; k++) pt.push({ x: Math.random() * W, y: Math.random() * H, z: .3 + Math.random() * .9, p: Math.random() * 6 });
@@ -5537,10 +5551,11 @@ function playEnding(o) {
     function startClose() { if (closing) return; closing = true; tC = 0; sub.classList.remove('on'); hint.classList.remove('on'); if (saved) snd('sfx', 'rescue'); else snd('sfx', 'lose');
       const fates = Array.isArray(o.fates) ? o.fates.filter(f => f && f.id) : []; if (fates.length) { fates.slice(0, 4).forEach(f => { const e = $('div', 'f ' + (f.status || 'vivo'), fatesEl); const c = fateFace(f); e.appendChild(c); $('div', '', e, '<b>' + esc(f.name || (f.id === 'lia' ? 'Lía' : rinfo(f.id).n)) + '</b>'); }); }
       setTimeout(() => { if (!done) { title.classList.add('on'); pathEl.classList.add('on'); } }, 1800); setTimeout(() => { if (!done) { fatesEl.classList.add('on'); hint.classList.add('on'); } }, 4200); }
-    let stopT = () => { }; function end() { if (done) return; done = true; stopT(); snd('stopSpeak'); s.style.transition = 'opacity 1.1s'; s.style.opacity = 0; setTimeout(() => { s.style.opacity = ''; s.style.transition = ''; s.classList.remove('on'); cur = null; res(); }, 1150); }
+    let stopT = () => { }; function end() { if (done) return; done = true; cineSkip = null; stopT(); snd('stopSpeak'); s.style.transition = 'opacity 1.1s'; s.style.opacity = 0; setTimeout(() => { s.style.opacity = ''; s.style.transition = ''; s.classList.remove('on'); cur = null; res(); }, 1150); }
     function advance() { if (closing) { if (tC > 4.5) end(); return; } if (typed < text.length) { if (t < 1.2) return; typed = text.length; if (sub._a) { sub._a.textContent = text; sub._b.textContent = ''; } return; } if (t > 3.5) { sfx('click'); nextPanel(); } }
-    go('end', { music: saved ? 'win' : 'lose', keys: e => { if (e.key === 'Escape') { if (closing) end(); else startClose(); return; } if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight') { advance(); return; } return false; } });
-    s.onclick = e => { if (e.target === skip) return; advance(); }; skip.onclick = e => { e.stopPropagation(); sfx('back'); if (closing) end(); else { i = panels.length; startClose(); } };
+    const skipReq = rem => { if (isCl() && !rem) return; if (closing) return end(); if (!rem) emit('cineskip', { k: 'end' }); sfx('back'); i = panels.length; startClose(); }; cineSkip = () => skipReq(true);
+    go('end', { music: saved ? 'win' : 'lose', keys: e => { if (e.key === 'Escape') { skipReq(); return; } if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight') { advance(); return; } return false; } });
+    s.onclick = e => { if (e.target === skip) return; advance(); }; skip.onclick = e => { e.stopPropagation(); skipReq(); };
     nextPanel(); noise();
     stopT = tick(dt => {
       if (done) return; const T0 = t; t += dt; gt += dt; if (closing) tC += dt; bars.v = Math.min(1, bars.v + dt / 1.4); const rm = !!S.flash;
@@ -5692,7 +5707,7 @@ function showCredits() {
 const UI = { mount, showMenu, showTutorial, showLobby, lobbyUpdate, showRole, playCinematic, playEnding, showFinal, showAchievements, openSettings, showCredits, toast, hide, on, emit,
   settings: () => Object.assign({}, S), setLocalId: id => { localId = id; }, gameCanvas: () => document.querySelector('canvas#game') || null, isOpen: () => !!cur, burst, confetti, portrait, icon, trophy,
   unlock(ids) { const g = jget('rcv3_ach', {}); (Array.isArray(ids) ? ids : [ids]).forEach(i => { if (!g[i]) g[i] = Date.now(); }); store.set('rcv3_ach', JSON.stringify(g)); }, achievements: () => jget('rcv3_ach', {}),
-  showTitle: showMenu };
+  showTitle: showMenu, joinCode, skipCine: () => { if (cineSkip) { cineSkip(); return true; } return false; } };
 UI.api = UI; window.UI = UI;
 const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey && Story.setKey(st0); } catch (e) { }
 })();
@@ -7066,7 +7081,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
       if (last && last.classList.contains('h-g') && last.dataset.from === from && last.dataset.mood === mood && (!m.t || !lastChatT || m.t - lastChatT < 90000)) g = last;
       else {
         g = D.createElement('div'); g.className = 'h-g' + (me ? ' me' : ''); g.dataset.from = from; g.dataset.mood = mood;
-        g.innerHTML = '<div class="av">' + portrait(from, mood, 40) + '</div><div class="bd"><div class="hd" style="color:' + b.color + '">' + esc(b.name) + '<i>' + esc(b.title) + (me ? ' · TÚ' : P && P.players && P.players[from] && P.players[from].ai ? ' · IA' : '') + '</i><time>' + fmtTime(m.t) + '</time></div><div class="bs"></div></div>';
+        g.innerHTML = '<div class="av">' + portrait(from, mood, 40) + '</div><div class="bd"><div class="hd" style="color:' + b.color + '">' + esc(b.name) + (P && P.players && P.players[from] && P.players[from].pname ? ' · ' + esc(cut(String(P.players[from].pname), 14)) : '') + '<i>' + esc(b.title) + (me ? ' · TÚ' : P && P.players && P.players[from] && P.players[from].ai ? ' · IA' : '') + '</i><time>' + fmtTime(m.t) + '</time></div><div class="bs"></div></div>';
         el.log.appendChild(g);
       }
       var bb = D.createElement('div'); bb.className = 'h-b' + (card ? ' card' : ''); bb.innerHTML = inner; g.querySelector('.bs').appendChild(bb);
@@ -7923,7 +7938,10 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
     helpFor[gateId] = from; setTimeout(() => { if (st && st.phase === 'explore') eng.botOpenGate(to, gateId, () => { }); }, q.delay || 1500);
     setTimeout(() => { if (st && st.phase === 'explore' && !(st.gatesOpen || {})[gateId]) { try { (eng.forceOpenGate || eng.openGate).call(eng, gateId); } catch (e) { } } }, (q.delay || 1500) + 25000); // red de seguridad: nadie se queda bloqueado
   }
-  function setupBots() { RK.forEach(r => eng.setBot(r, r !== myRole && (!isClient() ? st.players[r].ai : true))); eng.setLocal(myRole); }
+  // Un rol con dueño humano NUNCA es bot en el host; sus entradas parten de ZERO hasta que llegue su primer 'input'.
+  function setupBots() { eng.setLocal(myRole); RK.forEach(r => { const hum = !isClient() && st.players[r].owner; eng.setBot(r, r !== myRole && !hum && (!isClient() ? st.players[r].ai : true)); if (hum && r !== myRole) eng.setInput(r, ZERO); }); }
+  const lastIn = {}; // host: instante del último 'input' de cada rol remoto (red de seguridad contra tecla pegada)
+  function zeroRemotes() { RK.forEach(r => { const o = st.players[r].owner; if (o && o !== myId && o !== 'solo') { eng.setInput(r, ZERO); lastIn[r] = 0; } }); }
   function showGame() { gameEl.style.display = 'flex'; Hud.show && Hud.show(); fitG(); }
 
   // ---------- Teclado ----------
@@ -7935,6 +7953,8 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
   addEventListener('keydown', e => { if (!/INPUT|TEXTAREA/.test(e.target.tagName) && /^j$/i.test(e.key)) coachFlags.nb = true; });
   addEventListener('keydown', e => { if (st && st.phase === 'summary' && (e.key === ' ' || e.key === 'Enter') && !/INPUT|TEXTAREA/.test(e.target.tagName)) { const b = document.querySelector('#rcgame button[data-act=cont]:not([disabled])'); if (b) { e.preventDefault(); b.click(); } } });
   addEventListener('keyup', e => { const k = kmap(e); if (k) { keys[k] = 0; pushInput(); } });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) { Object.keys(keys).forEach(k => keys[k] = 0); pushInput(); } });
+  setInterval(() => { if (isClient()) pushInput(); }, 200); // el cliente repite su estado (host lo usa como latido)
   addEventListener('blur', () => { Object.keys(keys).forEach(k => keys[k] = 0); pushInput(); });
 
   // ---------- Estado -> pantalla ----------
@@ -8010,6 +8030,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
     st = Story.newGame({ quick: true, seed: (Date.now() % 1000000) | 0, difficulty: Story.defaultDifficulty && Story.defaultDifficulty() === 'facil' ? 'facil' : (o.difficulty || (UI.settings && UI.settings().diff) || 'normal'), humans: hs, demo: !Story.hasKey() });
     if (hostMode) { Net.lock(true); Net.players.forEach(p => { if (!p.bot && RK.includes(p.role)) { st.players[p.role].owner = p.id; st.players[p.role].connected = true; } }); }
     else st.players[myRole].owner = 'solo';
+    if (hostMode) Net.players.forEach(p => { if (!p.bot && RK.includes(p.role)) st.players[p.role].pname = Net.cleanName(p.name); });
     started = true; ensureGame(); makeEngine(true); setupBots(); eng.resetGates(); eng.setWater(st.s.agua); eng.setWaterRate(0);
     st.phase = 'intro'; busyRound = true; myPriv = Story.privOf(st, myRole);
     if (hostMode) RK.forEach(r => { const ow = st.players[r].owner; if (ow && ow !== myId) Net.sendTo(ow, 'priv', Story.privOf(st, r)); });
@@ -8038,6 +8059,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
       const w = Story.tickWater(st, 0.25); eng.setWater(st.s.agua);
       if (w && w.warn) { snd('water_warn'); react('water', { level: w.warn }); }
     }
+    RK.forEach(r => { if (lastIn[r] && Date.now() - lastIn[r] > 1500) { eng.setInput(r, ZERO); lastIn[r] = 0; } });
     botLoop(); guide();
     if (st.phase === 'explore' && Date.now() - lastChatAt > 25000) { lastChatAt = Date.now(); react('idle'); }
     if (st.phase === 'explore' && !(sec % 20)) { try { Story.botRequest(st) && push(); } catch (e) { } }
@@ -8063,10 +8085,10 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
               try { Hud.setNow({ text: tr.caption || 'Viajan a la siguiente zona', sub: '', kind: 'info' }); Hud.showTravel && Hud.showTravel({ from: st.round - 1, to: st.round, kind: tr.kind }); } catch (e) { }
               const ok = eng.playTravel({ toZone: st.round, kind: tr.kind, outcome: tr.outcome, ms: st.quick ? 8500 : 11500, onShot: (i) => { try { Hud.setNow({ text: [tr.caption || 'Salen de la zona', 'Recorren el camino', 'Llegan a la nueva zona'][i] || '', sub: '', kind: 'info' }); } catch (e) { } } }, fin); if (ok === false) return fin();
               if (Hud.dialogue && tr.lines && tr.lines.length) Hud.dialogue(tr.lines, { auto: 3400 }); setTimeout(fin, 20000); }); }
-          await startRound(); return;
+          zeroRemotes(); await startRound(); return;
       }
     } catch (e) { console.error(e); }
-    busyRound = false; push();
+    zeroRemotes(); busyRound = false; push();
   }
 
   // ---------- Compañeros IA ----------
@@ -8129,12 +8151,15 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
   function wireNet() {
     if (!window.Net || !Net.available) return;
     const host = () => mode === 'host' && st;
-    Net.on('input', (d, from) => { if (!host() || from === 'p0') return; const r = ownerRole(from); if (!r) return; eng.setBot(r, false); eng.setInput(r, st.phase === 'explore' ? d : ZERO); });
+    Net.on('input', (d, from) => { if (!host() || from === 'p0') return; const r = ownerRole(from); if (!r || r === myRole) return; eng.setBot(r, false); lastIn[r] = Date.now(); eng.setInput(r, st.phase === 'explore' && d && typeof d === 'object' ? d : ZERO); });
     Net.on('chat', (d, from) => { if (!host()) return; const r = ownerRole(d.from || from); if (r && r !== myRole && d.text) doChat(r, d.text); });
     Net.on('poi', (d, from) => { if (!host() || !d) return; const r = ownerRole(from); if (!r) return; if (d.act === 'share') doShare(r, d); else if (d.act === 'ask' && RK.includes(d.toRole)) doAsk(r, d.toRole, d.gateId); });
     Net.on('vote', (d, from) => { if (!host()) return; const r = ownerRole(from); if (r) doVote(r, d.optId); });
     Net.on('secret', (d, from) => { if (!host()) return; const r = ownerRole(from); if (r) { Story.secretPick(st, r, d.idx); push(); } });
     Net.on('ready', (d, from) => { if (!host() || !d) return; if (d.act === 'intro') introReady[from] = 1; else if (d.act === 'explore') { const r = ownerRole(from); if (r) { Story.convene(st, r); push(); } } });
+    { let prev = null; // aviso al anfitrión: 'X se unió' / 'X se fue'
+      Net.on('players', () => { if (Net.role !== 'host') { prev = null; return; } const cur = {}; Net.players.forEach(p => { if (!p.bot && p.connected !== false && p.id !== 'p0') cur[p.id] = Net.cleanName(p.name) || 'Jugador'; });
+        if (prev) { Object.keys(cur).forEach(id => { if (!(id in prev)) UI.toast(cur[id] + ' se unió'); }); Object.keys(prev).forEach(id => { if (!(id in cur)) UI.toast(prev[id] + ' se fue', { bad: true }); }); } prev = cur; }); }
     Net.on('players', () => { // quien se va pasa a compañero IA
       if (!host()) return; const live = Net.players.filter(p => !p.bot && p.connected !== false).map(p => p.id); let ch = false;
       RK.forEach(r => { const o = st.players[r].owner; if (o && o !== myId && !live.includes(o)) { st.players[r].owner = null; st.players[r].ai = true; st.players[r].connected = false; eng.setBot(r, true); ch = true; } });
@@ -8147,12 +8172,15 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
         mode = 'client'; myId = Net.localId; const me = Net.players.find(p => p.id === myId); myRole = (me && me.role) || RK.find(r => s.players[r].owner === myId) || 'medica';
         started = true; UI.hide(); ensureGame(); makeEngine(false); setupBots();
       }
+      if (prev && prev.phase !== s.phase) { pushInput(); }
       if (s.phase === 'intro' && (!prev || prev.phase !== 'intro')) playIntro().then(() => Net.send('ready', { act: 'intro' }));
       else if (s.phase !== 'intro') render();
     });
     Net.on('priv', d => { myPriv = d; if (st) render(); });
     Net.on('phase', d => { if (d && d.note) { Hud.floatText(d.note, 'info'); snd(d.sfx || 'intel'); } });
     Net.on('snapshot', s => { if (mode === 'client' && eng) eng.applySnapshot(s); });
+    Net.on('cine', d => { if (mode === 'client' && d && d.act === 'skip') { try { UI.skipCine(); } catch (e) { } } });
+    UI.on('cineskip', () => { if (Net.role === 'host') Net.broadcast('cine', { act: 'skip' }); });
     Net.on('leave', d => { if (d && d.host) { UI.toast('El anfitrión se ha ido. Volviendo al inicio…', { bad: true }); setTimeout(() => location.reload(), 2500); } });
   }
 
@@ -8162,7 +8190,13 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
   UI.on('menu', () => location.reload());
   window.RC = { st: () => st, eng: () => eng, advance: () => advance(), priv: () => myPriv, role: () => myRole }; // gancho para pruebas
   window.RC_NOCARD = true; wireNet(); UI.showMenu();
-  if (/#sala=/.test(location.hash)) UI.showLobby({ mode: 'join' });
+  function openLink() { // #sala=CODIGO: pide el nombre y une; código inválido -> aviso + menú
+    if (!/sala=/i.test(location.hash)) return; if (started || (window.Net && Net.role)) return;
+    const code = window.Net && Net.codeFromHash(); if (!code) { UI.toast('Enlace de sala no válido', { bad: true }); try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { } return UI.showMenu(); }
+    UI.joinCode(code);
+  }
+  addEventListener('hashchange', () => { if (/sala=/i.test(location.hash) && (started || (window.Net && Net.role))) { UI.toast('Ya estás en una partida', { bad: true }); try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { } } else openLink(); });
+  openLink();
 })();
 
 </script>
@@ -8261,7 +8295,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
   function vis() {
     var g = q('#rcgame'), game = g && g.style.display !== 'none', ui = q('#rcv3 .scr.on, #rcv3 .mod'), hud = q('#rcgame .hud');
     var full = !game || ui || B.classList.contains('rc-dlg') || q('#rcgame .h-mg, #rcgame .h-jr, #rcgame .h-pn, #rcgame .h-big, #rcgame .h-dos.open, #rcgame .h-pause.open, #rcgame .h-hb') || (hud && /\b(modal|dlg)\b/.test(hud.className));
-    var chat = q('#rcgame .h-chat.open'), cs = !!(game && !ui && W.Engine && Engine.isCutscene && Engine.isCutscene()), show = !!game && !ui && !full && !chat;
+    var chat = q('#rcgame .h-chat.open'), cs = !!(game && !ui && W.Engine && Engine.isCutscene && Engine.isCutscene() && !(W.Net && Net.role === 'client')), show = !!game && !ui && !full && !chat;
     tc.classList.toggle('cs', cs); tc.classList.toggle('on', show || cs); if (!show) releaseAll();
   }
   setInterval(vis, 150);

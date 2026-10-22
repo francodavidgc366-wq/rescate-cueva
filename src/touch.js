@@ -92,7 +92,7 @@
   function vis() {
     var g = q('#rcgame'), game = g && g.style.display !== 'none', ui = q('#rcv3 .scr.on, #rcv3 .mod'), hud = q('#rcgame .hud');
     var full = !game || ui || B.classList.contains('rc-dlg') || q('#rcgame .h-mg, #rcgame .h-jr, #rcgame .h-pn, #rcgame .h-big, #rcgame .h-dos.open, #rcgame .h-pause.open, #rcgame .h-hb') || (hud && /\b(modal|dlg)\b/.test(hud.className));
-    var chat = q('#rcgame .h-chat.open'), cs = !!(game && !ui && W.Engine && Engine.isCutscene && Engine.isCutscene()), show = !!game && !ui && !full && !chat;
+    var chat = q('#rcgame .h-chat.open'), cs = !!(game && !ui && W.Engine && Engine.isCutscene && Engine.isCutscene() && !(W.Net && Net.role === 'client')), show = !!game && !ui && !full && !chat;
     tc.classList.toggle('cs', cs); tc.classList.toggle('on', show || cs); if (!show) releaseAll();
   }
   setInterval(vis, 150);

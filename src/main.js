@@ -115,7 +115,10 @@
     helpFor[gateId] = from; setTimeout(() => { if (st && st.phase === 'explore') eng.botOpenGate(to, gateId, () => { }); }, q.delay || 1500);
     setTimeout(() => { if (st && st.phase === 'explore' && !(st.gatesOpen || {})[gateId]) { try { (eng.forceOpenGate || eng.openGate).call(eng, gateId); } catch (e) { } } }, (q.delay || 1500) + 25000); // red de seguridad: nadie se queda bloqueado
   }
-  function setupBots() { RK.forEach(r => eng.setBot(r, r !== myRole && (!isClient() ? st.players[r].ai : true))); eng.setLocal(myRole); }
+  // Un rol con dueño humano NUNCA es bot en el host; sus entradas parten de ZERO hasta que llegue su primer 'input'.
+  function setupBots() { eng.setLocal(myRole); RK.forEach(r => { const hum = !isClient() && st.players[r].owner; eng.setBot(r, r !== myRole && !hum && (!isClient() ? st.players[r].ai : true)); if (hum && r !== myRole) eng.setInput(r, ZERO); }); }
+  const lastIn = {}; // host: instante del último 'input' de cada rol remoto (red de seguridad contra tecla pegada)
+  function zeroRemotes() { RK.forEach(r => { const o = st.players[r].owner; if (o && o !== myId && o !== 'solo') { eng.setInput(r, ZERO); lastIn[r] = 0; } }); }
   function showGame() { gameEl.style.display = 'flex'; Hud.show && Hud.show(); fitG(); }
 
   // ---------- Teclado ----------
@@ -127,6 +130,8 @@
   addEventListener('keydown', e => { if (!/INPUT|TEXTAREA/.test(e.target.tagName) && /^j$/i.test(e.key)) coachFlags.nb = true; });
   addEventListener('keydown', e => { if (st && st.phase === 'summary' && (e.key === ' ' || e.key === 'Enter') && !/INPUT|TEXTAREA/.test(e.target.tagName)) { const b = document.querySelector('#rcgame button[data-act=cont]:not([disabled])'); if (b) { e.preventDefault(); b.click(); } } });
   addEventListener('keyup', e => { const k = kmap(e); if (k) { keys[k] = 0; pushInput(); } });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) { Object.keys(keys).forEach(k => keys[k] = 0); pushInput(); } });
+  setInterval(() => { if (isClient()) pushInput(); }, 200); // el cliente repite su estado (host lo usa como latido)
   addEventListener('blur', () => { Object.keys(keys).forEach(k => keys[k] = 0); pushInput(); });
 
   // ---------- Estado -> pantalla ----------
@@ -202,6 +207,7 @@
     st = Story.newGame({ quick: true, seed: (Date.now() % 1000000) | 0, difficulty: Story.defaultDifficulty && Story.defaultDifficulty() === 'facil' ? 'facil' : (o.difficulty || (UI.settings && UI.settings().diff) || 'normal'), humans: hs, demo: !Story.hasKey() });
     if (hostMode) { Net.lock(true); Net.players.forEach(p => { if (!p.bot && RK.includes(p.role)) { st.players[p.role].owner = p.id; st.players[p.role].connected = true; } }); }
     else st.players[myRole].owner = 'solo';
+    if (hostMode) Net.players.forEach(p => { if (!p.bot && RK.includes(p.role)) st.players[p.role].pname = Net.cleanName(p.name); });
     started = true; ensureGame(); makeEngine(true); setupBots(); eng.resetGates(); eng.setWater(st.s.agua); eng.setWaterRate(0);
     st.phase = 'intro'; busyRound = true; myPriv = Story.privOf(st, myRole);
     if (hostMode) RK.forEach(r => { const ow = st.players[r].owner; if (ow && ow !== myId) Net.sendTo(ow, 'priv', Story.privOf(st, r)); });
@@ -230,6 +236,7 @@
       const w = Story.tickWater(st, 0.25); eng.setWater(st.s.agua);
       if (w && w.warn) { snd('water_warn'); react('water', { level: w.warn }); }
     }
+    RK.forEach(r => { if (lastIn[r] && Date.now() - lastIn[r] > 1500) { eng.setInput(r, ZERO); lastIn[r] = 0; } });
     botLoop(); guide();
     if (st.phase === 'explore' && Date.now() - lastChatAt > 25000) { lastChatAt = Date.now(); react('idle'); }
     if (st.phase === 'explore' && !(sec % 20)) { try { Story.botRequest(st) && push(); } catch (e) { } }
@@ -255,10 +262,10 @@
               try { Hud.setNow({ text: tr.caption || 'Viajan a la siguiente zona', sub: '', kind: 'info' }); Hud.showTravel && Hud.showTravel({ from: st.round - 1, to: st.round, kind: tr.kind }); } catch (e) { }
               const ok = eng.playTravel({ toZone: st.round, kind: tr.kind, outcome: tr.outcome, ms: st.quick ? 8500 : 11500, onShot: (i) => { try { Hud.setNow({ text: [tr.caption || 'Salen de la zona', 'Recorren el camino', 'Llegan a la nueva zona'][i] || '', sub: '', kind: 'info' }); } catch (e) { } } }, fin); if (ok === false) return fin();
               if (Hud.dialogue && tr.lines && tr.lines.length) Hud.dialogue(tr.lines, { auto: 3400 }); setTimeout(fin, 20000); }); }
-          await startRound(); return;
+          zeroRemotes(); await startRound(); return;
       }
     } catch (e) { console.error(e); }
-    busyRound = false; push();
+    zeroRemotes(); busyRound = false; push();
   }
 
   // ---------- Compañeros IA ----------
@@ -321,12 +328,15 @@
   function wireNet() {
     if (!window.Net || !Net.available) return;
     const host = () => mode === 'host' && st;
-    Net.on('input', (d, from) => { if (!host() || from === 'p0') return; const r = ownerRole(from); if (!r) return; eng.setBot(r, false); eng.setInput(r, st.phase === 'explore' ? d : ZERO); });
+    Net.on('input', (d, from) => { if (!host() || from === 'p0') return; const r = ownerRole(from); if (!r || r === myRole) return; eng.setBot(r, false); lastIn[r] = Date.now(); eng.setInput(r, st.phase === 'explore' && d && typeof d === 'object' ? d : ZERO); });
     Net.on('chat', (d, from) => { if (!host()) return; const r = ownerRole(d.from || from); if (r && r !== myRole && d.text) doChat(r, d.text); });
     Net.on('poi', (d, from) => { if (!host() || !d) return; const r = ownerRole(from); if (!r) return; if (d.act === 'share') doShare(r, d); else if (d.act === 'ask' && RK.includes(d.toRole)) doAsk(r, d.toRole, d.gateId); });
     Net.on('vote', (d, from) => { if (!host()) return; const r = ownerRole(from); if (r) doVote(r, d.optId); });
     Net.on('secret', (d, from) => { if (!host()) return; const r = ownerRole(from); if (r) { Story.secretPick(st, r, d.idx); push(); } });
     Net.on('ready', (d, from) => { if (!host() || !d) return; if (d.act === 'intro') introReady[from] = 1; else if (d.act === 'explore') { const r = ownerRole(from); if (r) { Story.convene(st, r); push(); } } });
+    { let prev = null; // aviso al anfitrión: 'X se unió' / 'X se fue'
+      Net.on('players', () => { if (Net.role !== 'host') { prev = null; return; } const cur = {}; Net.players.forEach(p => { if (!p.bot && p.connected !== false && p.id !== 'p0') cur[p.id] = Net.cleanName(p.name) || 'Jugador'; });
+        if (prev) { Object.keys(cur).forEach(id => { if (!(id in prev)) UI.toast(cur[id] + ' se unió'); }); Object.keys(prev).forEach(id => { if (!(id in cur)) UI.toast(prev[id] + ' se fue', { bad: true }); }); } prev = cur; }); }
     Net.on('players', () => { // quien se va pasa a compañero IA
       if (!host()) return; const live = Net.players.filter(p => !p.bot && p.connected !== false).map(p => p.id); let ch = false;
       RK.forEach(r => { const o = st.players[r].owner; if (o && o !== myId && !live.includes(o)) { st.players[r].owner = null; st.players[r].ai = true; st.players[r].connected = false; eng.setBot(r, true); ch = true; } });
@@ -339,12 +349,15 @@
         mode = 'client'; myId = Net.localId; const me = Net.players.find(p => p.id === myId); myRole = (me && me.role) || RK.find(r => s.players[r].owner === myId) || 'medica';
         started = true; UI.hide(); ensureGame(); makeEngine(false); setupBots();
       }
+      if (prev && prev.phase !== s.phase) { pushInput(); }
       if (s.phase === 'intro' && (!prev || prev.phase !== 'intro')) playIntro().then(() => Net.send('ready', { act: 'intro' }));
       else if (s.phase !== 'intro') render();
     });
     Net.on('priv', d => { myPriv = d; if (st) render(); });
     Net.on('phase', d => { if (d && d.note) { Hud.floatText(d.note, 'info'); snd(d.sfx || 'intel'); } });
     Net.on('snapshot', s => { if (mode === 'client' && eng) eng.applySnapshot(s); });
+    Net.on('cine', d => { if (mode === 'client' && d && d.act === 'skip') { try { UI.skipCine(); } catch (e) { } } });
+    UI.on('cineskip', () => { if (Net.role === 'host') Net.broadcast('cine', { act: 'skip' }); });
     Net.on('leave', d => { if (d && d.host) { UI.toast('El anfitrión se ha ido. Volviendo al inicio…', { bad: true }); setTimeout(() => location.reload(), 2500); } });
   }
 
@@ -354,5 +367,11 @@
   UI.on('menu', () => location.reload());
   window.RC = { st: () => st, eng: () => eng, advance: () => advance(), priv: () => myPriv, role: () => myRole }; // gancho para pruebas
   window.RC_NOCARD = true; wireNet(); UI.showMenu();
-  if (/#sala=/.test(location.hash)) UI.showLobby({ mode: 'join' });
+  function openLink() { // #sala=CODIGO: pide el nombre y une; código inválido -> aviso + menú
+    if (!/sala=/i.test(location.hash)) return; if (started || (window.Net && Net.role)) return;
+    const code = window.Net && Net.codeFromHash(); if (!code) { UI.toast('Enlace de sala no válido', { bad: true }); try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { } return UI.showMenu(); }
+    UI.joinCode(code);
+  }
+  addEventListener('hashchange', () => { if (/sala=/i.test(location.hash) && (started || (window.Net && Net.role))) { UI.toast('Ya estás en una partida', { bad: true }); try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { } } else openLink(); });
+  openLink();
 })();

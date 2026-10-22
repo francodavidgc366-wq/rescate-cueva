@@ -1365,7 +1365,7 @@
       if (last && last.classList.contains('h-g') && last.dataset.from === from && last.dataset.mood === mood && (!m.t || !lastChatT || m.t - lastChatT < 90000)) g = last;
       else {
         g = D.createElement('div'); g.className = 'h-g' + (me ? ' me' : ''); g.dataset.from = from; g.dataset.mood = mood;
-        g.innerHTML = '<div class="av">' + portrait(from, mood, 40) + '</div><div class="bd"><div class="hd" style="color:' + b.color + '">' + esc(b.name) + '<i>' + esc(b.title) + (me ? ' · TÚ' : P && P.players && P.players[from] && P.players[from].ai ? ' · IA' : '') + '</i><time>' + fmtTime(m.t) + '</time></div><div class="bs"></div></div>';
+        g.innerHTML = '<div class="av">' + portrait(from, mood, 40) + '</div><div class="bd"><div class="hd" style="color:' + b.color + '">' + esc(b.name) + (P && P.players && P.players[from] && P.players[from].pname ? ' · ' + esc(cut(String(P.players[from].pname), 14)) : '') + '<i>' + esc(b.title) + (me ? ' · TÚ' : P && P.players && P.players[from] && P.players[from].ai ? ' · IA' : '') + '</i><time>' + fmtTime(m.t) + '</time></div><div class="bs"></div></div>';
         el.log.appendChild(g);
       }
       var bb = D.createElement('div'); bb.className = 'h-b' + (card ? ' card' : ''); bb.innerHTML = inner; g.querySelector('.bs').appendChild(bb);

@@ -421,25 +421,36 @@ function showMenu() {
   $('div', 'foot', s, '1-7 elegir &middot; flechas/W-S mover &middot; Enter aceptar &middot; D dificultad &middot; M sonido');
   return s;
 }
+const cname = n => window.Net && Net.cleanName ? Net.cleanName(n) : String(n || '').replace(/[<>&"'`\u0000-\u001f]/g, '').trim().slice(0, 14);
+function askName() { // '¿Cómo te llamas?' -> nombre limpio (o null si se cancela); recordado en localStorage
+  return new Promise(res => { let v = null; modal((p, close) => { $('h2', '', p, '¿Cómo te llamas?'); const i = $('input', '', p); i.type = 'text'; i.maxLength = 14; i.autocomplete = 'nickname'; i.setAttribute('aria-label', 'Tu nombre'); i.style.cssText = 'width:100%;margin:.6em 0;font-size:16px'; i.value = cname(store.get('rcv3_name') || '');
+    const r = $('div', 'row', p), a = $('button', 'btn sec', r, 'Cancelar'), b = $('button', 'btn go', r, 'Entrar'); a.onclick = () => { sfx('back'); close(); };
+    b.onclick = () => { v = cname(i.value) || 'Jugador ' + (1 + Math.floor(Math.random() * 99)); store.set('rcv3_name', v); sfx('confirm'); close(); }; i.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); b.click(); } }; setTimeout(() => { i.focus(); i.select(); }, 60); }, () => res(v)); });
+}
+async function joinCode(code) { // desde el menú o desde un enlace #sala=
+  const name = await askName(); if (name === null) return; showLobby({ mode: 'join', code, name });
+}
 async function startFlow(mode) {
+  let name = null; if (mode !== 'solo') { name = await askName(); if (name === null) return; }
   if (!store.get('rcv3_tut')) { const r = await ask('Primera vez?', 'Hay mucho que entender: roles secretos, chat, votos. El tutorial dura menos de 2 minutos y te evita perderte.', [{ t: 'Ver tutorial', v: 'y', cls: 'go' }, { t: 'Ya se jugar', v: 'n', cls: 'sec' }]); if (r === null) return; if (r === 'y') { await showTutorial(); } else store.set('rcv3_tut', '1'); }
   if (mode === 'solo') emit('solo', { difficulty: S.diff }); else emit('host', { difficulty: S.diff });
-  showLobby({ mode: mode === 'solo' ? 'idle' : 'host' });
+  showLobby({ mode: mode === 'solo' ? 'idle' : 'host', name });
 }
 function joinDialog() {
   modal((p, close) => { $('h2', '', p, 'Unirse a una sala'); $('p', 'mut', p, 'Pega el enlace o escribe el código de 5 letras que te pasa el anfitrion.'); const i = $('input', '', p); i.type = 'text'; i.placeholder = 'ABCDE'; i.maxLength = 200; i.style.cssText = 'width:100%;margin:.6em 0;text-transform:uppercase'; i.setAttribute('aria-label', 'Código de sala'); try { const h = window.Net && Net.codeFromHash && Net.codeFromHash(); if (h) i.value = h; } catch (e) { }
-    const r = $('div', 'row', p), a = $('button', 'btn sec', r, 'Cancelar'), b = $('button', 'btn go', r, 'Unirme'); a.onclick = () => { sfx('back'); close(); }; b.onclick = () => { const v = i.value.trim(); if (!v) { sfx('error'); return toast('Escribe un código o pega el enlace', { bad: 1 }); } close(); showLobby({ mode: 'join', code: v }); }; i.onkeydown = e => { if (e.key === 'Enter') b.click(); }; });
+    const r = $('div', 'row', p), a = $('button', 'btn sec', r, 'Cancelar'), b = $('button', 'btn go', r, 'Unirme'); a.onclick = () => { sfx('back'); close(); }; b.onclick = () => { const v = i.value.trim(); if (!v) { sfx('error'); return toast('Escribe un código o pega el enlace', { bad: 1 }); } close(); joinCode(v); }; i.onkeydown = e => { if (e.key === 'Enter') b.click(); }; });
 }
 
 /* ================= LOBBY ================= */
+let cineSkip = null; const isCl = () => !!(window.Net && Net.role === 'client'); // solo el anfitrión salta cinemáticas; los clientes las saltan cuando llega 'cine' {act:'skip'}
 let U = { mode: 'idle', code: '', link: '', players: [], role: 'guia', ready: false };
 let lobbyOff = null;
 function showLobby(o) {
   ensure(); o = o || {}; const s = mkScr('lobby', 'lobby scroll'); U = Object.assign({ mode: 'idle', code: '', link: '', players: [], role: U.role || 'guia', ready: false }, { mode: o.mode || 'idle' });
   go('lobby', { music: 'menu', keys: e => { if (e.key === 'Escape') { back(); return; } const i = '123'.indexOf(e.key); if (i >= 0) pickRole(RK[i]); else if (e.key === 'Enter') { s.querySelector('.go') && s.querySelector('.go').click(); } else return false; } });
   if (window.Net && Net.on && !lobbyOff) { const f = () => { U.players = Net.players || []; if (cur === 'lobby') render(); }; Net.on('players', f); lobbyOff = () => { try { Net.off && Net.off('players', f); } catch (e) { } lobbyOff = null; }; own(lobbyOff); }
-  if (U.mode === 'host') { toast('Creando sala…'); Promise.resolve(window.Net && Net.host ? Net.host({ name: 'Anfitrión' }) : Promise.reject(new Error('Multijugador no disponible'))).then(r => { U.code = r.roomCode; U.link = r.link; try { Net.setRole && Net.setRole(U.role); } catch (e) { } emit('host', r); render(); }).catch(e => { sfx('error'); toast((e && e.message) || 'No se pudo crear la sala', { bad: 1 }); U.mode = 'idle'; render(); }); }
-  if (U.mode === 'join') { toast('Conectando...'); Promise.resolve(Net.join(o.code, { name: 'Jugador' })).then(r => { U.code = r.roomCode || o.code; if (r.role) U.role = r.role; if (r.id) localId = r.id; emit('join', r); render(); }).catch(e => { sfx('error'); toast((e && e.message) || 'No se pudo unir', { bad: 1 }); showMenu(); }); }
+  if (U.mode === 'host') { toast('Creando sala…'); Promise.resolve(window.Net && Net.host ? Net.host({ name: o.name || cname(store.get('rcv3_name')) || 'Anfitrión' }) : Promise.reject(new Error('Multijugador no disponible'))).then(r => { U.code = r.roomCode; U.link = r.link; try { Net.setRole && Net.setRole(U.role); } catch (e) { } emit('host', r); render(); }).catch(e => { sfx('error'); toast((e && e.message) || 'No se pudo crear la sala', { bad: 1 }); U.mode = 'idle'; render(); }); }
+  if (U.mode === 'join') { toast('Conectando...'); Promise.resolve(Net.join(o.code, { name: o.name || cname(store.get('rcv3_name')) || 'Jugador' })).then(r => { try { if (/sala=/.test(location.hash)) history.replaceState(null, '', location.pathname + location.search); } catch (e) { } U.code = r.roomCode || o.code; if (r.role) U.role = r.role; if (r.id) localId = r.id; emit('join', r); render(); }).catch(e => { sfx('error'); toast((e && e.message) || 'No se pudo unir', { bad: 1 }); showMenu(); }); }
   showLobby.rerender = render; render(); return s;
   function back() { sfx('back'); if (U.mode !== 'idle') { try { Net.leave && Net.leave(); } catch (e) { } } emit('menu', { lobby: 1 }); showMenu(); }
   function pickRole(k) { const t = taken(k); if (t) { sfx('error'); return toast('Ese rol ya lo juega ' + (t.name || 'otro jugador'), { bad: 1 }); } U.role = k; sfx('select'); emit('role', k); try { Net.role && Net.setRole && Net.setRole(k); } catch (e) { } render(); }
@@ -449,7 +460,7 @@ function showLobby(o) {
     if (U.mode === 'host' || U.mode === 'join') { const b = $('div', 'panel', s); $('div', 'lab', b, U.mode === 'host' ? 'COMPARTE ESTE CÓDIGO CON TUS AMIGOS' : 'CONECTADO A LA SALA'); $('div', 'code', b, esc(U.code || '. . . . .')); if (U.link) { const r = $('div', 'row', b); r.style.flexWrap = 'nowrap'; r.style.marginTop = '.6em'; const i = $('input', '', r); i.type = 'text'; i.readOnly = true; i.value = U.link; i.setAttribute('aria-label', 'Enlace'); const c = $('button', 'btn', r, 'Copiar'); c.onclick = () => { try { navigator.clipboard.writeText(U.link).then(() => { toast('Enlace copiado'); }, () => { i.select(); document.execCommand('copy'); toast('Enlace copiado'); }); } catch (x) { i.select(); toast('Copia el enlace a mano', { bad: 1 }); } }; } }
     const p = $('div', 'panel', s); $('div', 'lab', p, 'ELIGE TU ROL (1 / 2 / 3)'); const cards = $('div', 'cards', p); cards.style.marginTop = '.7em';
     RK.forEach((k, i) => { const d = rinfo(k), t = taken(k), b = $('button', 'rc' + (U.role === k ? ' sel' : '') + (t ? ' taken' : ''), cards); b.style.setProperty('--c', d.col); b.appendChild(portrait(k, U.role === k ? 'feliz' : 'neutral', 72)); $('b', '', b, esc(d.n)).style.color = d.col; $('span', 'mut', b, esc(d.t)); const sk = $('span', '', b, esc(String(d.skill || '').split(/[.;]/)[0].slice(0, 40))); sk.style.cssText = 'font-size:.85em;line-height:1.35'; $('span', 'tag' + (U.role === k ? ' me' : ''), b, U.role === k ? 'TU' : t ? esc(t.name || 'Jugador') : 'IA: ' + esc(d.ai)); b.onclick = () => pickRole(k); });
-    const hum = U.players.filter(x => x && !x.bot); if (U.mode !== 'idle') $('div', 'mut', p, (hum.length ? hum.map(x => '<span class="ok">●</span> ' + esc(x.name || x.id) + (x.host ? ' (anfitrión)' : '')).join(' &nbsp; ') : 'Esperando jugadores...') + '<br>Máx. 3 humanos.').style.marginTop = '.7em';
+    const hum = U.players.filter(x => x && !x.bot); if (U.mode !== 'idle') $('div', 'mut', p, (hum.length ? hum.map(x => '<span class="ok">●</span> ' + esc(x.name || x.id) + (RK.includes(x.role) ? ' · ' + esc(rinfo(x.role).n) : '') + (x.host ? ' (anfitrión)' : '')).join(' &nbsp; ') : 'Esperando jugadores...') + '<br>Máx. 3 humanos.').style.marginTop = '.7em';
     else $('div', 'mut', p, 'Juegas con ' + esc(rinfo(U.role).n) + '. Los otros dos: IA.').style.marginTop = '.7em';
     if (U.mode !== 'join') { const dv = $('div', 'diff', s); $('span', 'lab', dv, 'DIFICULTAD'); [['facil', 'Fácil'], ['normal', 'Normal'], ['everest', 'Everest']].forEach(([k, n]) => { const c = $('button', 'chip' + (S.diff === k ? ' on' : ''), dv, n); c.onclick = () => { S.diff = k; saveS(); sfx('select'); render(); }; }); }
     const act = $('div', 'row', s); act.style.justifyContent = 'flex-end'; const go2 = $('button', 'btn go', act, U.mode === 'join' ? (U.ready ? 'No estoy listo' : 'Estoy listo') : 'Empezar'); go2.focus();
@@ -644,7 +655,7 @@ function playCinematic(id, o) {
     const shots = buildShots(id, o); await Promise.all(shots.map(s => loadStill(s.still)));
     const s = mkScr('cine', 'cine'); s.innerHTML = ''; const W = 640, H = 360;
     const vw = $('div', 'cvw', s), cv = $('canvas', '', vw); cv.width = W; cv.height = H; const g = cv.getContext('2d'), sub = $('div', 'sub3', vw), fl = $('div', 'fl', vw), cd = $('div', 'cdots', vw);
-    shots.forEach(() => $('i', '', cd)); const skip = $('button', 'btn sec skip', s, 'Saltar »'); sub.remove(); (matchMedia('(max-aspect-ratio:1/1)').matches ? s : vw).appendChild(sub);
+    shots.forEach(() => $('i', '', cd)); const skip = $('button', 'btn sec skip', s, 'Saltar »'); if (isCl()) { skip.disabled = true; skip.textContent = 'Solo el anfitrión salta'; } sub.remove(); (matchMedia('(max-aspect-ratio:1/1)').matches ? s : vw).appendChild(sub);
     const prev = mk(W, H), pg = prev.getContext('2d'), nz = mk(160, 90), nzg = nz.getContext('2d'); let gt = 0, done = false, i = -1, t = 0, dur = 6, typed = 0, text = '', fade = 0, flash = 0, thunderAt = -1, wait = 0, shake = 0, P = [], ty = 0, tmo = 0;
     const noise = () => { const d = nzg.createImageData(160, 90); for (let k = 0; k < d.data.length; k += 4) { const v = Math.random() * 255; d.data[k] = d.data[k + 1] = d.data[k + 2] = v; d.data[k + 3] = 255; } nzg.putImageData(d, 0, 0); };
     function nextShot() {
@@ -658,11 +669,12 @@ function playCinematic(id, o) {
       if (fxl.includes('drip')) sfx('drip'); if (fxl.includes('rain') && !fxl.includes('lightning')) sfx('rumble');
       if (S.narr && text) snd('speak', text, { who: (sh.who || 'narrador') });
     }
-    function end() { if (done) return; done = true; stopT(); snd('stopSpeak'); s.style.transition = 'opacity .6s'; s.style.opacity = 0; setTimeout(() => { s.style.opacity = ''; s.style.transition = ''; s.classList.remove('on'); cur = null; res(); }, 650); }
+    function end() { if (done) return; done = true; cineSkip = null; stopT(); snd('stopSpeak'); s.style.transition = 'opacity .6s'; s.style.opacity = 0; setTimeout(() => { s.style.opacity = ''; s.style.transition = ''; s.classList.remove('on'); cur = null; res(); }, 650); }
     function advance() { const sh = shots[i]; if (!sh) return; if (typed < text.length) { typed = text.length; return; } if (t > 1.2) { sfx('click'); nextShot(); } }
     let stopT = () => { };
-    go('cine', { music: 'briefing', keys: e => { if (e.key === 'Escape') { sfx('back'); end(); return; } if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight') { advance(); return; } return false; } });
-    s.onclick = e => { if (e.target === skip) return; advance(); }; skip.onclick = e => { e.stopPropagation(); sfx('back'); end(); };
+    const skipReq = rem => { if (isCl() && !rem) return; if (!rem) emit('cineskip', { k: 'cine' }); sfx('back'); end(); }; cineSkip = () => skipReq(true);
+    go('cine', { music: 'briefing', keys: e => { if (e.key === 'Escape') { skipReq(); return; } if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight') { advance(); return; } return false; } });
+    s.onclick = e => { if (e.target === skip) return; advance(); }; skip.onclick = e => { e.stopPropagation(); skipReq(); };
     nextShot(); noise();
     stopT = tick(dt => {
       if (done) return; t += dt; const sh = shots[i]; if (!sh) return; const fxl = sh._fx, p = clamp(t / dur, 0, 1);
@@ -726,7 +738,7 @@ function playEnding(o) {
     const src = (i) => { const k = keys[i], im = k && getImg(k); return im && im.ok ? im : scene(saved ? (i ? 'rescate' : 'radio') : (i ? 'derrota' : 'radio')); };
     const s = mkScr('end', 'endv'); s.innerHTML = ''; const W = 960, H = 540, col = saved ? '#ffd34d' : '#9fb4d8';
     const vw = $('div', 'cvw', s), cv = $('canvas', '', vw); cv.width = W; cv.height = H; const g = cv.getContext('2d'); const sub = $('div', 'en-sub', vw), title = $('div', 'en-title ' + (saved ? 'good' : 'bad'), vw, saved ? 'LÍA ESTÁ A SALVO' : 'NO LLEGAMOS A TIEMPO'), fatesEl = $('div', 'en-fates', vw), pathEl = $('div', 'en-path', vw, pathRow(o.path)), hint = $('div', 'en-hint', vw, 'Clic / Espacio: continuar');
-    const skip = $('button', 'btn sec skip', s, 'Saltar »'); const prev = mk(W, H), pg = prev.getContext('2d'), nz = mk(160, 90), nzg = nz.getContext('2d');
+    const skip = $('button', 'btn sec skip', s, 'Saltar »'); if (isCl()) { skip.disabled = true; skip.textContent = 'Solo el anfitrión salta'; } const prev = mk(W, H), pg = prev.getContext('2d'), nz = mk(160, 90), nzg = nz.getContext('2d');
     const faceCv = mk(48, 48); faceCv.className = 'en-face'; const fg = faceCv.getContext('2d'); let faceId = null, faceMood = 'neutral';
     let i = -1, t = 0, dur = 6, typed = 0, text = '', fade = 0, done = false, closing = false, tC = 0, black = 0, lt = 0, gt = 0, pt = [], first = true; const bars = { v: 0 };
     for (let k = 0; k < 70; k++) pt.push({ x: Math.random() * W, y: Math.random() * H, z: .3 + Math.random() * .9, p: Math.random() * 6 });
@@ -742,10 +754,11 @@ function playEnding(o) {
     function startClose() { if (closing) return; closing = true; tC = 0; sub.classList.remove('on'); hint.classList.remove('on'); if (saved) snd('sfx', 'rescue'); else snd('sfx', 'lose');
       const fates = Array.isArray(o.fates) ? o.fates.filter(f => f && f.id) : []; if (fates.length) { fates.slice(0, 4).forEach(f => { const e = $('div', 'f ' + (f.status || 'vivo'), fatesEl); const c = fateFace(f); e.appendChild(c); $('div', '', e, '<b>' + esc(f.name || (f.id === 'lia' ? 'Lía' : rinfo(f.id).n)) + '</b>'); }); }
       setTimeout(() => { if (!done) { title.classList.add('on'); pathEl.classList.add('on'); } }, 1800); setTimeout(() => { if (!done) { fatesEl.classList.add('on'); hint.classList.add('on'); } }, 4200); }
-    let stopT = () => { }; function end() { if (done) return; done = true; stopT(); snd('stopSpeak'); s.style.transition = 'opacity 1.1s'; s.style.opacity = 0; setTimeout(() => { s.style.opacity = ''; s.style.transition = ''; s.classList.remove('on'); cur = null; res(); }, 1150); }
+    let stopT = () => { }; function end() { if (done) return; done = true; cineSkip = null; stopT(); snd('stopSpeak'); s.style.transition = 'opacity 1.1s'; s.style.opacity = 0; setTimeout(() => { s.style.opacity = ''; s.style.transition = ''; s.classList.remove('on'); cur = null; res(); }, 1150); }
     function advance() { if (closing) { if (tC > 4.5) end(); return; } if (typed < text.length) { if (t < 1.2) return; typed = text.length; if (sub._a) { sub._a.textContent = text; sub._b.textContent = ''; } return; } if (t > 3.5) { sfx('click'); nextPanel(); } }
-    go('end', { music: saved ? 'win' : 'lose', keys: e => { if (e.key === 'Escape') { if (closing) end(); else startClose(); return; } if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight') { advance(); return; } return false; } });
-    s.onclick = e => { if (e.target === skip) return; advance(); }; skip.onclick = e => { e.stopPropagation(); sfx('back'); if (closing) end(); else { i = panels.length; startClose(); } };
+    const skipReq = rem => { if (isCl() && !rem) return; if (closing) return end(); if (!rem) emit('cineskip', { k: 'end' }); sfx('back'); i = panels.length; startClose(); }; cineSkip = () => skipReq(true);
+    go('end', { music: saved ? 'win' : 'lose', keys: e => { if (e.key === 'Escape') { skipReq(); return; } if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight') { advance(); return; } return false; } });
+    s.onclick = e => { if (e.target === skip) return; advance(); }; skip.onclick = e => { e.stopPropagation(); skipReq(); };
     nextPanel(); noise();
     stopT = tick(dt => {
       if (done) return; const T0 = t; t += dt; gt += dt; if (closing) tC += dt; bars.v = Math.min(1, bars.v + dt / 1.4); const rm = !!S.flash;
@@ -897,7 +910,7 @@ function showCredits() {
 const UI = { mount, showMenu, showTutorial, showLobby, lobbyUpdate, showRole, playCinematic, playEnding, showFinal, showAchievements, openSettings, showCredits, toast, hide, on, emit,
   settings: () => Object.assign({}, S), setLocalId: id => { localId = id; }, gameCanvas: () => document.querySelector('canvas#game') || null, isOpen: () => !!cur, burst, confetti, portrait, icon, trophy,
   unlock(ids) { const g = jget('rcv3_ach', {}); (Array.isArray(ids) ? ids : [ids]).forEach(i => { if (!g[i]) g[i] = Date.now(); }); store.set('rcv3_ach', JSON.stringify(g)); }, achievements: () => jget('rcv3_ach', {}),
-  showTitle: showMenu };
+  showTitle: showMenu, joinCode, skipCine: () => { if (cineSkip) { cineSkip(); return true; } return false; } };
 UI.api = UI; window.UI = UI;
 const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey && Story.setKey(st0); } catch (e) { }
 })();
