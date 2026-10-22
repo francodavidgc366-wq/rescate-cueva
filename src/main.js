@@ -158,7 +158,7 @@
     if (sk !== lastScene) {
       lastScene = sk; const kind = st.phase === 'briefing' ? 'event' : null;
       if (kind && Hud.dialogue) { let ls = []; try { ls = Story.scene(st, kind) || []; } catch (e) { } if (st.round === 1 && kind === 'event') { try { ls = ls.concat(Story.scene(st, 'lia') || []); } catch (e) { } }
-        Hud.dialogue(ls).then(() => { if (kind === 'event' && mode !== 'client' && st && st.phase === 'briefing') advance(); }); }
+        Hud.dialogue(ls, { skippable: !isClient() }).then(() => { if (kind === 'event' && mode !== 'client' && st && st.phase === 'briefing') advance(); }); }
     }
     const res = st.lastRes;
     if (st.phase === 'resolve' && res && shownRes !== st.round) {
@@ -190,7 +190,7 @@
   async function playIntro() {
     UI.hide(); gameEl.style.display = 'none'; Hud.hide && Hud.hide();
     for (let i = 0; i < 30 && !myPriv; i++) await new Promise(r => setTimeout(r, 100));
-    await UI.playCinematic('intro'); if (myPriv) await UI.showRole(myPriv, myRole);
+    try { await UI.playCinematic('intro'); if (myPriv) await UI.showRole(myPriv, myRole); } catch (e) { console.error(e); } // nunca dejar al cliente colgado fuera de la partida
     UI.hide(); showGame(); S.music && S.music('briefing');
   }
   async function waitIntro() { // host: espera a los clientes humanos (máx. 90 s)
@@ -349,7 +349,7 @@
         mode = 'client'; myId = Net.localId; const me = Net.players.find(p => p.id === myId); myRole = (me && me.role) || RK.find(r => s.players[r].owner === myId) || 'medica';
         started = true; UI.hide(); ensureGame(); makeEngine(false); setupBots();
       }
-      if (prev && prev.phase !== s.phase) { pushInput(); }
+      if (prev && prev.phase !== s.phase) { if (prev.phase === 'briefing' && Hud.isDialogue && Hud.isDialogue()) Hud.skipDialogue(); pushInput(); } // el host saltó/terminó el diálogo del Director
       if (s.phase === 'intro' && (!prev || prev.phase !== 'intro')) playIntro().then(() => Net.send('ready', { act: 'intro' }));
       else if (s.phase !== 'intro') render();
     });
@@ -362,7 +362,7 @@
   }
 
   // ---------- Arranque ----------
-  UI.on('start', o => { if (window.Net && Net.role === 'client') return; startGame(o || {}, false); });
+  UI.on('start', o => { if (window.Net && Net.role === 'client') return; if (window.Net && Net.role === 'host' && Net.notReady() > 0) return UI.toast('Faltan ' + Net.notReady() + ' por estar listos', { bad: true }); startGame(o || {}, false); });
   UI.on('restart', () => { if (isClient()) return UI.toast('Solo el anfitrión puede reiniciar.'); if (lastStart) startGame(lastStart, true); });
   UI.on('menu', () => location.reload());
   window.RC = { st: () => st, eng: () => eng, advance: () => advance(), priv: () => myPriv, role: () => myRole }; // gancho para pruebas

@@ -1497,6 +1497,7 @@
       var box = el.dlg, i = -1, typed = 0, text = '', parts = [], ctl = null, tm = 0, talkTm = 0, line = null, fin = false, autoTm = 0, speed = o.speed || 26, ended = false, swap = false, b0 = null;
       if (D.activeElement && D.activeElement.blur && typingNow()) D.activeElement.blur();
       box.innerHTML = '<div class="dl-wrap"><div class="dl-box"><div class="dl-fr"><div class="dl-por"></div></div><div class="dl-tx"><div class="dl-name"><b></b><i></i></div><div class="dl-text"><span class="a"></span><span class="b"></span></div></div><div class="dl-foot"><span class="pg"></span><span class="arr">▼</span><button type="button" class="sk" data-act="dlgskip">Saltar <kbd>Esc</kbd></button></div></div></div>';
+      if (o.skippable === false) { var sb_ = box.querySelector('[data-act=dlgskip]'); if (sb_) sb_.style.display = 'none'; }
       var dbox = box.querySelector('.dl-box'), fr = box.querySelector('.dl-fr'), por = box.querySelector('.dl-por'), nm = box.querySelector('.dl-name'), ta = box.querySelector('.a'), tb = box.querySelector('.b'), wrap = box.querySelector('.dl-wrap'), pg = box.querySelector('.pg'), arr = box.querySelector('.arr');
       box.classList.add('on'); root.classList.add('dlg'); dlgOpen = true; snd('dialogue_open'); if (cb.dialogue) cb.dialogue(true);
       function next() {

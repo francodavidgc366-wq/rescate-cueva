@@ -132,7 +132,7 @@
     return retrying(function () { return openPeer(PREFIX + code, function () { code = newCode(); return PREFIX + code; }); }).then(function (p) {
       peer = p; Net.role = 'host'; Net.localId = 'p0'; Net.roomCode = code; conns = {}; Net.locked = false;
       Net.link = location.origin + location.pathname + '#sala=' + code;
-      Net.players = [{ id: 'p0', name: Net.cleanName(opts.name) || Net.cleanName(name) || 'Anfitrión', role: ROLES[0], bot: false, ready: false, host: true, connected: true }]; hideTok(Net.players[0], token);
+      Net.players = [{ id: 'p0', name: Net.cleanName(opts.name) || Net.cleanName(name) || 'Anfitrión', role: ROLES[0], bot: false, ready: true, host: true, connected: true }]; hideTok(Net.players[0], token);
       p.on('connection', onIncoming);
       p.on('disconnected', function () { if (!leaving && peer === p) { log('broker caído, reconectando'); setTimeout(function () { try { p.reconnect(); } catch (e) {} }, 1500); } });
       p.on('error', function (e) { if (e.type === 'peer-unavailable') return; log('peer error', e.type); });
@@ -191,7 +191,7 @@
     if (m.t === 'bye') return dropPlayer(id, 'salió');
     if (m.t === 'hello') { if (pl && m.d && m.d.name) { pl.name = Net.cleanName(m.d.name) || pl.name; pushPlayers(); } return; }
     if (m.t === 'setrole') return Net.setRole(m.d, id);
-    if (m.t === 'ready' && pl) { pl.ready = !!(m.d && m.d.ready); pushPlayers(); }
+    if (m.t === 'ready' && pl && m.d && 'ready' in m.d) { pl.ready = !!(m.d && m.d.ready); pushPlayers(); }
     if (m.t === 'input' && m.d) { m.d.id = id; }
     if (m.t === 'chat' || m.t === 'typing') { if (!m.d || typeof m.d !== 'object') return; m.d.from = id; bcast(m.t, m.d); }
     emit(m.t, m.d, id);
@@ -219,6 +219,8 @@
     me.role = role; pushPlayers(); return true;
   };
   Net.setName = function (n) { name = Net.cleanName(n) || 'Jugador'; if (Net.role === 'host') { Net.players[0].name = name; pushPlayers(); } else if (hostConn) send1(hostConn.r, { t: 'hello', d: { name: name } }); };
+  // host: humanos conectados (sin contar al anfitrión) que aún no han pulsado 'Estoy listo'
+  Net.notReady = function () { return Net.players.filter(function (p) { return !p.bot && !p.host && p.connected !== false && !p.ready; }).length; };
   Net.lock = function (v) { Net.locked = !!v; }; // host: bloquea nuevas uniones (reconexiones con token siguen permitidas)
 
   // ---------- CLIENTE ----------
@@ -313,7 +315,7 @@
 
   // cliente -> host. En el host hace loopback local (emite el evento con from=localId) para unificar el código de main.js.
   Net.send = function (type, payload) {
-    if (Net.role === 'host') { if (type === 'ready') { Net.players[0].ready = !!(payload && payload.ready); pushPlayers(); } emit(type, type === 'input' ? Object.assign({ id: 'p0' }, payload) : payload, 'p0'); return true; }
+    if (Net.role === 'host') { if (type === 'ready' && payload && 'ready' in payload) { Net.players[0].ready = !!(payload && payload.ready); pushPlayers(); } emit(type, type === 'input' ? Object.assign({ id: 'p0' }, payload) : payload, 'p0'); return true; }
     if (Net.role !== 'client' || !hostConn) return false;
     var m = { t: type, d: payload };
     return send1(hostConn.r, m);

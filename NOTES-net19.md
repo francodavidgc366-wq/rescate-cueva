@@ -10,3 +10,11 @@ Crear sala con nombre (HTML saneado), enlace valido une con modal de nombre y ha
 ## No probado
 Dos redes distintas / TURN, movil real con teclado, 'X se fue' por desconexion, skip de playEnding en red, etiqueta de nombre en el chat (no vista en pantalla), viaje con cliente.
 Nota: tras saltar el host el dialogo de briefing, el dialogo del cliente sigue abierto hasta que lo cierre (comportamiento previo, bloquea su movimiento).
+
+## Ronda 2 (prueba real con movil): cine, lobby, LISTO
+- Cine cliente: antes un cliente aun podia AVANZAR planos con clic/toque/Espacio/Enter (no saltar). Ahora `advance()` de `playCinematic` y de los paneles de `playEnding` no hace nada en cliente (solo el cierre final local); la cine va por duracion o por `cine {act:'skip'}` del host.
+- Dialogo del Director (briefing): el cliente lo abre con `skippable:false` (boton Saltar oculto en hud.js); al cambiar la fase briefing->explore el cliente cierra su dialogo (`Hud.skipDialogue`). El cliente nunca avanza fase (ya era solo host).
+- Vuelta al lobby: NO reproducida (flujo completo con cliente movil 850x390 touch, cine natural 65 s y con skip del host; el lobby nunca reaparece). Hipotesis: build antigua en cache. Defensas anadidas: `showLobby` no hace nada si hay partida (cliente), y `playIntro` envuelve cine+rol en try/catch.
+- LISTO: el roster (`Net.players[].ready`) se muestra a todos (icono pixel check verde + 'LISTO' / cuadro gris + 'esperando…'). El host cuenta como listo siempre; `Net.notReady()`; boton Empezar deshabilitado con 'Faltan N por estar listos' + contador 'Listos X/Y' (solo si hay otros humanos); main.js tambien rechaza `start` si faltan. 'ready' con `act` (intro/explore) ya no pisa el flag de lobby. Cliente: 'Pulsa «Estoy listo»' / 'Esperando a que todos estén listos…' / 'El anfitrión va a empezar…'.
+- 'Creando enlace…' en el cliente: ahora `U.link = Net.link` al unirse (input con el enlace real).
+- Probado: 2 paginas (host 1000x600 + cliente movil emulado 850x390 touch), PeerJS real; capturas en el scratchpad (`shots/`). No probado: movil real, Esc/touch en cine de `playEnding`, 3 humanos.
