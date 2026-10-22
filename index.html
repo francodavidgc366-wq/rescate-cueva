@@ -10630,6 +10630,8 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
     // teclado virtual abierto (touch.js pone body.rc-touch.rc-kb y --vvt/--vvh de visualViewport): lo esencial pegado encima del teclado
     'body.rc-touch #rcgame .h-chat.open{--x:0}body.rc-touch.rc-kb #rcgame .h-chat.open{position:fixed;left:4px;right:4px;top:calc(var(--vvt,0)*1px + 2px);bottom:auto;width:auto;height:calc(var(--vvh,100vh)*1px - 4px);z-index:90}',
     'body.rc-touch.rc-kb #rcgame .h-chat.open .h-chips,body.rc-touch.rc-kb #rcgame .h-chat.open .h-typ,body.rc-touch.rc-kb #rcgame .h-chat.open .h-newmsg{display:none}body.rc-touch.rc-kb #rcgame .h-chat.open .h-ch{min-height:30px}body.rc-touch.rc-kb #rcgame .h-chat.open .h-cx{height:30px;width:44px}body.rc-touch.rc-kb #rcgame .h-chat.open .h-m .tx{font-size:12.5px;padding:3px 7px}body.rc-touch.rc-kb #rcgame .h-chat.open .h-m .hd{display:none}body.rc-touch.rc-kb #rcgame .h-chat.open .h-in{padding:3px 4px}body.rc-touch.rc-kb #rcgame .h-chat.open .h-in input,body.rc-touch.rc-kb #rcgame .h-chat.open .h-in .h-btn{min-height:38px}body.rc-touch.rc-kb #rc-tc{display:none!important}',
+    // teclado virtual con un cuadro de dialogo (nombre, unirse a sala...): el cuadro sube al viewport visible y se compacta
+    'body.rc-touch.rc-kb #rcv3 .mod{position:fixed;left:0;right:0;top:calc(var(--vvt,0)*1px);bottom:auto;height:calc(var(--vvh,100vh)*1px);align-items:flex-start;padding:4px;z-index:95}body.rc-touch.rc-kb #rcv3 .mod .panel{max-height:calc(var(--vvh,100vh)*1px - 8px);padding:.4em .8em;overflow-y:auto}body.rc-touch.rc-kb #rcv3 .mod p{display:none}body.rc-touch.rc-kb #rcv3 .mod h2{margin:.1em 0 .3em;font-size:16px}',
     // boton CHAT de la izquierda: con el chat abierto sigue ahi y pasa a ser CERRAR
     '#rc-tc.chatop>*{display:none!important}#rc-tc.chatop>.top{display:block!important}#rc-tc.chatop .top button{display:none}#rc-tc.chatop .top [data-t=t]{display:grid;place-items:center;width:44px;height:44px;padding:0;opacity:1;background:#c9453d;color:#fff;font-size:0}#rc-tc.chatop .top [data-t=t]::after{content:"\\2715";font-size:22px;font-weight:900}',
     // minijuegos: capa tactil a pantalla completa + cancelar + flechas grandes
@@ -10789,7 +10791,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
   // teclado virtual: con el campo del chat enfocado y el viewport visual bajo, el chat se recoloca encima (CSS body.rc-kb + --vvt/--vvh)
   var vv = W.visualViewport, base = W.innerHeight, kbOn = false;
   function kbd() {
-    var f = D.activeElement, foc = !!(f && f.matches && f.matches('#rcgame .h-chat input')), h = Math.min(vv ? vv.height : W.innerHeight, W.innerHeight);
+    var f = D.activeElement, foc = !!(f && f.matches && f.matches('#rcgame .h-chat input, #rcv3 .mod input')), h = Math.min(vv ? vv.height : W.innerHeight, W.innerHeight);
     if (!foc) base = Math.max(h, W.innerHeight);
     var on = foc && h < base * .8, r = D.documentElement.style;
     r.setProperty('--vvh', (vv ? vv.height : W.innerHeight).toFixed(1)); r.setProperty('--vvt', (vv ? vv.offsetTop : 0).toFixed(1));
