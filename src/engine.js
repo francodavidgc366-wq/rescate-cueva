@@ -2280,6 +2280,16 @@ function create(canvas, opts) {
     var w = textW(text) + 8, bx = clamp(Math.round(cx2 - w / 2), VIS.x0 + 2, VIS.x1 - w - 8), by = clamp(Math.round(y2), VIS.y0 + 2, VIS.y1 - 14);
     pill(bx, by, w, 11, '#1a1228', col); drawText(out, text, bx + 4, by + 3, '#fff2d0');
   }
+  // cartel de la guia: si cae sobre el jugador (nombre/cabeza), prueba a un lado de la flecha o mas lejos; nunca tapa nombre ni flecha
+  function guideLabelSafe(text, cands, ax, ay, px, py) {
+    var w = textW(text) + 8, all = cands.concat([{ x: px, y: py + 22 }, { x: px, y: py - 50 }, { x: ax - w / 2 - 20, y: ay - 6 }, { x: ax + w / 2 + 20, y: ay - 6 }, { x: ax, y: ay + 26 }, { x: ax, y: ay - 30 }]), pick = all[0], k;
+    for (k = 0; k < all.length; k++) {
+      var c = all[k], bx = clamp(Math.round(c.x - w / 2), VIS.x0 + 2, VIS.x1 - w - 8), by = clamp(Math.round(c.y), VIS.y0 + 2, VIS.y1 - 14);
+      var hitP = !(bx > px + 18 || bx + w < px - 18 || by + 11 < py - 34 || by > py + 16), hitA = !(bx > ax + 14 || bx + w < ax - 14 || by + 11 < ay - 14 || by > ay + 14);
+      if (!hitP && !hitA) { pick = c; break; }
+    }
+    guideLabel(text, pick.x, pick.y, '#ffd24a');
+  }
   function drawGuide(cxr, cyr, t) {
     var tp = guideT === null ? null : targetPos(guideT), b = bodies[active]; if (!tp || !b) return;
     if (guideT === 'lia' && poiRound < 5 && unlocked < 5) return;
@@ -2303,13 +2313,13 @@ function create(canvas, opts) {
     }
     if (aimOn) {      // a la vista pero lejos: orbita al jugador apuntando al destino
       var ang0 = Math.atan2(pdy, pdx), rd = Math.min(1, pd / 120), ox2 = px2 + Math.cos(ang0) * (26 + 44 * rd + bob * 0.5), oy2 = py2 + Math.sin(ang0) * (22 + 34 * rd + bob * 0.4);
-      drawArrowAng(ox2, oy2, ang0, t, col); guideLabel(lab, ox2 + Math.cos(ang0) * 6, oy2 + (Math.sin(ang0) > 0 ? 18 : -26), '#ffd24a'); return;
+      drawArrowAng(ox2, oy2, ang0, t, col); guideLabelSafe(lab, [{ x: ox2 + Math.cos(ang0) * 6, y: oy2 + (Math.sin(ang0) > 0 ? 18 : -26) }, { x: px2, y: py2 - 46 }], ox2, oy2, px2, py2); return;   // cartel fijo junto al jugador, del lado contrario a la flecha: no tapa la flecha ni el nombre
     }
     var vcx = (VIS.x0 + VIS.x1) / 2, vcy = (VIS.y0 + VIS.y1) / 2, dx = aim.x - vcx, dy = aim.y - vcy, hw = (VIS.x1 - VIS.x0) / 2 - 22, hh = (VIS.y1 - VIS.y0) / 2 - 22;
     var kk = Math.min(Math.abs(dx) > 0.01 ? hw / Math.abs(dx) : 1e9, Math.abs(dy) > 0.01 ? hh / Math.abs(dy) : 1e9), ln = Math.hypot(dx, dy) || 1;
     var ex = vcx + dx * kk + dx / ln * bob * 0.8, ey = vcy + dy * kk + dy / ln * bob * 0.8;
     drawArrowAng(ex, ey, Math.atan2(dy, dx), t, col);
-    guideLabel(lab, ex - dx / ln * 30, ey - dy / ln * 22 - 6, '#ffd24a');
+    guideLabelSafe(lab, [{ x: ex - dx / ln * 30, y: ey - dy / ln * 22 - 6 }], ex, ey, px2, py2);
   }
   var garg = null;
   function drawArrowAng(x, y, ang, t, col, snap) {   // suaviza el angulo por el camino corto
