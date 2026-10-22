@@ -1,0 +1,5 @@
+# hud17c
+- Fin de tramo unificado: el DIARIO (Hud.showJournal) es la unica pantalla. main.js render() (fase summary, host/solo): arma Story.journal(st) + {secret, pts:{d,t}, ach, bar:{r,last}, cta} y al cerrar llama advance(). advance('summary') ya no muestra diario; va directo a viaje. Clientes remotos / sin diario: Hud.showSummary de respaldo (ya no pinta el bloque secreto).
+- Diario: 'Mi decision secreta:' (caja + sello ¡SALIO BIEN!/SALIO MAL) + 'Influyo:' icono+▲/▼+cantidad; linea 'Puntos del tramo +N · Total T' + chips de logros; pie con miniBar (puntos con ✓) + '¡Faltan N tramos para Lia!' + boton SIGUIENTE TRAMO ▸ (Espacio/Enter, handler propio del diario). Espaciado compactado: cabe sin scroll en 1280x720 (ejemplo con 2 hallazgos + decision + secreto).
+- Viaje: fila compacta 58px (top:190px, bajo la pildora) con icono + EL PUENTE + miniBar con ficha + '¡Faltan N tramos para Lia!'.
+- Fase summary no avanza sola (tleft>=60 en tick) y solo avanza al cerrar el diario. Red no verificada.

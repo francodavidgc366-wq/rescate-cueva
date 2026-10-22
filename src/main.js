@@ -161,7 +161,14 @@
       Hud.showResolve(Object.assign({}, res, { explain: ex, reveals: (res.reveals || []).map(r => Object.assign({}, r, { kind: revKind(r.type) })), achievements: achs(res) })).then(() => { if (mode !== 'client' && st && st.phase === 'resolve') advance(); });
     }
     if (st.phase === 'summary' && shownSum !== st.round) {
-      shownSum = st.round; Hud.showSummary({ round: st.round, score: res ? res.scoreDelta : {}, total: st.score.total, secret: (myPriv && myPriv.secretResult && myPriv.secretResult.round === st.round) ? myPriv.secretResult : null, achievements: achs(res) }).then(() => { if (mode !== 'client' && st && st.phase === 'summary') advance(); });
+      shownSum = st.round;
+      const secret = (myPriv && myPriv.secretResult && myPriv.secretResult.round === st.round) ? myPriv.secretResult : null;
+      let jr = null; if (mode !== 'client' && Hud.showJournal) { try { jr = Story.journal(st); } catch (e) { } }
+      const after = () => { if (mode !== 'client' && st && st.phase === 'summary') advance(); };
+      if (jr) { // el diario es la pantalla unica de fin de tramo (resumen = respaldo)
+        const sd = res && res.scoreDelta, dsum = typeof sd === 'number' ? sd : sd ? (sd.total != null ? sd.total : Object.keys(sd).reduce((a, k) => a + (+sd[k] || 0), 0)) : 0, last = Story.isOver(st);
+        Hud.showJournal(Object.assign({}, jr, { secret, pts: { d: Math.round(dsum), t: st.score.total }, ach: achs(res), bar: { r: st.round, last }, cta: last ? 'VER FINAL ▸' : 'SIGUIENTE TRAMO ▸' })).then(after, after);
+      } else Hud.showSummary({ round: st.round, score: res ? res.scoreDelta : {}, total: st.score.total, secret, achievements: achs(res) }).then(after);
     }
     if (st.phase === 'final' && st.final && !shownFinal) {
       shownFinal = true; try { localStorage.setItem('rcv3_games', String((+localStorage.getItem('rcv3_games') || 0) + 1)); } catch (e) { }
@@ -241,8 +248,7 @@
         case 'resolve': Story.setPhase(st, 'summary'); break;
         case 'summary':
           if (Story.isOver(st)) { st.final = await Story.finish(st, { role: myRole }); break; }
-          { let tr = null, jr = null; try { tr = Story.travelScene(st); } catch (e) { } try { jr = Story.journal(st); } catch (e) { }
-            if (jr && Hud.showJournal && mode !== 'client' ) { try { await Hud.showJournal(jr); } catch (e) { } }
+          { let tr = null; try { tr = Story.travelScene(st); } catch (e) { }
             Story.advance(st);
             if (tr && eng.playTravel) await new Promise(res => { let d = false; const fin = () => { if (!d) { d = true; try { Hud.hideTravel && Hud.hideTravel(); } catch (e) { } res(); } };
               try { Hud.setNow({ text: tr.caption || 'Viajan a la siguiente zona', sub: '', kind: 'info' }); Hud.showTravel && Hud.showTravel({ from: st.round - 1, to: st.round, kind: tr.kind }); } catch (e) { }
