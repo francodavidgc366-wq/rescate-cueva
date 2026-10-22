@@ -17,6 +17,11 @@ Simulación estratégica de equipo en pixel art (inspirada en las dinámicas de 
 - **Modo demo (sin red ni clave):** contenido pregrabado y compañeros reactivos; también es el plan B si falla la IA.
 - Prompts v3 versionados y salida validada: `docs/prompts.md`.
 
+## Instalación y configuración
+- **Jugar sin instalar:** abre la URL de arriba o el archivo `index.html` (autocontenido, sin dependencias).
+- **Desarrollo:** `./build.sh` regenera `index.html` a partir de `src/` y `vendor/` (necesita Python 3). Pruebas de balance: `node tools/story-test.js` (Node 18+). Las pruebas de interfaz de `tools/` usan Playwright.
+- **Configuración:** ver `.env.example`. No hay variables obligatorias; la clave de IA es opcional y se introduce en el juego (Ajustes), no en archivos. El repositorio no contiene claves.
+
 ## Multijugador
 "Crear sala" y comparte el enlace (`#sala=CODIGO`). WebRTC con PeerJS; el anfitrión es la autoridad y cada jugador solo recibe su propia información privada. Sin servidor TURN algunas redes (4G/CGNAT) pueden no conectar (ver `NOTES-net3.md`).
 
