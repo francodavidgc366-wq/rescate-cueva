@@ -1729,11 +1729,19 @@ function create(canvas, opts) {
     if (swm) { sc.save(); var sw = Math.sin(b.fr * 0.18); y += Math.round(sw * 1.5); sc.translate(x, y - 6); sc.rotate(b.face * (1.25 + sw * 0.1)); sc.translate(-x, -(y - 6)); }
     var meta = assets && assets.meta && assets.meta['player_' + b.role];
     if (meta && meta.anims && sheet('player_' + b.role)) {
-      var an = meta.anims[b.cl ? 'jump' : b.anim] || meta.anims.idle, fi = Math.floor(b.fr * (an.fps || 8) / 60);
+      var ka = b.cl ? 'jump' : b.anim, sp = Math.abs(b.vx), skid = ka === 'run' && b.grounded && sp > 1.2 && b.vx * b.face < 0;
+      if (ka === 'run' && meta.anims.walk) ka = skid && meta.anims.skid ? 'skid' : sp > 1.95 ? 'run' : 'walk';   // v17: andar (calmado) vs correr (inclinado, rapido) vs derrape
+      var an = meta.anims[ka] || meta.anims.idle, fi = Math.floor(b.fr * (an.fps || 8) / 60);
       fi = an.loop === false ? Math.min(fi % (an.frames * 4), an.frames - 1) : fi % an.frames;
       if (b.anim === 'jump' && !b.cl) fi = b.vy < -1 ? 0 : 1;
       if (b.anim === 'fall') fi = Math.floor(b.fr / 8) % 2;
-      shown = drawSheetFrame('player_' + b.role, fi, an.row, x, y, b.face < 0, meta.fw, meta.fh, meta.feet_y || 22);
+      var sq = b.grounded && !b.cl && (b.sy < 0.97 || b.sy > 1.03), im2 = sheet('player_' + b.role);
+      if (ka === 'skid' && b.fr % 3 === 0) puff(b.x - b.face * 3, b.y, 1, -b.face);
+      if (ka === 'run' && b.grounded) { sc.globalAlpha = 0.14; drawSheetFrame('player_' + b.role, fi, an.row, x - b.face * 4, y, b.face < 0, meta.fw, meta.fh, meta.feet_y || 22); sc.globalAlpha = 1; }   // estela muy sutil
+      if (sq) {   // squash/stretch anclado a los pies (aterrizaje = ancho y bajo)
+        var fy = meta.feet_y || 22; sc.save(); sc.translate(x, y); sc.scale(clamp(b.sx, 0.8, 1.3), clamp(b.sy, 0.7, 1.25)); sc.translate(-x, -y);
+        shown = drawSheetFrame('player_' + b.role, fi, an.row, x, y, b.face < 0, meta.fw, meta.fh, fy); sc.restore();
+      } else shown = drawSheetFrame('player_' + b.role, fi, an.row, x, y, b.face < 0, meta.fw, meta.fh, meta.feet_y || 22);
     }
     if (!shown) {
       var parts2 = charParts(b);

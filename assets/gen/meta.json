@@ -23,7 +23,7 @@
  },
  "player_guia": {
   "w": 144,
-  "h": 120,
+  "h": 168,
   "fw": 24,
   "fh": 24,
   "cols": 6,
@@ -37,7 +37,7 @@
    "run": {
     "row": 1,
     "frames": 6,
-    "fps": 12,
+    "fps": 14,
     "loop": true
    },
    "jump": {
@@ -56,6 +56,18 @@
     "row": 4,
     "frames": 4,
     "fps": 8,
+    "loop": true
+   },
+   "walk": {
+    "row": 5,
+    "frames": 6,
+    "fps": 9,
+    "loop": true
+   },
+   "skid": {
+    "row": 6,
+    "frames": 1,
+    "fps": 1,
     "loop": true
    }
   },
@@ -64,7 +76,7 @@
  },
  "player_medica": {
   "w": 144,
-  "h": 120,
+  "h": 168,
   "fw": 24,
   "fh": 24,
   "cols": 6,
@@ -78,7 +90,7 @@
    "run": {
     "row": 1,
     "frames": 6,
-    "fps": 12,
+    "fps": 14,
     "loop": true
    },
    "jump": {
@@ -97,6 +109,18 @@
     "row": 4,
     "frames": 4,
     "fps": 8,
+    "loop": true
+   },
+   "walk": {
+    "row": 5,
+    "frames": 6,
+    "fps": 9,
+    "loop": true
+   },
+   "skid": {
+    "row": 6,
+    "frames": 1,
+    "fps": 1,
     "loop": true
    }
   },
@@ -105,7 +129,7 @@
  },
  "player_ing": {
   "w": 144,
-  "h": 120,
+  "h": 168,
   "fw": 24,
   "fh": 24,
   "cols": 6,
@@ -119,7 +143,7 @@
    "run": {
     "row": 1,
     "frames": 6,
-    "fps": 12,
+    "fps": 14,
     "loop": true
    },
    "jump": {
@@ -138,6 +162,18 @@
     "row": 4,
     "frames": 4,
     "fps": 8,
+    "loop": true
+   },
+   "walk": {
+    "row": 5,
+    "frames": 6,
+    "fps": 9,
+    "loop": true
+   },
+   "skid": {
+    "row": 6,
+    "frames": 1,
+    "fps": 1,
     "loop": true
    }
   },

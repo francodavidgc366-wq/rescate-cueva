@@ -18,6 +18,12 @@ async function play(style, difficulty, seed, hook) {
     for (const k of RK) { const a = await Story.botAct(st, k, 'secret'); if (a) Story.exec(st, k, a); }
     const res = Story.resolve(st);
     SK.forEach(s => assert(Number.isFinite(st.s[s]) && st.s[s] >= 0 && st.s[s] <= 100, 'fuera de rango ' + s + '=' + st.s[s]));
+    RK.forEach(k => { const sr = st.priv[k].secretResult, pk = res.picks[k]; // tarea 2: decisión secreta propia
+      assert(sr && sr.round === r && ['AYUDAR', 'PARA MÍ', 'ARRIESGAR'].includes(sr.verb) && sr.title === pk.text && sr.line.length > 5 && Array.isArray(sr.effects), 'secretResult ' + k);
+      assert(sr.outcome === (st.priv[k].secretOptions.find(o => o.title === sr.title).p ? (pk.ok ? 'ok' : 'mal') : null), 'outcome ' + k);
+      sr.effects.forEach(x => { assert(SK.includes(x.k) && x.d !== 0 && Math.abs(x.d) <= 3); const j = res.parts.find(p => p.tag === 'sec:' + k); assert(Math.sign(j.v[SK.indexOf(x.k)]) === Math.sign(x.d), 'signo efecto'); });
+      assert(!JSON.stringify(Story.publicState(st)).includes(sr.line), 'secretResult no debe ir en el estado público'); });
+    { const m = Story.say(st, 'sys', 'privado-xyz', 'sys', { only: 'guia' }); assert(!JSON.stringify(Story.publicState(st)).includes('privado-xyz') && st.chat.includes(m), 'línea only oculta en estado público'); }
     if (hook) hook(st, res);
     if (Story.isOver(st)) break; Story.advance(st);
   }

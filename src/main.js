@@ -76,6 +76,13 @@
     if (!Hud.minigame) return 'ok'; freeKeys();
     try { const r = await Hud.minigame({ kind: g[0], theme: g[3], title: g[1], icon: g[2], level: level || Math.min(3, 1 + (st.round >> 1)), role: myRole }); freeKeys(); return (r && r.result) || 'ok'; } catch (e) { freeKeys(); return 'ok'; }
   }
+  // Un fallo no consume el punto/puerta: se puede repetir sin límite, y cada fallo seguido baja un nivel (mín. 1)
+  const failN = {};
+  const retryLevel = id => Math.max(1, Math.min(3, 1 + (st.round >> 1)) - (failN[id] || 0));
+  function failed(id, q) {
+    if (q === 'fail') { failN[id] = (failN[id] || 0) + 1; try { Hud.floatText('¡Casi! Inténtalo otra vez', 'bad'); } catch (e) { } return true; }
+    delete failN[id]; return false;
+  }
   function showReward(rw, ref) {
     if (!rw) return; try { Hud.setStreak && Hud.setStreak(rw.streak || 0); (rw.bonus || []).forEach(b => Hud.floatReward && Hud.floatReward({ icon: b.icon, text: b.text }));
       if (rw.quality === 'perfect') { snd('achievement'); Hud.floatReward && Hud.floatReward({ icon: 'estrella', text: 'PERFECTO' }); } } catch (e) { }
@@ -84,11 +91,11 @@
   async function onInteractPrompt(role, poiId) {
     if (isClient() || !st || st.phase !== 'explore' || role !== myRole) return;
     const p = (st.pois || []).find(x => x.id === poiId), g = POI_GAME[p && p.kind] || POI_GAME.pista;
-    const q = await play(g); if (st.phase !== 'explore') return; poiQ[poiId] = q; const ok = eng.commitInteract(role, poiId); if (!ok) delete poiQ[poiId];
+    const q = await play(g, retryLevel(poiId)); if (st.phase !== 'explore') return; if (failed(poiId, q)) return; poiQ[poiId] = q; const ok = eng.commitInteract(role, poiId); if (!ok) delete poiQ[poiId];
   }
   async function onAbilityPrompt(role, d) {
     if (isClient() || !st || st.phase !== 'explore' || role !== myRole || !d) return;
-    const g = GATE_GAME[d.kind] || GATE_GAME.anclaje, q = await play(g); if (st.phase !== 'explore') return;
+    const g = GATE_GAME[d.kind] || GATE_GAME.anclaje, key = d.gateId || d.target || d.kind, q = await play(g, retryLevel(key)); if (st.phase !== 'explore') return; if (failed(key, q)) return;
     if (d.gateId) { gateQ[d.gateId] = q; eng.openGate(d.gateId); } else if (d.target) { eng.stabilize(role, d.target); try { Hud.floatReward && Hud.floatReward({ icon: 'salud', text: '+aire' }); } catch (e) { } }
   }
   function onUnreachable(role, poiId) { if (isClient() || !st) return; try { Story.botStuck(st, role, poiId); push(); } catch (e) { } }
@@ -154,14 +161,14 @@
       Hud.showResolve(Object.assign({}, res, { explain: ex, reveals: (res.reveals || []).map(r => Object.assign({}, r, { kind: revKind(r.type) })), achievements: achs(res) })).then(() => { if (mode !== 'client' && st && st.phase === 'resolve') advance(); });
     }
     if (st.phase === 'summary' && shownSum !== st.round) {
-      shownSum = st.round; Hud.showSummary({ round: st.round, score: res ? res.scoreDelta : {}, total: st.score.total, achievements: achs(res) }).then(() => { if (mode !== 'client' && st && st.phase === 'summary') advance(); });
+      shownSum = st.round; Hud.showSummary({ round: st.round, score: res ? res.scoreDelta : {}, total: st.score.total, secret: (myPriv && myPriv.secretResult && myPriv.secretResult.round === st.round) ? myPriv.secretResult : null, achievements: achs(res) }).then(() => { if (mode !== 'client' && st && st.phase === 'summary') advance(); });
     }
     if (st.phase === 'final' && st.final && !shownFinal) {
       shownFinal = true; try { localStorage.setItem('rcv3_games', String((+localStorage.getItem('rcv3_games') || 0) + 1)); } catch (e) { }
       S.music && S.music(st.final.saved ? 'win' : 'lose');
       const showFin = () => { Hud.hide && Hud.hide(); gameEl.style.display = 'none'; UI.showFinal(st.final, st); };
       let ep = null; try { ep = Story.endingPanels(st); } catch (e) { }
-      if (ep && ep.panels && ep.panels.length && UI.playEnding) UI.playEnding({ saved: ep.saved, panels: ep.panels, fates: st.final.fates }).then(showFin, showFin);
+      if (ep && ep.panels && ep.panels.length && UI.playEnding) UI.playEnding({ path: st.path, saved: ep.saved, panels: ep.panels, fates: st.final.fates }).then(showFin, showFin);
       else { let ls = []; try { ls = Story.scene(st, 'final') || []; } catch (e) { } if (ls.length && Hud.dialogue) Hud.dialogue(ls).then(showFin); else showFin(); }
     }
   }
@@ -230,15 +237,15 @@
         case 'briefing': Story.setPhase(st, 'explore'); break;
         case 'explore': Story.setPhase(st, 'plan'); try { const b = Story.planBrief(st); if (b && st.plan) st.plan.brief = b.lines || b.text; } catch (e) { } react('plan'); break;
         case 'plan': { const t = Story.tally(st); if (t && t.react) react('tally', t.react.ctx); Story.setPhase(st, 'secret'); react('secret'); break; }
-        case 'secret': Story.setPhase(st, 'resolve'); st.lastRes = Story.resolve(st); eng.setWater(st.s.agua); react('resolve', { result: st.lastRes }); break;
+        case 'secret': Story.setPhase(st, 'resolve'); st.lastRes = Story.resolve(st); secretLine(); eng.setWater(st.s.agua); react('resolve', { result: st.lastRes }); break;
         case 'resolve': Story.setPhase(st, 'summary'); break;
         case 'summary':
           if (Story.isOver(st)) { st.final = await Story.finish(st, { role: myRole }); break; }
           { let tr = null, jr = null; try { tr = Story.travelScene(st); } catch (e) { } try { jr = Story.journal(st); } catch (e) { }
             if (jr && Hud.showJournal && mode !== 'client' ) { try { await Hud.showJournal(jr); } catch (e) { } }
             Story.advance(st);
-            if (tr && eng.playTravel) await new Promise(res => { let d = false; const fin = () => { if (!d) { d = true; res(); } };
-              try { Hud.setNow({ text: tr.caption || 'Viajan a la siguiente zona', sub: '', kind: 'info' }); } catch (e) { }
+            if (tr && eng.playTravel) await new Promise(res => { let d = false; const fin = () => { if (!d) { d = true; try { Hud.hideTravel && Hud.hideTravel(); } catch (e) { } res(); } };
+              try { Hud.setNow({ text: tr.caption || 'Viajan a la siguiente zona', sub: '', kind: 'info' }); Hud.showTravel && Hud.showTravel({ from: st.round - 1, to: st.round, kind: tr.kind }); } catch (e) { }
               const ok = eng.playTravel({ toZone: st.round, kind: tr.kind, outcome: tr.outcome, ms: st.quick ? 8500 : 11500, onShot: (i) => { try { Hud.setNow({ text: [tr.caption || 'Salen de la zona', 'Recorren el camino', 'Llegan a la nueva zona'][i] || '', sub: '', kind: 'info' }); } catch (e) { } } }, fin); if (ok === false) return fin();
               if (Hud.dialogue && tr.lines && tr.lines.length) Hud.dialogue(tr.lines, { auto: 3400 }); setTimeout(fin, 20000); }); }
           await startRound(); return;
@@ -274,6 +281,9 @@
     if (role === myRole) { if (out.explain && Hud.floatCard) Hud.floatCard({ title: out.card ? out.card.title : out.hallazgo ? out.hallazgo.title : 'Recurso', text: out.explain, uses: out.card && (out.card.uses || out.card.use) }); else if (msg) Hud.floatText(msg, 'info'); snd(sfx); }
     else { const o = st.players[role].owner; if (o && o !== 'solo') Net.sendTo(o, 'phase', { note: msg, sfx }); }
   }
+  // Tu decisión secreta: línea de chat solo para ti (m.only; publicState la oculta) o nota por red para los clientes
+  function secretLine() { RK.forEach(r => { const sr = st.priv[r].secretResult, o = st.players[r].owner; if (!sr || st.players[r].ai) return; const t = 'Tu decisión: ' + sr.line;
+    if (r === myRole) Story.say(st, 'sys', t, 'sys', { only: r }); else if (o && o !== 'solo') Net.sendTo(o, 'phase', { note: t }); }); }
   function onInteract(role, poiId) { // solo host
     if (isClient() || !st || st.phase !== 'explore') return;
     const q = poiQ[poiId]; delete poiQ[poiId]; const out = Story.poiInteract(st, role, poiId, { quality: q });

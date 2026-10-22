@@ -223,7 +223,7 @@ function refreshPlan(st) {
   st.plan.options.forEach((o, i) => { delete o.hints; delete o.known; delete o.risk_known; const r = optT(st, i).r; o.risk = r < .2 ? 1 : r < .35 ? 2 : 3; });
 }
 const privOf = (st, role) => { const pv = st.priv[role]; refreshPlan(st); pv.planOpts = st.plan.options.map(o => Object.assign({}, o)); return pv; };
-const publicState = st => { refreshPlan(st); return JSON.parse(JSON.stringify(st)); };
+const publicState = st => { refreshPlan(st); const c = st.chat; st.chat = c.filter(m => !m.only); try { return JSON.parse(JSON.stringify(st)); } finally { st.chat = c; } }; // m.only = línea privada (solo la ve ese rol)
 const sc_ = st => st.hid.struct[st.round - 1];
 const optT = (st, p) => ROUND_D[st.round - 1].opts[sc_(st).perm[p]];
 function say(st, from, text, kind, extra) {
@@ -478,7 +478,9 @@ function resolve(st) {
   RK.forEach(k => {
     const pv = st.priv[k], i = Number.isInteger(pv.secretPick) && pv.secretOptions[pv.secretPick] ? pv.secretPick : 0, a = pv.secretOptions[i], afk = pv.secretPick == null; let e = a.fx, aok = true, aroll = null;
     if (a.p) { const nd = Math.round(a.p * 100 * df.risk); aroll = 1 + hi(100, st.seed, 'roll', r, k); aok = aroll > nd; rolls.push({ what: 'secret', role: k, label: a.text, need: nd, roll: aroll, ok: aok }); if (!aok) e = a.fail; if (aok) sc.riesgo += 25; }
-    P('sec:' + k, [e.agua < 0 ? e.agua * ASC : a.tag === 'goal' ? Math.round(e.agua * .4) : e.agua, e.salud, e.material, e.confianza]); picks[k] = { role: k, idx: i, tag: a.tag, text: a.title, ok: aok, afk };
+    const sv = [e.agua < 0 ? e.agua * ASC : a.tag === 'goal' ? Math.round(e.agua * .4) : e.agua, e.salud, e.material, e.confianza]; P('sec:' + k, sv);
+    { const ef = fxList(sv), oc = a.p ? (aok ? 'ok' : 'mal') : null; pv.secretResult = { round: r, verb: a.verb, title: a.title, effects: ef, outcome: oc, line: a.title + (oc ? (oc === 'ok' ? ' (salió bien)' : ' (salió mal)') : '') + (ef.length ? ': ' + ef.map(x => (x.d > 0 ? '+' : '-') + x.k).join(' ') : '') }; }
+    picks[k] = { role: k, idx: i, tag: a.tag, text: a.title, ok: aok, afk };
     if (a.tag === 'team' || a.tag === 'confess') { hd.stat.team[k]++; sc.equipo += 10; hd.pts[k] += 10; }
     SK.forEach(c => { if (e[c] !== 0 && ((c === 'material' || c === 'salud' || c === 'confianza') && e[c] <= -4 || c === 'agua' && e[c] >= 5)) { if (!blame[c] || Math.abs(e[c]) > blame[c].v) blame[c] = { role: k, v: Math.abs(e[c]) }; } });
     if (a.tag === 'confess') confessSecret(st, k, reveals, d, msgs, sc);
@@ -1228,7 +1230,7 @@ function validDirector(j) {
   return out;
 }
 function buildBotPrompt(st, role, trig, c) {
-  const R = ROLES[role] || { name: 'Lía', persona: 'valiente y asustada, hablando por radio' }, pv = st.priv[role], chat = st.chat.slice(-8).map(m => (NAMES[m.from] || m.from) + ': ' + m.text).join('\n');
+  const R = ROLES[role] || { name: 'Lía', persona: 'valiente y asustada, hablando por radio' }, pv = st.priv[role], chat = st.chat.filter(m => !m.only).slice(-8).map(m => (NAMES[m.from] || m.from) + ': ' + m.text).join('\n');
   const mine = pv ? 'Tu objetivo: ' + pv.goal.text.replace(/\d+/, pv.goal.min) + ' Tu secreto (' + (pv.secret.revealed ? 'ya revelado' : 'OCULTO, no lo reveles') + '): ' + pv.secret.text + '\nTus tarjetas del tramo: ' + JSON.stringify(pv.intel.filter(i => i.round === st.round).map(i => ({ id: i.id, texto: i.text, fiabilidad: i.reliability, compartida: i.shared }))) : '';
   const task = trig === 'act' ? ({ explore: 'Elige UNA acción: {"action":"poi","poiId":"..."} | {"action":"share","cardId":"...","asIs":true|false,"text":"si asIs es false: tu versión modificada"} | {"action":"ready"} | {"action":"none"}. POIs libres: ' + JSON.stringify(st.pois.filter(p => !st.hid.poiMeta[p.id].seen.includes(role) && !st.hid.poiMeta[p.id].used).map(p => ({ id: p.id, label: p.label, kind: p.kind }))), plan: 'Vota: {"action":"vote","optId":"A|B|C"}. Opciones: ' + JSON.stringify(st.plan.options.map(o => ({ id: o.id, titulo: o.title, publico: o.known }))), secret: 'Elige acción secreta: {"action":"secret","idx":0|1|2}. Opciones: ' + JSON.stringify(pv.secretOptions.map((o, i) => ({ idx: i, texto: o.text, hint: o.hint }))) })[c.phase] || '{"action":"none"}' : 'Escribe UNA intervención en el chat. Disparador: ' + trig + ' ' + JSON.stringify(c) + '. Formato: {"text":"..."}';
   return ['[PROMPT v4 COMPAÑERO]', 'Eres ' + (R.name) + '. Personalidad: ' + R.persona + ' Estilo de juego: ' + (st.players[role] ? st.players[role].style : ''), '[ESTADO PÚBLICO]\n' + pubCtx(st), '[CHAT RECIENTE]\n' + (chat || '(vacío)'), '[TU INFORMACIÓN PRIVADA]\n' + mine, '[TAREA]\n' + task].join('\n\n');

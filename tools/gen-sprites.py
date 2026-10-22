@@ -159,7 +159,7 @@ def gen_tiles():
         snow_solid=23, crystal_cluster=24, moss=25, chain=26, rubble=27))
 
 # ------------------------------------------------------------------ PERSONAJES 24x24
-ANIMS = [('idle', 4), ('run', 6), ('jump', 2), ('fall', 2), ('interact', 4)]
+ANIMS = [('idle', 4), ('run', 6), ('jump', 2), ('fall', 2), ('interact', 4), ('walk', 6), ('skid', 1)]  # v17: walk (andar calmado) y skid (derrape)
 SKIN_L = {'guia': '#e0a674', 'medica': '#f2d0b4', 'ing': '#9a6440'}  # v7: Mateo, Elena, Samuel
 
 # cabezas chibi 10x8 (v8), mirando a la derecha; letras -> HPAL
@@ -188,11 +188,18 @@ def draw_char(role, anim, i):
     if anim == 'idle':
         bob = [0, 0, 1, 1][i]; fa = (0, 6 + bob); ba = (0, 6 + bob)
         fp, bp = (1, 0), (-2, 0)
-    elif anim == 'run':
-        ph = i / 6 * 2 * math.pi; lean = 1; bob = 1 if i in (1, 4) else 0
-        fp = (round(math.sin(ph) * 4) + 1, -round(max(0, math.cos(ph)) * 3))
-        bp = (round(-math.sin(ph) * 4) - 1, -round(max(0, -math.cos(ph)) * 3))
-        fa = (round(-math.sin(ph) * 4), 5); ba = (round(math.sin(ph) * 4), 5)
+    elif anim == 'run':   # v17: zancada larga, cuerpo inclinado, brazos doblados bombeando
+        ph = i / 6 * 2 * math.pi; lean = 2; bob = 1 if i in (1, 4) else 0
+        fp = (round(math.sin(ph) * 5) + 1, -round(max(0, math.cos(ph)) * 4))
+        bp = (round(-math.sin(ph) * 5) - 1, -round(max(0, -math.cos(ph)) * 4))
+        fa = (round(-math.sin(ph) * 5), 4); ba = (round(math.sin(ph) * 5), 4)
+    elif anim == 'walk':  # v17: paso corto, erguido, brazos opuestos a las piernas, rebote suave
+        ph = (i + 0.5) / 6 * 2 * math.pi; bob = 1 if i in (1, 4) else 0
+        fp = (round(math.sin(ph) * 3) + 1, -round(max(0, math.cos(ph)) * 2))
+        bp = (round(-math.sin(ph) * 3) - 1, -round(max(0, -math.cos(ph)) * 2))
+        fa = (round(-math.sin(ph) * 3), 6); ba = (round(math.sin(ph) * 3), 6)
+    elif anim == 'skid':  # v17: derrape, torso atras, piernas adelante, brazos de equilibrio
+        lean = -1; bob = 1; fp, bp = (5, 0), (2, 0); fa = (-3, 3); ba = (-5, 2)
     elif anim == 'jump':
         bob = -1 if i == 0 else 0; fp, bp = (3, -4 - i), (-1, -2 - i); fa = (2, -2 + i * 2); ba = (-3, -3 + i * 2)
     elif anim == 'fall':
@@ -235,7 +242,7 @@ def gen_players():
         sh = sheet(6, len(ANIMS), 24, 24)
         for r, (a, n) in enumerate(ANIMS):
             for i in range(n): sh.paste(draw_char(role, a, i), (i*24, r*24))
-        save(sh, 'player_' + role, fw=24, fh=24, cols=6, anims={a: dict(row=r, frames=n, fps=[6, 12, 4, 4, 8][r], loop=a not in ('jump',)) for r, (a, n) in enumerate(ANIMS)},
+        save(sh, 'player_' + role, fw=24, fh=24, cols=6, anims={a: dict(row=r, frames=n, fps=[6, 14, 4, 4, 8, 9, 1][r], loop=a not in ('jump',)) for r, (a, n) in enumerate(ANIMS)},
              facing='derecha; espejar para izquierda', feet_y=22)
 
 def draw_lia(i):

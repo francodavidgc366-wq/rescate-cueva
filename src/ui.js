@@ -24,6 +24,10 @@ const RD = {
   medica: { n: 'Elena', t: 'La médica', col: '#2fd0b0', hat: '#e8e8f0', body: '#2e9e6b', skill: 'Cuida de Lía: lee su estado y detecta lo que otros no ven.', ai: 'Empática, directa', goal: 'Que Lía llegue con salud.' },
   ing: { n: 'Samuel', t: 'El ingeniero', col: '#5aa8ff', hat: '#4aa0e8', body: '#7a5a3a', skill: 'Mide el agua y gestiona el material y los anclajes.', ai: 'Técnico, algo orgulloso', goal: 'Cuidar el material.' }
 };
+const pathRow = path => { // TU CAMINO + DECISION FINAL: iconos y nombres de las rutas tomadas
+  const ri = k => (window.Hud && Hud.routeInfo ? Hud.routeInfo(k) : { name: k, icon: '', full: String(k).toUpperCase() }), L = (path || []).filter(x => x && x.kind); if (!L.length) return '';
+  return '<div class="pth"><u>TU CAMINO</u>' + L.map(x => { const r = ri(x.kind); return '<span class="' + (x.outcome === 'mal' ? 'mal' : '') + '"><i>' + r.icon + '</i>' + esc(r.name) + '</span>'; }).join('<em>›</em>') + '</div>' + '<div class="pfin"><u>DECISIÓN FINAL</u><b><i>' + ri(L[L.length - 1].kind).icon + '</i>' + esc(ri(L[L.length - 1].kind).full) + '</b></div>';
+};
 const rinfo = k => { const R = (window.Story && Story.ROLES && Story.ROLES[k]) || {}; const d = RD[k]; return { id: k, n: R.short || d.n, full: R.name || (d.n + ', ' + d.t), t: d.t, col: d.col, hat: R.hat || d.hat, body: R.body || d.body, skill: R.skill || d.skill, ai: R.personality || d.ai, goal: R.goal || d.goal }; };
 const GRADE = { S: '#ffd34d', A: '#6be08a', B: '#5ab8ff', C: '#ff9a4d', D: '#ff5a5a' };
 const ICONS = ['agua', 'salud', 'material', 'confianza', 'cuerda', 'bateria', 'radio', 'mapa', 'botiquin', 'llave', 'ojo', 'candado', 'trofeo', 'estrella', 'reloj', 'chat', 'voto', 'alerta', 'secreto', 'ap'];
@@ -287,6 +291,10 @@ const css13 = `
 #rcv3 .en-fates .f{display:flex;flex-direction:column;align-items:center;gap:.35em;font-size:clamp(11px,1.3vw,16px);color:#fff;text-shadow:0 2px 3px #000,0 0 8px #000;text-align:center}
 #rcv3 .en-fates canvas{width:clamp(48px,7vw,96px);height:clamp(48px,7vw,96px);image-rendering:pixelated;border:3px solid #ffe9b8;background:#0a1128}
 #rcv3 .en-fates .f.muerto canvas{border-color:#5a6478;filter:grayscale(1) brightness(.7)}
+#rcv3 .pth,#rcv3 .pfin{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;font-weight:800;color:#fff;text-shadow:0 2px 3px #000}#rcv3 .pth u,#rcv3 .pfin u{text-decoration:none;font:8px 'Press Start 2P',monospace;color:#ffd34d;margin-right:4px}
+#rcv3 .pth span{padding:3px 9px;border-radius:14px;background:#1c1534e8;border:2px solid #5fe39a;font-size:clamp(11px,1.4vw,16px)}#rcv3 .pth span.mal{border-color:#ff6b5e}#rcv3 .pth i,#rcv3 .pfin i{font-style:normal;margin-right:4px}#rcv3 .pth em{font-style:normal;opacity:.6}
+#rcv3 .pfin{margin-top:8px}#rcv3 .pfin b{padding:5px 14px;border-radius:6px;background:linear-gradient(#ffb43a,#d4620f);color:#2a1004;border:3px solid #ffe08a;text-shadow:none;font-size:clamp(13px,1.8vw,20px);box-shadow:0 0 18px #ff9d2e99}
+#rcv3 .en-path{position:absolute;left:3%;right:3%;top:5%;text-align:center;opacity:0;transition:opacity 1.8s;pointer-events:none}#rcv3 .en-path.on{opacity:1}
 #rcv3 .en-hint{position:absolute;right:3%;bottom:2.2%;font-size:clamp(10px,1.1vw,14px);color:#fff9;text-shadow:0 1px 2px #000;pointer-events:none;opacity:0;transition:opacity .8s}
 #rcv3 .en-hint.on{opacity:1}
 #rcv3 .tcard .ttext{display:flex;flex-direction:column;justify-content:center}#rcv3 .tcard .ttext p{font-size:clamp(22px,2.6vw,34px);line-height:1.25;margin:.5em 0 0;font-weight:700}
@@ -702,7 +710,7 @@ function playEnding(o) {
     const keys = panels.map((p, i) => endKey(p.img, saved, i, panels.length)); await Promise.all(keys.map(k => new Promise(r => { const im = k && getImg(k); if (!im || im.ok) return r(); im._cb = (im._cb || []).concat(r); im.onerror = r; setTimeout(r, 2500); })));
     const src = (i) => { const k = keys[i], im = k && getImg(k); return im && im.ok ? im : scene(saved ? (i ? 'rescate' : 'radio') : (i ? 'derrota' : 'radio')); };
     const s = mkScr('end', 'endv'); s.innerHTML = ''; const W = 960, H = 540, col = saved ? '#ffd34d' : '#9fb4d8';
-    const vw = $('div', 'cvw', s), cv = $('canvas', '', vw); cv.width = W; cv.height = H; const g = cv.getContext('2d'); const sub = $('div', 'en-sub', vw), title = $('div', 'en-title ' + (saved ? 'good' : 'bad'), vw, saved ? 'LÍA ESTÁ A SALVO' : 'NO LLEGAMOS A TIEMPO'), fatesEl = $('div', 'en-fates', vw), hint = $('div', 'en-hint', vw, 'Clic / Espacio: continuar');
+    const vw = $('div', 'cvw', s), cv = $('canvas', '', vw); cv.width = W; cv.height = H; const g = cv.getContext('2d'); const sub = $('div', 'en-sub', vw), title = $('div', 'en-title ' + (saved ? 'good' : 'bad'), vw, saved ? 'LÍA ESTÁ A SALVO' : 'NO LLEGAMOS A TIEMPO'), fatesEl = $('div', 'en-fates', vw), pathEl = $('div', 'en-path', vw, pathRow(o.path)), hint = $('div', 'en-hint', vw, 'Clic / Espacio: continuar');
     const skip = $('button', 'btn sec skip', s, 'Saltar »'); const prev = mk(W, H), pg = prev.getContext('2d'), nz = mk(160, 90), nzg = nz.getContext('2d');
     const faceCv = mk(48, 48); faceCv.className = 'en-face'; const fg = faceCv.getContext('2d'); let faceId = null, faceMood = 'neutral';
     let i = -1, t = 0, dur = 6, typed = 0, text = '', fade = 0, done = false, closing = false, tC = 0, black = 0, lt = 0, gt = 0, pt = [], first = true; const bars = { v: 0 };
@@ -718,7 +726,7 @@ function playEnding(o) {
     }
     function startClose() { if (closing) return; closing = true; tC = 0; sub.classList.remove('on'); hint.classList.remove('on'); if (saved) snd('sfx', 'rescue'); else snd('sfx', 'lose');
       const fates = Array.isArray(o.fates) ? o.fates.filter(f => f && f.id) : []; if (fates.length) { fates.slice(0, 4).forEach(f => { const e = $('div', 'f ' + (f.status || 'vivo'), fatesEl); const c = fateFace(f); e.appendChild(c); $('div', '', e, '<b>' + esc(f.name || (f.id === 'lia' ? 'Lía' : rinfo(f.id).n)) + '</b>'); }); }
-      setTimeout(() => { if (!done) title.classList.add('on'); }, 1800); setTimeout(() => { if (!done) { fatesEl.classList.add('on'); hint.classList.add('on'); } }, 4200); }
+      setTimeout(() => { if (!done) { title.classList.add('on'); pathEl.classList.add('on'); } }, 1800); setTimeout(() => { if (!done) { fatesEl.classList.add('on'); hint.classList.add('on'); } }, 4200); }
     let stopT = () => { }; function end() { if (done) return; done = true; stopT(); snd('stopSpeak'); s.style.transition = 'opacity 1.1s'; s.style.opacity = 0; setTimeout(() => { s.style.opacity = ''; s.style.transition = ''; s.classList.remove('on'); cur = null; res(); }, 1150); }
     function advance() { if (closing) { if (tC > 4.5) end(); return; } if (typed < text.length) { if (t < 1.2) return; typed = text.length; if (sub._a) { sub._a.textContent = text; sub._b.textContent = ''; } return; } if (t > 3.5) { sfx('click'); nextPanel(); } }
     go('end', { music: saved ? 'win' : 'lose', keys: e => { if (e.key === 'Escape') { if (closing) end(); else startClose(); return; } if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight') { advance(); return; } return false; } });
@@ -794,6 +802,7 @@ function showFinal(result, state) {
     { const cv = fateFace(lfx); cv.style.cssText = 'display:block;width:144px;height:144px;image-rendering:pixelated'; pt.appendChild(cv); } pt.style.cssText = 'border:3px solid ' + (sv ? '#5fe39a' : '#6b6678') + ';border-radius:12px;overflow:hidden;width:144px;height:144px;margin:0 auto';
     hero.style.cssText = 'text-align:center'; const hd = $('div', 'fhead', hero, esc(en && en.title ? en.title : sv ? 'Lía está a salvo' : 'No llegamos a tiempo')); hd.style.color = sv ? '#9affc0' : '#ffb0a8'; hd.style.fontSize = 'clamp(32px,7vw,64px)';
     if (en && en.sub) $('div', 'mut', hero, esc(en.sub)).style.cssText = 'font-size:1.2em;margin:.2em 0 .6em'; }
+  { const pr = pathRow(state.path); if (pr) { const pe = $('div', 'panel', c, '<div class="lab" style="text-align:center;margin-bottom:.5em">TU CAMINO</div>' + pr.replace('<u>TU CAMINO</u>', '')); pe.style.margin = '.8em 0'; } }
   if (fates.length) {
     const ok = fates.filter(f => f.status !== 'muerto').length; $('div', 'lab', c, 'DESTINO DE LAS PERSONAS').style.textAlign = 'center'; $('div', '', c, 'Salvaron a <b>' + ok + '</b> de ' + fates.length).style.cssText = 'color:#fff;text-shadow:0 2px 0 #000,0 0 8px #000;text-align:center;font-size:1.25em;margin:.2em 0';
     const fg = $('div', 'fates', c); fates.forEach(f => { const dead = f.status === 'muerto', e = $('div', 'fate ' + (f.status || 'vivo'), fg); e.style.opacity = 0; const pt = $('div', 'pt', e); pt.appendChild(fateFace(f));

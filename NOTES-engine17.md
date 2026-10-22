@@ -1,0 +1,4 @@
+# NOTES-engine17 (animacion de movimiento)
+- tools/gen-sprites.py: ANIMS ahora incluye `walk` (fila 5, 6 frames, fps 9: paso corto, erguido, brazos opuestos, rebote) y `skid` (fila 6, 1 frame: derrape). `run` (fila 1, fps 14): inclinacion 2px, zancada 5px, brazos doblados. Celdas 24x24 y feet_y=22 intactos; hoja 6x7. Regenerar: `.venv/bin/python tools/gen-sprites.py && python3 tools/pack-assets.py`.
+- engine.js drawBody: anim 'run' del fisico se reparte por velocidad: |vx|>1.95 correr, si no andar; derrape si vx y face opuestos (con polvo); estela sutil (alpha .14, 4px atras) al correr; squash/stretch de b.sx/b.sy (aterrizaje) aplicado a los sprites, anclado a los pies. Fisica/IA sin tocar. Lia/NPC no usan este codigo.
+- Verificado: hoja de sprites de los 3 personajes (ampliada), partida real sin errores, log de anim/vx (walk 1.7, run 2.72, giro, salto/caida/aterrizaje). No verificado: capturas en juego (el cartel del guia tapa el cuerpo), red/clientes.
