@@ -2,7 +2,7 @@
 
 Simulación estratégica de equipo en pixel art (inspirada en las dinámicas de Everest V3 de Harvard: roles, información asimétrica, chat y decisiones bajo presión). Tres rescatadores —Nico (guía), Ona (médica) e Iván (ingeniero)— deben sacar a Lía de una cueva que se inunda en 5 tramos. Cada rol tiene información privada, un objetivo individual secreto y un secreto. Hasta 3 jugadores por enlace; los huecos los llevan compañeros IA que hablan, negocian y pueden mentir.
 
-**Jugar:** https://francodavidgc366-wq.github.io/roleplay-ia-agentica/ — o abre `index.html` (un único archivo autocontenido).
+**Jugar:** https://francodavidgc366-wq.github.io/rescate-cueva/ — o abre `index.html` (un único archivo autocontenido).
 
 ## Cómo se juega (cada tramo)
 1. **Briefing:** evento ilustrado y radio de Lía.
