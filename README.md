@@ -15,7 +15,7 @@ Simulación estratégica de equipo en pixel art (inspirada en las dinámicas de 
 ## IA y prompts
 - **Con IA:** en Ajustes pega tu clave de Anthropic (solo se guarda en tu navegador, nunca en el repo). La IA actúa como director de partida, compañeros (deciden qué ven, comparten, ocultan o falsean, y chatean), Lía por radio y árbitro final.
 - **Modo demo (sin red ni clave):** contenido pregrabado y compañeros reactivos; también es el plan B si falla la IA.
-- Prompts v3 versionados y salida validada: `docs/prompts.md`.
+- Prompts v4 versionados y salida validada: `docs/prompts.md`.
 
 ## Instalación y configuración
 - **Jugar sin instalar:** abre la URL de arriba o el archivo `index.html` (autocontenido, sin dependencias).
