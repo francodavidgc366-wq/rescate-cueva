@@ -254,7 +254,7 @@ const css = `
 /* cine */
 #rcv3 .cine{background:#000;align-items:center;justify-content:center}
 #rcv3 .cvw{position:relative;width:min(100vw,177.7vh);aspect-ratio:16/9;background:#000;overflow:hidden}
-#rcv3 .cvw canvas{width:100%;height:100%;display:block}
+#rcv3 .cvw canvas{width:100%;height:100%;display:block}#rcv3 .qr{display:flex;flex-direction:column;align-items:center;gap:.5em;margin-top:.9em;cursor:zoom-in}#rcv3 .qr canvas{image-rendering:pixelated;background:#fff;border-radius:8px;width:min(62vmin,300px);height:auto}#rcv3 .qr.big{cursor:zoom-out}#rcv3 .qr.big canvas{width:min(92vw,80vh)}
 #rcv3 .sub3{position:absolute;left:5%;right:5%;bottom:4%;text-align:center;font-size:clamp(13px,1.9vw,24px);line-height:1.5;text-shadow:0 2px 4px #000,0 0 10px #000;min-height:3em}
 #rcv3 .sub3 .who{display:block;font-family:'Press Start 2P',monospace;font-size:.5em;color:var(--amb);margin-bottom:.5em;letter-spacing:2px}
 #rcv3 .sub3.title{bottom:auto;top:32%;font-family:'Press Start 2P',monospace}
@@ -445,6 +445,21 @@ function joinDialog() {
 let cineSkip = null; const isCl = () => !!(window.Net && Net.role === 'client'); // solo el anfitrión salta cinemáticas; los clientes las saltan cuando llega 'cine' {act:'skip'}
 let U = { mode: 'idle', code: '', link: '', players: [], role: 'guia', ready: false };
 let lobbyOff = null;
+// QR del enlace de la sala (vendor/qrcode.js, MIT): se escanea con la cámara del móvil; al tocarlo se agranda (para proyectar)
+function qrBox(text) {
+  try {
+    if (typeof qrcode !== 'function') return null;
+    const qr = qrcode(0, 'M'); qr.addData(String(text)); qr.make();
+    const n = qr.getModuleCount(), S = 8, Q = 4, cv = document.createElement('canvas'); cv.width = cv.height = (n + 2 * Q) * S;
+    const g = cv.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, cv.width, cv.height); g.fillStyle = '#000';
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) g.fillRect((c + Q) * S, (r + Q) * S, S, S);
+    cv.setAttribute('role', 'img'); cv.setAttribute('aria-label', 'Código QR para unirse a la sala');
+    const box = document.createElement('div'); box.className = 'qr'; box.appendChild(cv);
+    const cap = document.createElement('div'); cap.className = 'mut'; cap.textContent = 'ESCANÉALO CON LA CÁMARA DEL MÓVIL · toca para agrandar'; box.appendChild(cap);
+    box.onclick = () => box.classList.toggle('big');
+    return box;
+  } catch (e) { return null; }
+}
 function showLobby(o) {
   ensure(); o = o || {}; const s = mkScr('lobby', 'lobby scroll'); U = Object.assign({ mode: 'idle', code: '', link: '', players: [], role: U.role || 'guia', ready: false }, { mode: o.mode || 'idle' });
   go('lobby', { music: 'menu', keys: e => { if (e.key === 'Escape') { back(); return; } const i = '123'.indexOf(e.key); if (i >= 0) pickRole(RK[i]); else if (e.key === 'Enter') { s.querySelector('.go') && s.querySelector('.go').click(); } else return false; } });
@@ -457,7 +472,7 @@ function showLobby(o) {
   function taken(k) { return U.players.find(p => p && p.role === k && p.id !== localId && p.id !== (window.Net && Net.localId) && !p.bot && p.connected !== false); }
   function render() {
     s.innerHTML = ''; const top = $('div', 'row', s); top.style.justifyContent = 'space-between'; $('h2', '', top, U.mode === 'idle' ? 'PARTIDA EN SOLITARIO' : U.mode === 'host' ? 'TU SALA' : 'SALA DE ' + esc(U.code)); const bk = $('button', 'btn sec', top, 'Volver'); bk.onclick = back;
-    if (U.mode === 'host' || U.mode === 'join') { const b = $('div', 'panel', s); $('div', 'lab', b, U.mode === 'host' ? 'COMPARTE ESTE CÓDIGO CON TUS AMIGOS' : 'CONECTADO A LA SALA'); $('div', 'code', b, esc(U.code || '. . . . .')); if (U.link) { const r = $('div', 'row', b); r.style.flexWrap = 'nowrap'; r.style.marginTop = '.6em'; const i = $('input', '', r); i.type = 'text'; i.readOnly = true; i.value = U.link; i.setAttribute('aria-label', 'Enlace'); const c = $('button', 'btn', r, 'Copiar'); c.onclick = () => { try { navigator.clipboard.writeText(U.link).then(() => { toast('Enlace copiado'); }, () => { i.select(); document.execCommand('copy'); toast('Enlace copiado'); }); } catch (x) { i.select(); toast('Copia el enlace a mano', { bad: 1 }); } }; } }
+    if (U.mode === 'host' || U.mode === 'join') { const b = $('div', 'panel', s); $('div', 'lab', b, U.mode === 'host' ? 'COMPARTE ESTE CÓDIGO CON TUS AMIGOS' : 'CONECTADO A LA SALA'); $('div', 'code', b, esc(U.code || '. . . . .')); if (U.link) { const r = $('div', 'row', b); r.style.flexWrap = 'nowrap'; r.style.marginTop = '.6em'; const i = $('input', '', r); i.type = 'text'; i.readOnly = true; i.value = U.link; i.setAttribute('aria-label', 'Enlace'); const c = $('button', 'btn', r, 'Copiar'); c.onclick = () => { try { navigator.clipboard.writeText(U.link).then(() => { toast('Enlace copiado'); }, () => { i.select(); document.execCommand('copy'); toast('Enlace copiado'); }); } catch (x) { i.select(); toast('Copia el enlace a mano', { bad: 1 }); } }; if (U.mode === 'host') { const qb = qrBox(U.link); if (qb) b.appendChild(qb); } } }
     const p = $('div', 'panel', s); $('div', 'lab', p, 'ELIGE TU ROL (1 / 2 / 3)'); const cards = $('div', 'cards', p); cards.style.marginTop = '.7em';
     RK.forEach((k, i) => { const d = rinfo(k), t = taken(k), b = $('button', 'rc' + (U.role === k ? ' sel' : '') + (t ? ' taken' : ''), cards); b.style.setProperty('--c', d.col); b.appendChild(portrait(k, U.role === k ? 'feliz' : 'neutral', 72)); $('b', '', b, esc(d.n)).style.color = d.col; $('span', 'mut', b, esc(d.t)); const sk = $('span', '', b, esc(String(d.skill || '').split(/[.;]/)[0].slice(0, 40))); sk.style.cssText = 'font-size:.85em;line-height:1.35'; $('span', 'tag' + (U.role === k ? ' me' : ''), b, U.role === k ? 'TU' : t ? esc(t.name || 'Jugador') : 'IA: ' + esc(d.ai)); b.onclick = () => pickRole(k); });
     const hum = U.players.filter(x => x && !x.bot); if (U.mode !== 'idle') $('div', 'mut', p, (hum.length ? hum.map(x => '<span class="ok">●</span> ' + esc(x.name || x.id) + (RK.includes(x.role) ? ' · ' + esc(rinfo(x.role).n) : '') + (x.host ? ' (anfitrión)' : '')).join(' &nbsp; ') : 'Esperando jugadores...') + '<br>Máx. 3 humanos.').style.marginTop = '.7em';
