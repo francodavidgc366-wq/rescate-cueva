@@ -235,11 +235,11 @@
         case 'summary':
           if (Story.isOver(st)) { st.final = await Story.finish(st, { role: myRole }); break; }
           { let tr = null, jr = null; try { tr = Story.travelScene(st); } catch (e) { } try { jr = Story.journal(st); } catch (e) { }
-            if (jr && Hud.showJournal && mode !== 'client' && !st.quick) { try { await Hud.showJournal(jr); } catch (e) { } }
+            if (jr && Hud.showJournal && mode !== 'client' ) { try { await Hud.showJournal(jr); } catch (e) { } }
             Story.advance(st);
             if (tr && eng.playTravel) await new Promise(res => { let d = false; const fin = () => { if (!d) { d = true; res(); } };
               try { Hud.setNow({ text: tr.caption || 'Viajan a la siguiente zona', sub: '', kind: 'info' }); } catch (e) { }
-              const ok = eng.playTravel({ toZone: st.round, kind: tr.kind, outcome: tr.outcome, ms: st.quick ? 4500 : 11500, onShot: (i) => { try { Hud.setNow({ text: [tr.caption || 'Salen de la zona', 'Recorren el camino', 'Llegan a la nueva zona'][i] || '', sub: '', kind: 'info' }); } catch (e) { } } }, fin); if (ok === false) return fin();
+              const ok = eng.playTravel({ toZone: st.round, kind: tr.kind, outcome: tr.outcome, ms: st.quick ? 8500 : 11500, onShot: (i) => { try { Hud.setNow({ text: [tr.caption || 'Salen de la zona', 'Recorren el camino', 'Llegan a la nueva zona'][i] || '', sub: '', kind: 'info' }); } catch (e) { } } }, fin); if (ok === false) return fin();
               if (Hud.dialogue && tr.lines && tr.lines.length) Hud.dialogue(tr.lines, { auto: 3400 }); setTimeout(fin, 20000); }); }
           await startRound(); return;
       }

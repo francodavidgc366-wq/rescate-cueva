@@ -45,9 +45,9 @@ const DIF = {
 };
 const dname = n => { n = NORM(n || 'normal'); return n === 'easy' || n === 'facil' ? 'facil' : n === 'hard' || n === 'everest' ? 'everest' : 'normal'; };
 const difficulty = n => Object.assign({}, DIF[dname(n)], { start: Object.assign({}, DIF[dname(n)].start) });
-const QUICK = { briefing: 3, explore: 22, plan: 9, secret: 7 }; // modo rápido (vídeo de 1 min): el agua por fase se conserva porque waterRate divide entre explore
+const QUICK = d => ({ briefing: 8, explore: Math.round(d.explore * .4), plan: 40, secret: 18 }); // ritmo intermedio (partida de ~15 min): el agua por fase se conserva porque waterRate divide entre explore
 const isQuick = st => !!(st && st.quick);
-const dif = st => isQuick(st) ? Object.assign({}, DIF[dname(st.difficulty)], QUICK) : DIF[dname(st.difficulty)];
+const dif = st => isQuick(st) ? Object.assign({}, DIF[dname(st.difficulty)], QUICK(DIF[dname(st.difficulty)])) : DIF[dname(st.difficulty)];
 const expTime = st => Math.round(dif(st).explore * ((st.hid && st.hid.expMul) || 1));
 const K = { rm: 1.5, fs: 1.6 }; let ASC = .3; const PRESS = [11.3, 6, 14]; // ASC: factor de bajadas de agua por acciones secretas; PRESS: agua, salud y ruido por tramo (calibrado con tools/story-test.js)
 const RISE = [3, 4, 5, 6, 7]; // subida de agua en explore por tramo (a 90 s, Normal)

@@ -415,9 +415,9 @@ const DIF = {
 };
 const dname = n => { n = NORM(n || 'normal'); return n === 'easy' || n === 'facil' ? 'facil' : n === 'hard' || n === 'everest' ? 'everest' : 'normal'; };
 const difficulty = n => Object.assign({}, DIF[dname(n)], { start: Object.assign({}, DIF[dname(n)].start) });
-const QUICK = { briefing: 3, explore: 22, plan: 9, secret: 7 }; // modo rápido (vídeo de 1 min): el agua por fase se conserva porque waterRate divide entre explore
+const QUICK = d => ({ briefing: 8, explore: Math.round(d.explore * .4), plan: 40, secret: 18 }); // ritmo intermedio (partida de ~15 min): el agua por fase se conserva porque waterRate divide entre explore
 const isQuick = st => !!(st && st.quick);
-const dif = st => isQuick(st) ? Object.assign({}, DIF[dname(st.difficulty)], QUICK) : DIF[dname(st.difficulty)];
+const dif = st => isQuick(st) ? Object.assign({}, DIF[dname(st.difficulty)], QUICK(DIF[dname(st.difficulty)])) : DIF[dname(st.difficulty)];
 const expTime = st => Math.round(dif(st).explore * ((st.hid && st.hid.expMul) || 1));
 const K = { rm: 1.5, fs: 1.6 }; let ASC = .3; const PRESS = [11.3, 6, 14]; // ASC: factor de bajadas de agua por acciones secretas; PRESS: agua, salud y ruido por tramo (calibrado con tools/story-test.js)
 const RISE = [3, 4, 5, 6, 7]; // subida de agua en explore por tramo (a 90 s, Normal)
@@ -6228,7 +6228,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
 .h-coach .ar{position:absolute;left:50%;bottom:-30px;transform:translateX(-50%);font-size:26px;color:#ffd27a;text-shadow:0 3px 0 #000,0 0 0 #000;animation:h-arrow .7s ease-in-out infinite alternate;line-height:1}
 @keyframes h-coach{50%{transform:scale(1.035);box-shadow:0 0 0 3px #000,0 8px 0 #7a4308,0 0 54px #ffd27a}}@keyframes h-arrow{to{transform:translate(-50%,8px)}}
 .h-coach.done{animation:h-nowchg 1s ease-out}
-.h-gd{padding-bottom:22px}
+.h-gd{padding-bottom:22px;padding-top:max(8px,calc(15.6vh - 58px))}/* deja libre el cartel AGUA CERCA del motor (canvas y 12-28 de 180) */
 /* textos flotantes apilados bajo el banner */
 .h-tst{gap:6px}.h-fl2{font-family:var(--h-px);font-size:calc(14px*var(--h-fs));padding:6px 14px;background:#120e26ee;border:2px solid currentColor;border-radius:8px;text-shadow:0 2px 0 #000;white-space:nowrap;animation:h-fl2 2s ease-out forwards;box-shadow:0 3px 0 #07040f}
 @keyframes h-fl2{0%{opacity:0;transform:translateY(-10px) scale(.8)}12%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0}}
@@ -6522,7 +6522,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
     var changed = nowKey !== '' && n.text !== nowKey.split('|')[0]; nowKey = key;
     var k = NOW_IC[n.kind] ? n.kind : 'go';
     el.now.className = 'h-now ' + (n.kind === 'urgent' || n.kind === 'wait' || n.kind === 'danger' ? n.kind : '');
-    nowFull = { text: n.text, why: why }; el.now.innerHTML = '<div class="ic">' + icon(NOW_IC[k], 36) + '</div><div class="tx"><div class="t">' + esc(cut(n.text, 40)) + '</div>' + (why ? '<div class="w">↳ ' + esc(cut(why, 45)) + '</div>' : '') + (sub ? '<div class="s">' + esc(sub) + '</div>' : '') + '</div>' +
+    nowFull = { text: n.text, why: why }; el.now.innerHTML = '<div class="ic">' + icon(NOW_IC[k], 36) + '</div><div class="tx"><div class="t">' + esc(cut(n.text, 40)) + '</div>' + (why ? '<div class="w">' + esc(cut(why, 45)) + '</div>' : '') + (sub ? '<div class="s">' + esc(sub) + '</div>' : '') + '</div>' +
       (pr && pr.total ? '<div class="pg">' + (pr.done | 0) + '/' + (pr.total | 0) + '<span><i style="width:' + clamp((pr.done | 0) / pr.total * 100, 0, 100) + '%"></i></span></div>' : '');
     if (changed) { void el.now.offsetWidth; el.now.classList.add('chg'); snd('toast'); }
   }
@@ -7530,7 +7530,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
       for (var d = dust.length - 1; d >= 0; d--) { var p = dust[d]; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += p.gy * dt; p.l -= dt; if (p.l <= 0) { dust.splice(d, 1); continue; } g.globalAlpha = Math.min(1, p.l * 2); g.fillStyle = p.c; g.fillRect(p.x | 0, p.y | 0, 2, 2); } g.globalAlpha = 1;
     };
   }
-  var mgCur = null, mgStreak = 0, mgKinds = { timing: ['ESCANEAR', 'ojo', 'ESPACIO'], mash: ['ANCLAR', 'cuerda', 'MACHACA E'], hold: ['VÁLVULA', 'agua', 'MANTÉN E = sube · SUELTA = baja · déjalo en lo VERDE'], sequence: ['PUENTE', 'material', 'FLECHAS / WASD'] };
+  var mgCur = null, mgStreak = 0, mgKinds = { timing: ['ESCANEAR', 'ojo', 'ESPACIO'], mash: ['ANCLAR', 'cuerda', 'MACHACA E'], hold: ['VÁLVULA', 'agua', 'MANTÉN E · SUELTA PARA BAJAR'], sequence: ['PUENTE', 'material', 'FLECHAS / WASD'] };
   var SEQ = [['↑', 'arrowup', 'w'], ['→', 'arrowright', 'd'], ['↓', 'arrowdown', 's'], ['←', 'arrowleft', 'a']];
   function reduced() { return opts.noflash || (W.matchMedia && W.matchMedia('(prefers-reduced-motion:reduce)').matches); }
   function setStreak(n) {
@@ -7548,7 +7548,7 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
     o = o || {}; if (!mounted) mount(); if (mgCur) mgCur.end();
     var TH = { escaner: ['timing', 'Escanea la pared'], cavar: ['mash', 'Cava entre escombros'], anclaje: ['timing', 'Clava el anclaje'], puente: ['sequence', 'Coloca los tablones'], valvula: ['mash', 'Gira la válvula'], reptadero: ['hold', 'Controla el aire'], estabilizar: ['hold', 'Controla el aire'] }, th = TH[o.theme];
     var kind = th ? th[0] : mgKinds[o.kind] ? o.kind : 'timing', K = mgKinds[kind], lv = clamp(o.level | 0 || 1, 1, 3), title = o.title || (th && th[1]) || K[0], ic = o.icon || K[1], red = reduced();
-    var dur = clamp({ timing: 4.5, mash: 4, hold: 5, sequence: 5 }[kind] - (lv - 1) * (kind === 'hold' ? .5 : .4), 2, 5);
+    var dur = clamp({ timing: 4.5, mash: 4, hold: 7, sequence: 5 }[kind] - (lv - 1) * (kind === 'hold' ? .5 : .4), 2, 7);
     return new Promise(function (res) {
       var box = D.createElement('div'); box.className = 'h-mg ' + kind + (th ? ' th' : '');
       box.innerHTML = '<div class="mh">' + jIcon(ic, 28) + '<b>' + esc(cut(title, 18)) + '</b><span class="lv">' + '★★★'.slice(0, lv) + '</span><span class="tm">' + dur.toFixed(1) + '</span></div><div class="tb"><i></i></div><div class="mb"></div><div class="mf">' + esc(K[2]) + '</div>';
@@ -7589,16 +7589,16 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
         upd = function (t, dt) { S.f = Math.max(0, S.f - dec * dt); fi.style.width = S.f * 100 + '%'; };
         press = function () { S.sw = performance.now(); S.rot = (S.rot || 0) + .5; S.sp && S.sp(o.theme === 'valvula' ? 60 : 80, 30, 4, o.theme === 'valvula' ? '#e8f4ff' : '#b8a890'); S.f = Math.min(1, S.f + inc); fl('+10', 20 + Math.random() * 60, 30); pop(2, '#ffe08a', S.f * 100, 55); snd('tick'); box.classList.remove('bmp'); void box.offsetWidth; box.classList.add('bmp'); fi.style.width = S.f * 100 + '%'; if (S.f >= 1) end((performance.now() - t0) / 1000 < dur * .65 ? 'perfect' : 'ok', 100 - ((performance.now() - t0) / 1000 / dur) * 40); };
       } else if (kind === 'hold') {
-        // Mantén E: el nivel sube; suelta: baja. Hay que dejarlo en la franja verde (que se mueve un poco) el tiempo necesario.
-        var hh = [.17, .13, .1][lv - 1], need = [1.6, 2, 2.4][lv - 1]; S.p = .15; S.on = false; S.hh = hh; S.hc = .6; S.in = 0; S.ph = Math.random() * 6;
-        mb.innerHTML = '<div class="bar"><div class="zn"><u></u></div><div class="cu"></div></div><div class="big2">0%</div>';
-        var zn = mb.querySelector('.zn'), cu2 = mb.querySelector('.cu'), pc = mb.querySelector('.big2'); zn.style.width = hh * 200 + '%'; mb.querySelector('.bar').appendChild(zn);
+        // Mantén E: el marcador sube; suelta: baja despacio. Franja verde FIJA; hay que dejarlo dentro `need` s seguidos.
+        var hh = [.15, .12, .1][lv - 1], need = [1.5, 1.8, 2.1][lv - 1]; S.p = .1; S.on = false; S.hh = hh; S.hc = .6; S.in = 0;
+        mb.innerHTML = '<div class="hi"><kbd>E</kbd><b>MANTÉN</b></div><div class="bar"><div class="zn"><u></u></div><div class="cu"></div></div><div class="hp"><span><i></i></span><b>0%</b></div>';
+        var zn = mb.querySelector('.zn'), cu2 = mb.querySelector('.cu'), hi = mb.querySelector('.hi'), hb = mb.querySelector('.hi b'), hf = mb.querySelector('.hp i'), hpt = mb.querySelector('.hp b');
+        zn.style.left = (S.hc - hh) * 100 + '%'; zn.style.width = hh * 200 + '%';
         upd = function (t, dt) {
-          S.p = clamp(S.p + (S.on ? .55 : -.4) * dt, 0, 1); S.hc = .55 + .15 * Math.sin(t * 1.3 + S.ph);
-          zn.style.left = (S.hc - hh) * 100 + '%'; cu2.style.left = S.p * 100 + '%';
-          var inside = Math.abs(S.p - S.hc) <= hh; box.classList.toggle('hld', S.on);
-          if (inside) { S.in += dt; if (!S.fl || t - S.fl > .5) { S.fl = t; fl('+', S.p * 100, 30, '#9bffc0'); } } else S.in = Math.max(0, S.in - dt * .6);
-          pc.textContent = Math.round(S.in / need * 100) + '%'; pc.style.color = inside ? '#9bffc0' : '#ffe08a';
+          S.p = clamp(S.p + (S.on ? .4 : -.22) * dt, 0, 1); cu2.style.left = S.p * 100 + '%';
+          var inside = Math.abs(S.p - S.hc) <= hh; box.classList.toggle('hld', S.on); hi.className = 'hi' + (S.on ? ' on' : ''); hb.textContent = S.on ? '¡SIGUE!' : 'MANTÉN';
+          if (inside) { S.in += dt; if (!S.fl || t - S.fl > .5) { S.fl = t; fl('+', S.p * 100, 30, '#9bffc0'); } } else S.in = Math.max(0, S.in - dt * 2);
+          var pr = Math.min(1, S.in / need); hf.style.width = pr * 100 + '%'; hpt.textContent = Math.round(pr * 100) + '%'; box.classList.toggle('ins', inside);
           if (S.in >= need) { pop(12, '#ffd34d', S.p * 100, 50); end((performance.now() - t0) / 1000 < dur * .6 ? 'perfect' : 'ok', 100 - (performance.now() - t0) / 100); }
         };
         press = function () { if (!S.on) { S.on = true; snd('tick'); } }; rel = function () { S.on = false; };
@@ -7648,7 +7648,9 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
     '.h-mg .fi:after{content:"";position:absolute;left:0;right:0;top:2px;height:5px;background:rgba(255,255,255,.45)}',
     '.h-mg .big2{font:800 18px var(--h-ui);color:#ffe08a;letter-spacing:2px}',
     '.h-mg svg{width:116px;height:116px}.h-mg svg circle{fill:none;stroke-width:12}.h-mg svg .bg{stroke:#26204a}.h-mg svg .zn{stroke:#ffd34d;background:none;border:0}.h-mg svg .fi{stroke:#4fc3ff;background:none;box-shadow:none;height:auto}.h-mg svg .fi:after{display:none}',
-    '.h-mg.hld svg .fi{stroke:#9fe6ff}.h-mg.hold .mb{flex-direction:row;gap:14px}',
+    '.h-mg.hld svg .fi{stroke:#9fe6ff}.h-mg.hold .mb{flex-direction:column;gap:8px}',
+    '.h-mg .hi{display:flex;align-items:center;justify-content:center;gap:10px;font:800 26px var(--h-ui);color:#ffe08a;letter-spacing:2px;text-shadow:0 2px 0 #000}.h-mg .hi kbd{display:inline-grid;place-items:center;width:38px;height:38px;border:3px solid #000;border-radius:8px;background:#ffd27a;color:#2a1606;font:800 24px var(--h-ui);box-shadow:0 4px 0 #7a4308;animation:mghk .7s steps(2) infinite}.h-mg .hi.on{color:#9bffc0}.h-mg .hi.on kbd{animation:none;background:#8ff0b5;box-shadow:0 1px 0 #1b6b3f;transform:translateY(3px)}@keyframes mghk{50%{opacity:.35}}',
+    '.h-mg.hold .bar{height:36px}.h-mg.ins .bar{border-color:#5fe39a}.h-mg .hp{display:flex;align-items:center;gap:8px;width:100%}.h-mg .hp span{flex:1;height:14px;background:#0a0716;border:2px solid #5a4d96;border-radius:7px;overflow:hidden}.h-mg .hp i{display:block;height:100%;width:0;background:#5fe39a}.h-mg .hp b{font:800 16px var(--h-ui);color:#9bffc0;min-width:44px;text-align:right}',
     '.h-mg .sq{display:flex;gap:10px}.h-mg .ar{width:56px;height:56px;line-height:56px;text-align:center;font:800 32px var(--h-ui);background:#1c2650;border:3px solid #5a6ab0;border-radius:8px;color:#fff;animation:mgar .2s backwards}.h-mg .ar.cur{border-color:#ffd34d;background:#4a3210;transform:scale(1.1)}.h-mg .ar.ok{border-color:#5fe39a;background:#10381f;color:#5fe39a}',
     '@keyframes mgar{from{opacity:0;transform:translateY(8px)}}',
     '.h-mg .dp{display:flex;gap:6px}.h-mg .dp button{width:34px;height:28px;border:2px solid #5a4d96;border-radius:5px;background:#17112e;color:#d8d0ee;font:800 14px var(--h-ui);cursor:pointer;padding:0}',
@@ -7927,11 +7929,11 @@ const st0 = store.get('rcv3_key'); if (st0) try { window.Story && Story.setKey &
         case 'summary':
           if (Story.isOver(st)) { st.final = await Story.finish(st, { role: myRole }); break; }
           { let tr = null, jr = null; try { tr = Story.travelScene(st); } catch (e) { } try { jr = Story.journal(st); } catch (e) { }
-            if (jr && Hud.showJournal && mode !== 'client' && !st.quick) { try { await Hud.showJournal(jr); } catch (e) { } }
+            if (jr && Hud.showJournal && mode !== 'client' ) { try { await Hud.showJournal(jr); } catch (e) { } }
             Story.advance(st);
             if (tr && eng.playTravel) await new Promise(res => { let d = false; const fin = () => { if (!d) { d = true; res(); } };
               try { Hud.setNow({ text: tr.caption || 'Viajan a la siguiente zona', sub: '', kind: 'info' }); } catch (e) { }
-              const ok = eng.playTravel({ toZone: st.round, kind: tr.kind, outcome: tr.outcome, ms: st.quick ? 4500 : 11500, onShot: (i) => { try { Hud.setNow({ text: [tr.caption || 'Salen de la zona', 'Recorren el camino', 'Llegan a la nueva zona'][i] || '', sub: '', kind: 'info' }); } catch (e) { } } }, fin); if (ok === false) return fin();
+              const ok = eng.playTravel({ toZone: st.round, kind: tr.kind, outcome: tr.outcome, ms: st.quick ? 8500 : 11500, onShot: (i) => { try { Hud.setNow({ text: [tr.caption || 'Salen de la zona', 'Recorren el camino', 'Llegan a la nueva zona'][i] || '', sub: '', kind: 'info' }); } catch (e) { } } }, fin); if (ok === false) return fin();
               if (Hud.dialogue && tr.lines && tr.lines.length) Hud.dialogue(tr.lines, { auto: 3400 }); setTimeout(fin, 20000); }); }
           await startRound(); return;
       }

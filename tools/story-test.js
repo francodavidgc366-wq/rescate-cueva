@@ -51,11 +51,11 @@ const strip = x => JSON.stringify(x, (k, v) => k === 't' ? undefined : v);
   }
   console.log('finales buenos', [...gk].join(), '| malos', [...bk].join()); assert(gk.size >= 5, 'finales buenos distintos: ' + gk.size); assert(bk.size >= 4, 'finales malos distintos: ' + bk.size);
   const q = Story.newGame({ seed: 3, quick: true }); assert(Story.isQuick(q) && !Story.isQuick(Story.newGame({ seed: 3 }))); await Story.roundStart(q);
-  assert.strictEqual(q.tleft, 3); Story.setPhase(q, 'explore'); assert.strictEqual(q.tleft, 22); Story.setPhase(q, 'plan'); assert.strictEqual(q.tleft, 9); Story.setPhase(q, 'secret'); assert.strictEqual(q.tleft, 7); assert.strictEqual(q.pois.length, 4);
+  assert.strictEqual(q.tleft, 8); Story.setPhase(q, 'explore'); assert.strictEqual(q.tleft, 96); Story.setPhase(q, 'plan'); assert.strictEqual(q.tleft, 40); Story.setPhase(q, 'secret'); assert.strictEqual(q.tleft, 18); assert.strictEqual(q.pois.length, 4);
   assert(q.plan.brief === '' && q.plan.options.every(o => o.what.length <= 45 && o.what && o.hints == null && o.known == null && o.kind && o.speed));
   assert(!/hints|known|clue|planBrief/.test(JSON.stringify(Story.publicState(q).plan)) && !/clue|hints|known/.test(JSON.stringify(Story.privOf(q, 'guia').planOpts)));
   const pq = Story.newGame({ seed: 4, quick: true }); await Story.roundStart(pq); Story.setPhase(pq, 'explore'); const pi2 = pq.pois.find(x => x.kind === 'info'); const po = Story.poiInteract(pq, 'guia', pi2.id); assert(po.chatLine && po.chatLine.length <= 55 && po.explain);
-  const w0 = Story.newGame({ seed: 4, quick: true }), w1 = Story.newGame({ seed: 4 }); assert(Story.waterRate(w0) > Story.waterRate(w1) * 5, 'agua proporcional en modo rápido');
+  const w0 = Story.newGame({ seed: 4, quick: true }), w1 = Story.newGame({ seed: 4 }); assert(Story.waterRate(w0) > Story.waterRate(w1) * 2, 'agua proporcional en modo rápido');
   // la ruta cambia el tramo siguiente
   const pf = Story.newGame({ seed: 6 }); await Story.roundStart(pf); pf.path.push({ round: 1, kind: 'balsa', outcome: 'bien' }); pf.round = 2; const a0 = pf.s.agua; await Story.roundStart(pf); assert(pf.s.agua >= a0 + 8 && pf.chat.some(m => /balsa/.test(m.text)), 'balsa: agua +8');
   // determinismo por semilla
