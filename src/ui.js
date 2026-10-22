@@ -274,6 +274,21 @@ const css = `
 @media (max-height:760px){#rcv3 .menu{gap:8px;padding:2vh 16px}#rcv3 .menu h1{font-size:clamp(18px,3.6vw,32px)}#rcv3 .mlist{gap:.35em}#rcv3 .mlist .btn{padding-top:.55em;padding-bottom:.55em}}
 `;
 
+
+const css18 = `
+@media (max-height:520px){
+#rcv3 .menu{overflow-y:auto;justify-content:flex-start;gap:6px;padding:8px 12px}#rcv3 .menu>*{flex:none}#rcv3 .menu>.rel:first-of-type{margin-top:auto}#rcv3 .menu>.mlist{margin-bottom:auto}
+#rcv3 .menu h1{font-size:clamp(14px,3vw,22px)}#rcv3 .menu .sub{display:none}
+#rcv3 .mlist{display:grid;grid-template-columns:1fr 1fr;width:min(680px,94vw);gap:8px}#rcv3 .mlist .btn{padding:.7em .8em .7em 1.6em;min-height:48px;font-size:11px}
+#rcv3 .chip{min-height:40px}#rcv3 .foot{display:none}
+#rcv3 .mod{padding:6px}#rcv3 .mod .panel{max-height:calc(100vh - 12px);padding:.6em 1em}#rcv3 .mod label{margin:.3em 0}#rcv3 h2{margin-bottom:.3em}
+#rcv3 .role{padding:8px;gap:.5em}#rcv3 .final{padding:8px}
+#rcv3 .tut{padding:6px}#rcv3 .tcard{grid-template-columns:1fr 1fr;gap:.6em}#rcv3 .tart{min-height:120px}#rcv3 .tcard .ttext p{font-size:clamp(13px,2.4vw,18px)}#rcv3 .tut{overflow-y:auto;justify-content:flex-start}#rcv3 .tut>*{flex:none;margin-left:auto;margin-right:auto}
+#rcv3 .btn,#rcv3 .opt{min-height:44px}
+}
+body.rc-touch #rcv3 .btn,body.rc-touch #rcv3 .chip,body.rc-touch #rcv3 .opt{min-height:44px}
+`;
+
 const css13 = `
 #rcv3 .endv{background:#000;align-items:center;justify-content:center}
 #rcv3 .endv .cvw canvas{image-rendering:auto}
@@ -304,7 +319,7 @@ const css13 = `
 let root, scr = {}, cur = null, fx, fxg, parts = [], tks = new Set(), raf = 0, last = 0, keyH = null, toasts, localId = 'solo';
 function mount(el) {
   if (root) return root;
-  const st = $('style', '', document.head); st.textContent = css + css13;
+  const st = $('style', '', document.head); st.textContent = css + css13 + css18;
   if (!document.getElementById('rcv3-font')) { const l = $('link', '', document.head); l.id = 'rcv3-font'; l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap'; }
   root = $('div', ''); root.id = 'rcv3'; (el || document.body).appendChild(root); applyLook();
   fx = $('canvas', '', root); fx.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:50'; fxg = fx.getContext('2d');

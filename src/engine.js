@@ -2541,7 +2541,7 @@ function create(canvas, opts) {
     // v10: factor entero en PIXELES FISICOS (devicePixelRatio 1.25/1.5 con factor CSS entero daba pixeles desiguales = texto borroso)
     var dpr = global.devicePixelRatio || 1, f = Math.min(maxW * dpr / W, maxH * dpr / H), s = Math.max(1, Math.floor(f + 1e-6)), st = canvas.style;
     if (s / f < 0.85) s = f;   // el factor entero dejaría el juego pequeño con barras: mejor llenar (pixelated, sin suavizado)
-    if (f < 1) s = f;   // ventana menor que 320x180 fisicos: no queda otra que fraccionario
+    if (f < 1 || (global.document && global.document.body.classList.contains('rc-touch'))) s = f;   // movil: llenar la pantalla (fraccional)   // ventana menor que 320x180 fisicos: no queda otra que fraccionario
     st.width = W * s / dpr + 'px'; st.height = H * s / dpr + 'px'; st.flex = 'none'; st.maxWidth = 'none'; st.imageRendering = 'pixelated';
     return s / dpr;
   }

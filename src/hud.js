@@ -1672,11 +1672,15 @@
     setTimeout(function () { ctl.talk(false); fc.classList.remove('talk'); }, Math.min(ms - 400, 700 + shown.length * 35));
     setTimeout(function () { ctl.stop(); n.classList.add('out'); setTimeout(function () { n.remove(); }, 320); }, ms);
   }
+  function tch(t) { // movil: sin teclas en los textos
+    var M = { 'ESPACIO': 'TOCA AL ACERTAR', 'MACHACA E': 'TOCA RÁPIDO', 'MANTÉN E · SUELTA PARA BAJAR': 'MANTÉN EL DEDO · SUELTA PARA BAJAR', 'FLECHAS / WASD': 'TOCA LAS FLECHAS' };
+    return D.body.classList.contains('rc-touch') ? M[t] || String(t).replace('W A S D o las flechas', '◀ ▶').replace('Pulsa E', 'Toca E').replace('con las teclas 1, 2, 3', 'tocando su tarjeta').replace(/\bPulsa\b/, 'Toca') : t;
+  }
   function paintCoach() {
     if (!el.coach) return; var c = coachO, pv = coachPrev; coachPrev = c;
     if (!c) { el.coach.className = 'h-coach'; el.coach.innerHTML = ''; if (pv && pv.total && pv.step >= pv.total) celebrate(); if (mounted && P) paintNow(); return; }
     var step = c.step | 0, total = c.total | 0;
-    el.coach.innerHTML = (total ? '<div class="st">PASO ' + step + ' DE ' + total + '</div>' : '') + '<div class="tx">' + esc(c.text) + '</div><div class="ar">▼</div>';
+    el.coach.innerHTML = (total ? '<div class="st">PASO ' + step + ' DE ' + total + '</div>' : '') + '<div class="tx">' + esc(tch(c.text)) + '</div><div class="ar">▼</div>';
     el.coach.className = 'h-coach on' + (panelBusy() && panelName !== 'summary' ? ' hold' : '');
     if (pv && pv.step !== c.step) { celebrate(); void el.coach.offsetWidth; el.coach.classList.add('done'); }
     if (mounted && P) paintNow();
@@ -1942,7 +1946,7 @@
     var dur = clamp({ timing: 4.5, mash: 4, hold: 7, sequence: 5 }[kind] - (lv - 1) * (kind === 'hold' ? .5 : .4), 2, 7);
     return new Promise(function (res) {
       var box = D.createElement('div'); box.className = 'h-mg ' + kind + (th ? ' th' : '');
-      box.innerHTML = '<div class="mh">' + jIcon(ic, 28) + '<b>' + esc(cut(title, 18)) + '</b><span class="lv">' + '★★★'.slice(0, lv) + '</span><span class="tm">' + dur.toFixed(1) + '</span></div><div class="tb"><i></i></div><div class="mb"></div><div class="mf">' + esc(K[2]) + '</div>';
+      box.innerHTML = '<div class="mh">' + jIcon(ic, 28) + '<b>' + esc(cut(title, 18)) + '</b><span class="lv">' + '★★★'.slice(0, lv) + '</span><span class="tm">' + dur.toFixed(1) + '</span></div><div class="tb"><i></i></div><div class="mb"></div><div class="mf">' + esc(tch(K[2])) + '</div>';
       root.appendChild(box); snd('tick');
       var mb = box.querySelector('.mb'), tmEl = box.querySelector('.tm'), tbI = box.querySelector('.tb i'), t0 = performance.now(), done = false, raf = 0, S = {}, upd = function () { }, press = function () { }, rel = function () { }, tkey = function () { };
       function pop(n, col, x, y) { if (red) n = Math.min(n, 3); for (var i = 0; i < n; i++) { var p = D.createElement('i'), a = Math.random() * 6.28, d = 30 + Math.random() * 50; p.className = 'pt'; p.textContent = i % 2 ? '★' : '✦'; p.style.cssText = 'left:' + x + '%;top:' + y + '%;color:' + col + ';--dx:' + Math.cos(a) * d + 'px;--dy:' + Math.sin(a) * d + 'px'; box.appendChild(p); setTimeout(function (q) { q.remove(); }.bind(null, p), 700); } }
@@ -1965,7 +1969,7 @@
       function ku(e) { e.preventDefault(); e.stopImmediatePropagation(); var k = e.key.toLowerCase(); if (!done && (k === ' ' || k === 'e' || k === 'enter')) rel(); }
       W.addEventListener('keydown', kd, true); W.addEventListener('keyup', ku, true);
       box.addEventListener('pointerdown', function (e) { e.preventDefault(); e.stopPropagation(); var b = e.target.closest && e.target.closest('[data-d]'); if (done) return; if (b) tkey(b.dataset.d); else press(false); });
-      box.addEventListener('pointerup', function () { if (!done) rel(); }); box.addEventListener('click', function (e) { e.stopPropagation(); });
+      box.addEventListener('pointerup', function () { if (!done) rel(); }); box.addEventListener('pointercancel', function () { if (!done) rel(); }); box.addEventListener('click', function (e) { e.stopPropagation(); });
       mgCur = { end: function () { end('fail', 0, true); } };
       if (kind === 'timing') {
         var hw = [.15, .1, .065][lv - 1], c = .3 + Math.random() * .4, sp = 2.1 + lv * .55;

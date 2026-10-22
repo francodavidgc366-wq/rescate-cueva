@@ -18,7 +18,7 @@
     gameEl.style.cssText = 'position:fixed;inset:0;background:#0d0b16;display:none;align-items:center;justify-content:center;z-index:10';
     cv = document.createElement('canvas'); cv.width = 320; cv.height = 180; cv.style.imageRendering = 'pixelated';
     gameEl.appendChild(cv); document.body.appendChild(gameEl);
-    addEventListener('resize', () => eng && eng.fit(innerWidth, innerHeight));
+    addEventListener('resize', () => eng && fitG());
     Hud.mount(gameEl);
     Hud.onChat(onChat); Hud.onShare(onShare); Hud.onVote(onVote); Hud.onSecret(onSecret); Hud.onReady(onReady);
     Hud.onAsk && Hud.onAsk(onAsk); Hud.onAbility && Hud.onAbility(() => { if (!isClient() && eng) { const o = eng.useAbility(myRole); if (o && !o.ok) Hud.floatText(o.reason === 'rol' ? 'Esa puerta la abre otro compañero: pídeselo por radio' : 'Aquí no puedes usar tu habilidad', 'bad'); } });
@@ -27,10 +27,11 @@
     Hud.onExit(() => location.reload()); Hud.onSettings(() => UI.openSettings());
     Hud.onFx && Hud.onFx((t, i) => eng && eng.camShake(i || 2)); Hud.onChatFocus && Hud.onChatFocus(b => { typing = b; pushInput(); });
   }
+  function fitG() { const c = getComputedStyle(gameEl); eng.fit(gameEl.clientWidth - parseFloat(c.paddingLeft) - parseFloat(c.paddingRight), gameEl.clientHeight - parseFloat(c.paddingTop) - parseFloat(c.paddingBottom)); }
   function makeEngine(authority) {
     if (eng) return;
     eng = Engine.create(cv, { assets: window.ASSETS, getState: () => st, authority, localRole: myRole, water: 10, onInteract, onSfx: n => snd(n), onGate, onDrown, onUnreachable, abilityMode: 'external', interactMode: 'external', onAbilityPrompt, onInteractPrompt });
-    eng.start(); eng.fit(innerWidth, innerHeight);
+    eng.start(); fitG();
     const ins = () => { try { eng.setViewInsets(Hud.getInsets()); } catch (e) { } }; ins(); Hud.onInsets && Hud.onInsets(ins);
   }
   // Misión v5: UN objetivo, flecha guía, habilidad, ayuda, aire, reunión y chips de chat contextuales
@@ -115,7 +116,7 @@
     setTimeout(() => { if (st && st.phase === 'explore' && !(st.gatesOpen || {})[gateId]) { try { (eng.forceOpenGate || eng.openGate).call(eng, gateId); } catch (e) { } } }, (q.delay || 1500) + 25000); // red de seguridad: nadie se queda bloqueado
   }
   function setupBots() { RK.forEach(r => eng.setBot(r, r !== myRole && (!isClient() ? st.players[r].ai : true))); eng.setLocal(myRole); }
-  function showGame() { gameEl.style.display = 'flex'; Hud.show && Hud.show(); eng.fit(innerWidth, innerHeight); }
+  function showGame() { gameEl.style.display = 'flex'; Hud.show && Hud.show(); fitG(); }
 
   // ---------- Teclado ----------
   const KEYMAP = { ArrowLeft: 'left', a: 'left', ArrowRight: 'right', d: 'right', ArrowUp: 'up', w: 'up', ArrowDown: 'down', s: 'down', ' ': 'jump', e: 'interact', q: 'ability', Shift: 'run' };
