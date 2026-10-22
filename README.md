@@ -22,6 +22,13 @@ Simulación estratégica de equipo en pixel art (inspirada en las dinámicas de 
 - **Desarrollo:** `./build.sh` regenera `index.html` a partir de `src/` y `vendor/` (necesita Python 3). Pruebas de balance: `node tools/story-test.js` (Node 18+). Las pruebas de interfaz de `tools/` usan Playwright.
 - **Configuración:** ver `.env.example`. No hay variables obligatorias; la clave de IA es opcional y se introduce en el juego (Ajustes), no en archivos. El repositorio no contiene claves.
 
+## Tecnología y dónde está cada cosa
+- **Lenguajes:** JavaScript (todo el juego, sin frameworks), HTML y CSS, canvas 2D para dibujar y Web Audio para la música y los efectos (generados por código). Python con Pillow para generar el arte pixel y Node.js para los tests.
+- **Motor:** propio, en `src/engine.js` (física de plataformas, mapa de 5 zonas, compañeros IA con búsqueda de caminos, cámara y cinemáticas). `build.sh` junta todo en un único `index.html`.
+- **Online sin servidor propio:** WebRTC con PeerJS. Quien crea la sala hace de anfitrión (decide el estado de la partida) y los demás se conectan por el código, el enlace o el QR. Para que los navegadores se encuentren se usa el servicio público de PeerJS y, si la red lo impide, un TURN público de respaldo. Es gratis, pero depende de servicios sin garantías.
+- **GitHub, README y la web:** el repositorio guarda el código y su historial. Este `README.md` es la portada que GitHub muestra. La web donde se juega la publica GitHub Pages a partir del `index.html` del repositorio y se actualiza sola al subir cambios.
+- **Entrega:** `entrega/` tiene el dossier y la ficha comercial en PDF, y `entrega/fuentes_latex/` los archivos LaTeX con los que se generaron.
+
 ## Multijugador
 "Crear sala" y comparte el enlace (`#sala=CODIGO`). WebRTC con PeerJS; el anfitrión es la autoridad y cada jugador solo recibe su propia información privada. Sin servidor TURN algunas redes (4G/CGNAT) pueden no conectar (ver `NOTES-net3.md`).
 

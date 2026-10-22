@@ -254,7 +254,7 @@ const css = `
 /* cine */
 #rcv3 .cine{background:#000;align-items:center;justify-content:center}
 #rcv3 .cvw{position:relative;width:min(100vw,177.7vh);aspect-ratio:16/9;background:#000;overflow:hidden}
-#rcv3 .cvw canvas{width:100%;height:100%;display:block}#rcv3 .qr{display:flex;flex-direction:column;align-items:center;gap:.5em;margin-top:.9em;cursor:zoom-in}#rcv3 .qr canvas{image-rendering:pixelated;background:#fff;border-radius:8px;width:min(62vmin,300px);height:auto}#rcv3 .qr.big{cursor:zoom-out}#rcv3 .qr.big canvas{width:min(92vw,80vh)}
+#rcv3 .cvw canvas{width:100%;height:100%;display:block}#rcv3 .qr{display:flex;flex-direction:column;align-items:center;gap:.5em;margin-top:.9em;cursor:zoom-in}#rcv3 .qr canvas{image-rendering:pixelated;background:#fff;border-radius:8px;width:min(62vmin,300px);height:auto}#rcv3 .qrsk{width:min(62vmin,300px);aspect-ratio:1;border-radius:8px;background:repeating-conic-gradient(#2b2150 0 25%,#3a2e66 0 50%) 0 0/24px 24px;animation:qrsk 1s steps(4) infinite}@keyframes qrsk{to{background-position:24px 0}}#rcv3 .qr.big{cursor:zoom-out}#rcv3 .qr.big canvas{width:min(92vw,80vh)}
 #rcv3 .sub3{position:absolute;left:5%;right:5%;bottom:4%;text-align:center;font-size:clamp(13px,1.9vw,24px);line-height:1.5;text-shadow:0 2px 4px #000,0 0 10px #000;min-height:3em}
 #rcv3 .sub3 .who{display:block;font-family:'Press Start 2P',monospace;font-size:.5em;color:var(--amb);margin-bottom:.5em;letter-spacing:2px}
 #rcv3 .sub3.title{bottom:auto;top:32%;font-family:'Press Start 2P',monospace}
@@ -285,6 +285,9 @@ const css18 = `
 #rcv3 .role{padding:8px;gap:.5em}#rcv3 .final{padding:8px}
 #rcv3 .tut{padding:6px}#rcv3 .tcard{grid-template-columns:1fr 1fr;gap:.6em}#rcv3 .tart{min-height:120px}#rcv3 .tcard .ttext p{font-size:clamp(13px,2.4vw,18px)}#rcv3 .tut{overflow-y:auto;justify-content:flex-start}#rcv3 .tut>*{flex:none;margin-left:auto;margin-right:auto}
 #rcv3 .btn,#rcv3 .opt{min-height:44px}
+#rcv3 .lobby.hc{display:grid;grid-template-columns:minmax(0,40%) minmax(0,1fr);align-content:start;gap:8px 14px;padding:8px 12px;width:100%;box-sizing:border-box}
+#rcv3 .lobby.hc>*{width:auto}#rcv3 .lobby>.row:first-child{grid-column:1/-1}#rcv3 .lobby>.lcode{grid-column:1;grid-row:2/6;margin-top:0;align-self:start}#rcv3 .lobby.hc>:not(.row:first-child):not(.lcode){grid-column:2}
+#rcv3 .lobby .code{font-size:clamp(14px,3vw,22px)}#rcv3 .lobby .qr{margin-top:6px}#rcv3 .lobby .lcode .lab{display:none}#rcv3 .lobby>.row:first-child .btn{min-height:36px}#rcv3 .lobby .qr canvas,#rcv3 .lobby .qrsk{width:min(42vh,200px)}#rcv3 .lobby .qr{font-size:0;gap:0}#rcv3 .lobby .lcode input,#rcv3 .lobby .lcode .btn{min-height:36px;padding:.3em .6em}#rcv3 .lobby .lcode{padding:.5em .8em}#rcv3 .lobby .cards{gap:.4em}#rcv3 .lobby .rc{padding:.4em}
 }
 body.rc-touch #rcv3 .btn,body.rc-touch #rcv3 .chip,body.rc-touch #rcv3 .opt{min-height:44px}
 `;
@@ -416,7 +419,8 @@ function showMenu() {
   const L = $('div', 'mlist rel', s);
   const act = { solo: () => startFlow('solo'), host: () => startFlow('host'), join: () => joinDialog(), tut: () => showTutorial(), ach: () => showAchievements(), set: () => openSettings(), cred: () => showCredits() };
   items.forEach(([n, k, key, cls], i) => { const b = $('button', 'btn ' + (cls || ''), L, esc(n) + '<span class="k">' + key + '</span>'); b.style.animationDelay = i * .06 + .2 + 's'; b.onclick = () => { sfx(k === 'solo' ? 'confirm' : 'click'); act[k](); }; if (!i) b.classList.add('sel'); });
-  const c = $('div', 'corner', s); const mb = $('button', 'btn sec', c, S.mute ? 'MUDO' : 'SON'); mb.title = 'Sonido (M)'; mb.setAttribute('aria-label', 'Silenciar'); mb.onclick = toggleMute;
+  const c = $('div', 'corner', s); if (document.body.classList.contains('rc-touch') && window.RCTouch && !RCTouch.isFs()) { RCTouch.fsBtn(c, 'btn sec'); }
+  const mb = $('button', 'btn sec', c, S.mute ? 'MUDO' : 'SON'); mb.title = 'Sonido (M)'; mb.setAttribute('aria-label', 'Silenciar'); mb.onclick = toggleMute;
   function toggleMute() { S.mute = !S.mute; saveS(); applySound(); mb.textContent = S.mute ? 'MUDO' : 'SON'; sfx('click'); }
   $('div', 'foot', s, '1-7 elegir &middot; flechas/W-S mover &middot; Enter aceptar &middot; D dificultad &middot; M sonido');
   return s;
@@ -464,21 +468,28 @@ function showLobby(o) {
   ensure(); o = o || {}; const s = mkScr('lobby', 'lobby scroll'); U = Object.assign({ mode: 'idle', code: '', link: '', players: [], role: U.role || 'guia', ready: false }, { mode: o.mode || 'idle' });
   go('lobby', { music: 'menu', keys: e => { if (e.key === 'Escape') { back(); return; } const i = '123'.indexOf(e.key); if (i >= 0) pickRole(RK[i]); else if (e.key === 'Enter') { s.querySelector('.go') && s.querySelector('.go').click(); } else return false; } });
   if (window.Net && Net.on && !lobbyOff) { const f = () => { U.players = Net.players || []; if (cur === 'lobby') render(); }; Net.on('players', f); lobbyOff = () => { try { Net.off && Net.off('players', f); } catch (e) { } lobbyOff = null; }; own(lobbyOff); }
-  if (U.mode === 'host') { toast('Creando sala…'); Promise.resolve(window.Net && Net.host ? Net.host({ name: o.name || cname(store.get('rcv3_name')) || 'Anfitrión' }) : Promise.reject(new Error('Multijugador no disponible'))).then(r => { U.code = r.roomCode; U.link = r.link; try { Net.setRole && Net.setRole(U.role); } catch (e) { } emit('host', r); render(); }).catch(e => { sfx('error'); toast((e && e.message) || 'No se pudo crear la sala', { bad: 1 }); U.mode = 'idle'; render(); }); }
+  if (U.mode === 'host') { Promise.resolve(window.Net && Net.host ? Net.host({ name: o.name || cname(store.get('rcv3_name')) || 'Anfitrión' }) : Promise.reject(new Error('Multijugador no disponible'))).then(r => { U.code = r.roomCode; U.link = r.link; try { Net.setRole && Net.setRole(U.role); } catch (e) { } emit('host', r); render(); }).catch(e => { sfx('error'); toast((e && e.message) || 'No se pudo crear la sala', { bad: 1 }); U.mode = 'idle'; render(); }); }
   if (U.mode === 'join') { toast('Conectando...'); Promise.resolve(Net.join(o.code, { name: o.name || cname(store.get('rcv3_name')) || 'Jugador' })).then(r => { try { if (/sala=/.test(location.hash)) history.replaceState(null, '', location.pathname + location.search); } catch (e) { } U.code = r.roomCode || o.code; if (r.role) U.role = r.role; if (r.id) localId = r.id; emit('join', r); render(); }).catch(e => { sfx('error'); toast((e && e.message) || 'No se pudo unir', { bad: 1 }); showMenu(); }); }
   showLobby.rerender = render; render(); return s;
   function back() { sfx('back'); if (U.mode !== 'idle') { try { Net.leave && Net.leave(); } catch (e) { } } emit('menu', { lobby: 1 }); showMenu(); }
   function pickRole(k) { const t = taken(k); if (t) { sfx('error'); return toast('Ese rol ya lo juega ' + (t.name || 'otro jugador'), { bad: 1 }); } U.role = k; sfx('select'); emit('role', k); try { Net.role && Net.setRole && Net.setRole(k); } catch (e) { } render(); }
   function taken(k) { return U.players.find(p => p && p.role === k && p.id !== localId && p.id !== (window.Net && Net.localId) && !p.bot && p.connected !== false); }
   function render() {
-    s.innerHTML = ''; const top = $('div', 'row', s); top.style.justifyContent = 'space-between'; $('h2', '', top, U.mode === 'idle' ? 'PARTIDA EN SOLITARIO' : U.mode === 'host' ? 'TU SALA' : 'SALA DE ' + esc(U.code)); const bk = $('button', 'btn sec', top, 'Volver'); bk.onclick = back;
-    if (U.mode === 'host' || U.mode === 'join') { const b = $('div', 'panel', s); $('div', 'lab', b, U.mode === 'host' ? 'COMPARTE ESTE CÓDIGO CON TUS AMIGOS' : 'CONECTADO A LA SALA'); $('div', 'code', b, esc(U.code || '. . . . .')); if (U.link) { const r = $('div', 'row', b); r.style.flexWrap = 'nowrap'; r.style.marginTop = '.6em'; const i = $('input', '', r); i.type = 'text'; i.readOnly = true; i.value = U.link; i.setAttribute('aria-label', 'Enlace'); const c = $('button', 'btn', r, 'Copiar'); c.onclick = () => { try { navigator.clipboard.writeText(U.link).then(() => { toast('Enlace copiado'); }, () => { i.select(); document.execCommand('copy'); toast('Enlace copiado'); }); } catch (x) { i.select(); toast('Copia el enlace a mano', { bad: 1 }); } }; if (U.mode === 'host') { const qb = qrBox(U.link); if (qb) b.appendChild(qb); } } }
+    s.innerHTML = ''; s.classList.toggle('hc', U.mode !== 'idle'); const top = $('div', 'row', s); top.style.justifyContent = 'space-between'; $('h2', '', top, U.mode === 'idle' ? 'PARTIDA EN SOLITARIO' : U.mode === 'host' ? 'TU SALA' : 'SALA DE ' + esc(U.code)); const bk = $('button', 'btn sec', top, 'Volver'); bk.onclick = back;
+    if (U.mode === 'host' || U.mode === 'join') {
+      const wait = U.mode === 'host' && !U.code, b = $('div', 'panel lcode', s);
+      $('div', 'lab', b, wait ? 'CREANDO SALA…' : U.mode === 'host' ? 'COMPARTE ESTE CÓDIGO CON TUS AMIGOS' : 'CONECTADO A LA SALA'); const cd = $('div', 'code', b, wait ? 'CREANDO SALA…' : esc(U.code)); if (wait) cd.style.cssText = 'font-size:.5em;padding:.62em 0;animation:rglow 1.2s infinite';
+      // mismo esqueleto antes y después de tener código: el QR llega sin mover el diseño
+      const r = $('div', 'row', b); r.style.flexWrap = 'nowrap'; r.style.marginTop = '.6em'; const i = $('input', '', r); i.type = 'text'; i.readOnly = true; i.value = U.link || ''; i.placeholder = 'Creando enlace…'; i.setAttribute('aria-label', 'Enlace'); const c = $('button', 'btn', r, 'Copiar'); c.disabled = !U.link;
+      c.onclick = () => { try { navigator.clipboard.writeText(U.link).then(() => { toast('Enlace copiado'); }, () => { i.select(); document.execCommand('copy'); toast('Enlace copiado'); }); } catch (x) { i.select(); toast('Copia el enlace a mano', { bad: 1 }); } };
+      if (U.mode === 'host') { const qb = U.link && qrBox(U.link); if (qb) b.appendChild(qb); else { const sk = $('div', 'qr', b); $('div', 'qrsk', sk); } }
+    }
     const p = $('div', 'panel', s); $('div', 'lab', p, 'ELIGE TU ROL (1 / 2 / 3)'); const cards = $('div', 'cards', p); cards.style.marginTop = '.7em';
     RK.forEach((k, i) => { const d = rinfo(k), t = taken(k), b = $('button', 'rc' + (U.role === k ? ' sel' : '') + (t ? ' taken' : ''), cards); b.style.setProperty('--c', d.col); b.appendChild(portrait(k, U.role === k ? 'feliz' : 'neutral', 72)); $('b', '', b, esc(d.n)).style.color = d.col; $('span', 'mut', b, esc(d.t)); const sk = $('span', '', b, esc(String(d.skill || '').split(/[.;]/)[0].slice(0, 40))); sk.style.cssText = 'font-size:.85em;line-height:1.35'; $('span', 'tag' + (U.role === k ? ' me' : ''), b, U.role === k ? 'TU' : t ? esc(t.name || 'Jugador') : 'IA: ' + esc(d.ai)); b.onclick = () => pickRole(k); });
     const hum = U.players.filter(x => x && !x.bot); if (U.mode !== 'idle') $('div', 'mut', p, (hum.length ? hum.map(x => '<span class="ok">●</span> ' + esc(x.name || x.id) + (RK.includes(x.role) ? ' · ' + esc(rinfo(x.role).n) : '') + (x.host ? ' (anfitrión)' : '')).join(' &nbsp; ') : 'Esperando jugadores...') + '<br>Máx. 3 humanos.').style.marginTop = '.7em';
     else $('div', 'mut', p, 'Juegas con ' + esc(rinfo(U.role).n) + '. Los otros dos: IA.').style.marginTop = '.7em';
     if (U.mode !== 'join') { const dv = $('div', 'diff', s); $('span', 'lab', dv, 'DIFICULTAD'); [['facil', 'Fácil'], ['normal', 'Normal'], ['everest', 'Everest']].forEach(([k, n]) => { const c = $('button', 'chip' + (S.diff === k ? ' on' : ''), dv, n); c.onclick = () => { S.diff = k; saveS(); sfx('select'); render(); }; }); }
-    const act = $('div', 'row', s); act.style.justifyContent = 'flex-end'; const go2 = $('button', 'btn go', act, U.mode === 'join' ? (U.ready ? 'No estoy listo' : 'Estoy listo') : 'Empezar'); go2.focus();
+    const act = $('div', 'row', s); act.style.justifyContent = 'flex-end'; const go2 = $('button', 'btn go', act, U.mode === 'join' ? (U.ready ? 'No estoy listo' : 'Estoy listo') : 'Empezar'); go2.focus({ preventScroll: true });
     go2.onclick = () => { snd('unlock'); sfx('confirm'); if (U.mode === 'join') { U.ready = !U.ready; emit('ready', U.ready); try { Net.send('ready', { ready: U.ready }); } catch (e) { } render(); } else emit('start', { role: U.role, host: U.mode === 'host', solo: U.mode === 'idle', difficulty: S.diff, quick: !!S.quick }); };
     if (U.mode === 'join') $('span', 'mut', act, 'Esperando al anfitrion...');
   }

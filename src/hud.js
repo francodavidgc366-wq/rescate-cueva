@@ -1477,6 +1477,7 @@
   function dlgScale() { // lado del recuadro (múltiplo de 48: x2..x4) según alto/ancho de pantalla; igual para todos los personajes
     var fw = 48, vh = W.innerHeight || 700, bw = (el.dlg && el.dlg.clientWidth) || (W.innerWidth || 1000);
     var px = Math.min(.21 * vh, .22 * bw, 224);
+    if (vh <= 440 && D.body.classList.contains('rc-touch')) return 60; // pantalla baja tactil: retrato ~60 px (escala 1.25)
     return fw * Math.max(2, Math.min(4, Math.floor(px / fw)));
   }
   function dialogue(lines, o) {
