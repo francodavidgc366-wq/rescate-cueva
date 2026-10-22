@@ -5,7 +5,7 @@
   var on = (W.matchMedia && W.matchMedia('(pointer: coarse)').matches) || 'ontouchstart' in W || /[?&]touch=1/.test(location.search);
   if (!on) return;
   B.classList.add('rc-touch');
-  var KEYS = { left: ['ArrowLeft', 'ArrowLeft'], right: ['ArrowRight', 'ArrowRight'], jump: [' ', 'Space'], jumpj: [' ', 'Space'], up: ['ArrowUp', 'ArrowUp'], down: ['ArrowDown', 'ArrowDown'], e: ['e', 'KeyE'], q: ['q', 'KeyQ'], run: ['Shift', 'ShiftLeft'], tab: ['Tab', 'Tab'], j: ['j', 'KeyJ'], t: ['t', 'KeyT'], r: ['r', 'KeyR'], esc: ['Escape', 'Escape'], enter: ['Enter', 'Enter'] }, down = {};
+  var KEYS = { left: ['ArrowLeft', 'ArrowLeft'], right: ['ArrowRight', 'ArrowRight'], jump: [' ', 'Space'], up: ['ArrowUp', 'ArrowUp'], down: ['ArrowDown', 'ArrowDown'], e: ['e', 'KeyE'], q: ['q', 'KeyQ'], run: ['Shift', 'ShiftLeft'], tab: ['Tab', 'Tab'], j: ['j', 'KeyJ'], t: ['t', 'KeyT'], r: ['r', 'KeyR'], esc: ['Escape', 'Escape'], enter: ['Enter', 'Enter'] }, down = {};
   function fire(type, k) { var d = KEYS[k]; D.body.dispatchEvent(new KeyboardEvent(type, { key: d[0], code: d[1], bubbles: true, cancelable: true })); }
   function press(k) { if (!down[k]) { down[k] = 1; fire('keydown', k); } }
   function rel(k) { if (down[k]) { down[k] = 0; fire('keyup', k); } }
@@ -25,9 +25,9 @@
     '#rc-fs{pointer-events:auto;position:absolute;left:50%;bottom:6px;transform:translateX(-50%);width:40px!important;height:40px!important;opacity:.4!important;display:none!important}#rc-tc.fs #rc-fs{display:grid!important}',
     '.rc-fsi{display:inline-block;width:14px;height:14px;vertical-align:-2px;margin-right:6px;background:linear-gradient(currentColor,currentColor) 0 0/5px 3px no-repeat,linear-gradient(currentColor,currentColor) 0 0/3px 5px no-repeat,linear-gradient(currentColor,currentColor) 100% 0/5px 3px no-repeat,linear-gradient(currentColor,currentColor) 100% 0/3px 5px no-repeat,linear-gradient(currentColor,currentColor) 0 100%/5px 3px no-repeat,linear-gradient(currentColor,currentColor) 0 100%/3px 5px no-repeat,linear-gradient(currentColor,currentColor) 100% 100%/5px 3px no-repeat,linear-gradient(currentColor,currentColor) 100% 100%/3px 5px no-repeat}#rc-fs .rc-fsi{margin:0;width:18px;height:18px}',
     '#rc-ios{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:9998;max-width:min(560px,92vw);padding:10px 14px;background:#251d44;color:#ffe08a;border:3px solid #ffe08a;border-radius:8px;font:11px/1.5 "Press Start 2P",ui-monospace,monospace;text-align:center}',
-    '#rc-tc [data-k=e]{right:max(12px,env(safe-area-inset-right));bottom:max(12px,env(safe-area-inset-bottom));width:88px;height:88px;border-radius:50%;font-size:28px;background:#1f6f66d9;color:#b4fff4}',
-    '#rc-tc [data-k=jump]{right:calc(max(12px,env(safe-area-inset-right)) + 100px);bottom:max(16px,env(safe-area-inset-bottom));width:72px;height:72px;border-radius:50%;font-size:10px}',
-    '#rc-tc [data-k=q]{right:calc(max(12px,env(safe-area-inset-right)) + 12px);bottom:calc(max(12px,env(safe-area-inset-bottom)) + 100px);width:56px;height:56px;border-radius:50%;font-size:20px;background:#4a2f7acc}',
+    '#rc-tc [data-k=e]{right:max(10px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));width:104px;height:104px;border-radius:50%;font-size:38px;opacity:.8;background:#1f6f66e6;color:#b4fff4}',
+    '#rc-tc [data-k=jump]{right:calc(max(10px,env(safe-area-inset-right)) + 116px);bottom:max(12px,env(safe-area-inset-bottom));width:60px;height:60px;border-radius:50%;font-size:8px}',
+    '#rc-tc [data-k=q]{right:calc(max(10px,env(safe-area-inset-right)) + 24px);bottom:calc(max(10px,env(safe-area-inset-bottom)) + 116px);width:56px;height:56px;border-radius:50%;font-size:20px;background:#4a2f7acc}',
     '#rc-tc .top button{width:64px;height:48px;font-size:7px;top:var(--y);margin:0}#rc-tc .top [data-t=tab]{left:var(--p)}#rc-tc .top [data-t=j]{left:var(--p)}#rc-tc .top [data-t=t]{left:var(--p)}#rc-tc .top [data-t=r],#rc-tc .top [data-t=esc]{right:max(12px,env(safe-area-inset-right))}',
     '#rc-tc .skip{display:none;right:max(12px,env(safe-area-inset-right));top:56px;width:96px;height:48px;font-size:9px}#rc-tc.cs>*{display:none!important}#rc-tc.cs>.skip{display:grid!important}',
     '#rc-tc [data-t=tab]{--y:56px}#rc-tc [data-t=j]{--y:108px}#rc-tc [data-t=t]{--y:160px}#rc-tc [data-t=esc]{--y:56px}#rc-tc [data-t=r]{--y:108px}',
@@ -53,8 +53,21 @@
     'body.rc-touch #rcgame .h-pn[data-p] .h-opt canvas,body.rc-touch #rcgame .h-pn[data-p] .h-so canvas,body.rc-touch #rcgame .h-pn[data-p] .h-opt svg.ic{width:36px!important;height:36px!important}body.rc-touch #rcgame .h-pn[data-p] .h-pb{padding:6px 8px}body.rc-touch #rcgame .h-pn[data-p] .h-foot{padding:4px 10px 6px}',
     'body.rc-touch #rcgame .h-act{padding-bottom:0}',
     // chat: panel superpuesto compacto arriba a la derecha, solo al pulsar CHAT
-    'body.rc-touch #rcgame .h-chat.open{display:flex;left:auto;right:6px;top:4px;bottom:auto;width:min(420px,56vw);height:calc(100% - 8px);max-height:none;z-index:70;pointer-events:auto}',
-    'body.rc-touch #rcgame .h-chat.open .h-chips{max-height:64px}body.rc-touch #rcgame .h-chat.open .h-in input{min-height:40px;font-size:16px}body.rc-touch #rcgame .h-chat.open .h-in button,body.rc-touch #rcgame .h-chips button{min-height:40px}',
+    // chat (touch21): panel estrecho a la derecha; cabecera con X grande; chips grandes; campo + ENVIAR siempre visibles
+    'body.rc-touch #rcgame .h-chat.open{display:flex;left:auto;right:6px;top:4px;bottom:6px;width:min(330px,44vw);height:auto;max-height:none;z-index:70;pointer-events:auto;transition:none;--h-fs:1}',
+    'body.rc-touch #rcgame .h-chat.open .h-ch{padding:0 0 0 10px;min-height:38px;gap:6px;cursor:default;flex:none}body.rc-touch #rcgame .h-chat.open .h-ch .tg{display:none}body.rc-touch #rcgame .h-chat.open .h-cx{display:grid;place-items:center;margin-left:auto;width:48px;height:38px;min-height:0;padding:0;border:0;border-left:2px solid #07040f;border-radius:0 6px 0 0;background:#c9453d;color:#fff;font-size:20px;font-weight:900;line-height:1}',
+    'body.rc-touch #rcgame .h-chat.open .h-log{padding:6px}body.rc-touch #rcgame .h-chat.open .h-g .av,body.rc-touch #rcgame .h-chat.open .h-m .av{display:none}body.rc-touch #rcgame .h-chat.open .h-m .bd{max-width:100%}body.rc-touch #rcgame .h-chat.open .h-m .tx{font-size:13.5px;line-height:1.3;padding:5px 8px}body.rc-touch #rcgame .h-chat.open .h-m .hd{font-size:11.5px;margin:4px 0 1px}body.rc-touch #rcgame .h-chat.open .h-typ:empty{display:none}',
+    'body.rc-touch #rcgame .h-chat.open .h-chips{display:flex;flex-direction:column;flex-wrap:nowrap;gap:5px;padding:5px 6px;max-height:none;overflow:visible}body.rc-touch #rcgame .h-chat.open .h-chips button{width:100%;min-height:42px;padding:4px 12px;font-size:14px;line-height:1.15;text-align:left;white-space:normal;border:2px solid #b58cff;border-radius:12px;background:#2d2358;color:#fff}',
+    'body.rc-touch #rcgame .h-chat.open .h-in{padding:5px 6px;gap:6px;align-items:stretch}body.rc-touch #rcgame .h-chat.open .h-in input{min-height:44px;font-size:16px}body.rc-touch #rcgame .h-chat.open .h-in .h-btn{min-height:44px;padding:0 12px;font-size:10px}',
+    // teclado virtual abierto (touch.js pone body.rc-touch.rc-kb y --vvt/--vvh de visualViewport): lo esencial pegado encima del teclado
+    'body.rc-touch #rcgame .h-chat.open{--x:0}body.rc-touch.rc-kb #rcgame .h-chat.open{position:fixed;left:4px;right:4px;top:calc(var(--vvt,0)*1px + 2px);bottom:auto;width:auto;height:calc(var(--vvh,100vh)*1px - 4px);z-index:90}',
+    'body.rc-touch.rc-kb #rcgame .h-chat.open .h-chips,body.rc-touch.rc-kb #rcgame .h-chat.open .h-typ,body.rc-touch.rc-kb #rcgame .h-chat.open .h-newmsg{display:none}body.rc-touch.rc-kb #rcgame .h-chat.open .h-ch{min-height:30px}body.rc-touch.rc-kb #rcgame .h-chat.open .h-cx{height:30px;width:44px}body.rc-touch.rc-kb #rcgame .h-chat.open .h-m .tx{font-size:12.5px;padding:3px 7px}body.rc-touch.rc-kb #rcgame .h-chat.open .h-m .hd{display:none}body.rc-touch.rc-kb #rcgame .h-chat.open .h-in{padding:3px 4px}body.rc-touch.rc-kb #rcgame .h-chat.open .h-in input,body.rc-touch.rc-kb #rcgame .h-chat.open .h-in .h-btn{min-height:38px}body.rc-touch.rc-kb #rc-tc{display:none!important}',
+    // boton CHAT de la izquierda: con el chat abierto sigue ahi y pasa a ser CERRAR
+    '#rc-tc.chatop>*{display:none!important}#rc-tc.chatop>.top{display:block!important}#rc-tc.chatop .top button{display:none}#rc-tc.chatop .top [data-t=t]{display:grid;width:84px;opacity:1;background:#c9453d;color:#fff;font-size:8px}',
+    // minijuegos: capa tactil a pantalla completa + cancelar + flechas grandes
+    '.h-mgcap{position:fixed;inset:0;z-index:59;pointer-events:auto;touch-action:none;-webkit-tap-highlight-color:transparent}body.rc-touch .h-mg .mgx{display:grid;place-items:center;width:36px;height:30px;padding:0;min-height:0;border:2px solid #5a4d96;border-radius:6px;background:#17112e;color:#d8d0ee;font-size:14px}body.rc-touch .h-mg .dp{gap:10px;width:100%}body.rc-touch .h-mg .dp button{flex:1;width:auto;height:56px;font-size:26px;border-radius:10px}',
+    // cuaderno
+    'body.rc-touch #rcgame .h-dh .x{width:48px;height:40px;min-height:0;padding:0;border:2px solid #07040f;border-radius:8px;background:#c9453d;color:#fff;font-size:20px;font-weight:900}body.rc-touch #rcgame .h-ic1 .x{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}body.rc-touch #rcgame .h-ic1 .us{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}body.rc-touch #rcgame .h-acts{flex-wrap:nowrap;align-items:center;margin-top:6px}body.rc-touch #rcgame .h-acts .h-btn.big{flex:1;min-height:46px;font-size:11px;padding:6px 10px}body.rc-touch #rcgame .h-acts .h-btn.alt.sm{flex:none;min-height:36px;font-size:10px;padding:4px 8px;background:none;box-shadow:none;border:0;text-decoration:underline;opacity:.75;color:#5a3a08}body.rc-touch #rcgame .hud.chatopen .h-dos{width:calc(100% - min(330px,44vw) - 14px)}',
     'body.rc-touch #rcgame .h-pn,body.rc-touch #rcgame .h-dos,body.rc-touch #rcgame .h-jr{overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y}',
     'body.rc-touch #rcgame button,body.rc-touch #rcgame .h-btn{min-height:44px}',
     // ===== touch20: escala proporcionada en pantallas bajas (ver NOTES-touch20.md) =====
@@ -104,9 +117,10 @@
       '§.h-jf{flex:none;padding:4px 12px 5px;gap:10px;min-height:0;font-size:15px;background:#d8c38f;border-top:2px solid #a0805099}§.h-jf .jbar{font-size:15px;gap:8px}§.h-jf .h-mb{width:96px}§.h-jf button{font-size:20px;padding:2px 14px;min-height:40px;border-width:2px;box-shadow:0 3px 0 #2a2540}',
       '§.h-note{font-size:9px}§.h-xw h4{font-size:9px}§.h-sep{font-size:9px}§.h-acts .h-btn{font-size:9px}',
       // ---- chat
-      '§.h-chat.open{--h-fs:.9;width:min(380px,52vw);top:calc(32px*var(--u,1));height:calc(100% - 36px*var(--u,1))}§.h-chat.open .h-ch{padding:3px 8px;font-size:8px}§.h-chat.open .h-m .tx{font-size:12.5px}§.h-chat.open .h-chips button{font-size:11px;padding:2px 8px;min-height:32px}§.h-chat.open .h-in{padding:4px}§.h-chat.open .h-g .av,§.h-chat.open .h-m .av{width:34px}',
+      '§.h-chat.open{top:calc(34px*var(--u,1));bottom:4px}§.h-chat.open .h-ch{min-height:32px;font-size:8px}§.h-chat.open .h-cx{height:32px}§.h-chat.open .h-chips button{min-height:40px;font-size:13px}§.h-chat.open .h-in input,§.h-chat.open .h-in .h-btn{min-height:42px}',
       // ---- cuaderno (J), pausa, mapa, tarjeta ENCONTRASTE, minijuegos
       '§.h-dos{top:0;bottom:2px;left:3px;width:min(560px,100%)}§.h-dh{padding:4px 10px;font-size:9px}§.h-tabs{padding:4px 6px 0}§.h-tabs button{padding:4px 2px;font-size:9px;min-height:36px}§.h-db{padding:6px;gap:6px}§.h-ic1 .t{font-size:12px}§.h-ic1 .x{font-size:12px;margin:2px 0 4px}§.h-empty{padding:12px;font-size:12px}',
+      '§.h-dh{padding:2px 10px}§.h-dh .x{width:44px;height:34px}§.h-tabs button{min-height:30px;padding:2px}§.h-db{padding:6px 8px;gap:6px}§.h-gh{margin:0}§.h-ic1{padding:6px 10px 7px}§.h-ic1 .t{font-size:14px}§.h-ic1 .x{font-size:13px;margin:2px 0 2px;line-height:1.3}§.h-ic1 .us{font-size:12.5px;margin-top:1px}§.h-ic1 .sh{font-size:7px}§.h-acts{margin-top:4px}§.h-acts .h-btn.big{min-height:40px;padding:4px 10px;font-size:10px}§.h-acts .h-btn.alt.sm{min-height:32px}',
       '§.h-pm{width:min(440px,96%);padding:6px 10px;display:grid;grid-template-columns:1fr 1fr;gap:4px 8px;align-items:center;border-width:2px}§.h-pm>*{margin:0}§.h-pm .h-btn,§.h-pm button{padding:4px 6px;font-size:9px;min-height:38px}§.h-pm h2,§.h-pm .t{grid-column:1/-1;font-size:11px;text-align:center}',
       '§.h-fcard{left:50%;transform:translateX(-50%);bottom:auto;top:calc(36px*var(--u,1));width:min(320px,94%);padding:5px 12px}§.h-fcard .k{font-size:8px}§.h-fcard .t{font-size:13px;margin:1px 0}§.h-fcard .x{font-size:11px}§.h-fcard .u{margin-top:2px;font-size:10px}',
       '§.h-big{top:calc(50% + 15px);max-width:calc(100% - 12px);padding:4px}§.h-big canvas{max-height:calc(100vh - 124px);width:auto!important;max-width:100%;margin:0 auto}§.h-big .bt span{font-size:11px!important}§.h-big .bt button{min-height:34px!important;width:34px;padding:0}§.h-big .mpz span{padding:2px;font-size:10px}§.h-big .mpr{font-size:10px}',
@@ -120,7 +134,7 @@
       '§.final{gap:.4em}§.grade{font-size:clamp(36px,12vh,56px)}§.fhero .pt,§.fhero .pt canvas{width:72px!important;height:72px!important}§.fhead{font-size:clamp(20px,6vh,30px)!important}§.fhero .mut{font-size:12px!important;margin:.1em 0 .3em!important}§.fates{grid-template-columns:repeat(4,minmax(0,1fr));gap:.4em}§.fate{padding:.3em;gap:.2em;font-size:11px}§.fate .pt canvas{width:56px!important;height:56px!important}§.final .panel{padding:.5em .8em}§.final .row .btn{min-height:40px}',
     ].join('\n').replace(/§/g, 'body.rc-touch #rcv3 ') + '}',
     // botones tactiles del juego (no usan §): sin solaparse entre si ni con la rueda a ~270 px
-    '@media (max-height:320px){#rc-tc .top button{width:64px;height:30px;font-size:8px}#rc-tc [data-t=tab],#rc-tc [data-t=esc]{--y:32px}#rc-tc [data-t=j],#rc-tc [data-t=r]{--y:66px}#rc-tc [data-t=t]{--y:100px}#rc-tc [data-k=e]{width:72px;height:72px;font-size:24px}#rc-tc [data-k=jump]{width:58px;height:58px;right:calc(max(12px,env(safe-area-inset-right)) + 84px)}#rc-tc [data-k=q]{width:44px;height:44px;font-size:16px;bottom:calc(max(12px,env(safe-area-inset-bottom)) + 80px);right:calc(max(12px,env(safe-area-inset-right)) + 14px)}#rc-tc .skip{top:34px}}',
+    '@media (max-height:320px){body.rc-touch #rcgame .h-chat.open{top:30px}body.rc-touch #rcgame .h-chat.open .h-ch,body.rc-touch #rcgame .h-chat.open .h-cx{min-height:28px;height:28px}body.rc-touch #rcgame .h-chat.open .h-chips{gap:3px;padding:3px 6px}body.rc-touch #rcgame .h-chat.open .h-chips button{min-height:34px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}body.rc-touch #rcgame .h-chat.open .h-in input,body.rc-touch #rcgame .h-chat.open .h-in .h-btn{min-height:38px}body.rc-touch .h-mg .dp button{height:44px}body.rc-touch .h-mg .sc{height:50px;object-fit:cover}body.rc-touch #rcgame .h-mg{top:calc(50% + 14px);padding-top:4px;padding-bottom:3px}body.rc-touch .h-mg .mgx{height:26px}#rc-tc .top button{width:64px;height:30px;font-size:8px}#rc-tc [data-t=tab],#rc-tc [data-t=esc]{--y:32px}#rc-tc [data-t=j],#rc-tc [data-t=r]{--y:66px}#rc-tc [data-t=t]{--y:100px}#rc-tc [data-k=e]{width:82px;height:82px;font-size:30px;bottom:max(8px,env(safe-area-inset-bottom))}#rc-tc [data-k=jump]{width:50px;height:50px;font-size:7px;bottom:max(10px,env(safe-area-inset-bottom));right:calc(max(10px,env(safe-area-inset-right)) + 94px)}#rc-tc [data-k=q]{width:44px;height:44px;font-size:16px;bottom:calc(max(8px,env(safe-area-inset-bottom)) + 92px);right:calc(max(10px,env(safe-area-inset-right)) + 19px)}#rc-tc .skip{top:34px}}',
     '@media (max-height:320px){' + [
       '§.rcard>.lab,§.rcard>.sbox~.mut{display:none}§.rcard canvas.big{width:44px!important;height:44px!important}§.rcard h1{font-size:18px}§.rcard{gap:.25em}§.sbox{padding:.25em .6em}§.lobby{gap:.3em!important;padding:6px 10px!important}§.lobby h2{font-size:14px}§.lobby>.panel>.mut{display:none}§.lobby .btn,§.lobby .chip{min-height:38px}§.mlist .btn{min-height:40px}§.mod label{margin:.1em 0}§.mod .panel{padding:.3em .9em}§.mod h2{font-size:14px}§.lobby>.panel .lab{display:none}§.rc canvas{width:36px!important;height:36px!important}',
     ].join('\n').replace(/§/g, 'body.rc-touch #rcv3 ') + '}',
@@ -154,14 +168,11 @@
   });
   tc.querySelectorAll('button[data-t]').forEach(function (b) { b.addEventListener('pointerdown', function (e) { e.preventDefault(); tap(b.dataset.t); }); });
   // ruedita flotante: el dedo empieza en cualquier punto de la mitad izquierda inferior; 8 direcciones + zona muerta; borde = correr
-  var jz = tc.querySelector('#rc-js'), jb = jz.firstChild, jk = jb.lastChild, jid = null, ox = 0, oy = 0, R = 46, cur = {}, upT = 0;
+  var jz = tc.querySelector('#rc-js'), jb = jz.firstChild, jk = jb.lastChild, jid = null, ox = 0, oy = 0, R = 46, cur = {};
   function jrest() { var r = jz.getBoundingClientRect(); jb.style.left = Math.max(70, r.width * .16) + 'px'; jb.style.top = (r.height - 80) + 'px'; jk.style.transform = ''; }
   function jset(d, on) {
     if (!!cur[d] === on) return; cur[d] = on; jb.querySelector('[data-d=' + d + ']').classList.toggle('a', on);
-    if (d !== 'up') { on ? press(d) : rel(d); return; }
-    clearTimeout(upT); if (!on) { rel('up'); rel('jumpj'); return; }
-    press('up'); // salto con retraso de 40 ms: si Mateo agarra una cuerda, subir no debe soltarla de un salto
-    upT = setTimeout(function () { var E = W.Engine && Engine.current, b = E && E.bodies && E.bodies[E.active]; if (cur.up && !(b && b.climb)) press('jumpj'); }, 40);
+    on ? press(d) : rel(d); // arriba = trepar (cuerdas/pared); el salto es solo el boton SALTAR
   }
   function jmove(x, y) {
     var dx = x - ox, dy = y - oy, d = Math.hypot(dx, dy), k = d > R ? R / d : 1;
@@ -206,12 +217,27 @@
   }
 
   // visibilidad segun lo que haya en pantalla
-  var q = function (s) { return D.querySelector(s); };
+  var q = function (s) { return D.querySelector(s); }, ctb = tc.querySelector('[data-t=t]');
+  // teclado virtual: con el campo del chat enfocado y el viewport visual bajo, el chat se recoloca encima (CSS body.rc-kb + --vvt/--vvh)
+  var vv = W.visualViewport, base = W.innerHeight, kbOn = false;
+  function kbd() {
+    var f = D.activeElement, foc = !!(f && f.matches && f.matches('#rcgame .h-chat input')), h = Math.min(vv ? vv.height : W.innerHeight, W.innerHeight);
+    if (!foc) base = Math.max(h, W.innerHeight);
+    var on = foc && h < base * .8, r = D.documentElement.style;
+    r.setProperty('--vvh', (vv ? vv.height : W.innerHeight).toFixed(1)); r.setProperty('--vvt', (vv ? vv.offsetTop : 0).toFixed(1));
+    if (on !== kbOn) { kbOn = on; B.classList.toggle('rc-kb', on); var lg = q('#rcgame .h-log'); lg && requestAnimationFrame(function () { lg.scrollTop = lg.scrollHeight; }); }
+  }
+  if (vv) { vv.addEventListener('resize', kbd); vv.addEventListener('scroll', kbd); } W.addEventListener('resize', kbd); D.addEventListener('focusin', kbd); D.addEventListener('focusout', function () { setTimeout(kbd, 50); });
+  // tocar fuera del chat lo cierra (el boton CERRAR de la izquierda tambien)
+  D.addEventListener('pointerdown', function (e) {
+    var c = q('#rcgame .h-chat.open'); if (!c || c.contains(e.target) || (e.target.closest && e.target.closest('#rc-tc'))) return;
+    e.preventDefault(); e.stopPropagation(); W.Hud && Hud.closeChat();
+  }, true);
   function vis() {
     var g = q('#rcgame'), game = g && g.style.display !== 'none', ui = q('#rcv3 .scr.on, #rcv3 .mod'), hud = q('#rcgame .hud');
     var full = !game || ui || B.classList.contains('rc-dlg') || q('#rcgame .h-mg, #rcgame .h-jr, #rcgame .h-pn, #rcgame .h-big, #rcgame .h-dos.open, #rcgame .h-pause.open, #rcgame .h-hb') || (hud && /\b(modal|dlg)\b/.test(hud.className));
     var chat = q('#rcgame .h-chat.open'), cs = !!(game && !ui && W.Engine && Engine.isCutscene && Engine.isCutscene() && !(W.Net && Net.role === 'client')), show = !!game && !ui && !full && !chat;
-    tc.classList.toggle('fs', show && !isFs() && (!!rfs || ios)); D.querySelectorAll('[data-fs]').forEach(function (x) { isFs() && x.remove(); }); var cn = q('#rcv3 .menu .corner'); if (cn && !isFs() && (rfs || ios) && !cn.querySelector('[data-fs]')) fsBtn(cn, 'btn sec'); var pm = q('#rcgame .h-pause.open .h-pm'); if (pm && !pm.querySelector('[data-fs]') && !isFs() && (rfs || ios)) fsBtn(pm, 'h-btn alt'); tc.classList.toggle('cs', cs); if (show && !tc.classList.contains('on')) { tc.classList.add('on'); jrest(); } tc.classList.toggle('on', show || cs); if (!show) releaseAll();
+    tc.classList.toggle('fs', show && !isFs() && (!!rfs || ios)); D.querySelectorAll('[data-fs]').forEach(function (x) { isFs() && x.remove(); }); var cn = q('#rcv3 .menu .corner'); if (cn && !isFs() && (rfs || ios) && !cn.querySelector('[data-fs]')) fsBtn(cn, 'btn sec'); var pm = q('#rcgame .h-pause.open .h-pm'); if (pm && !pm.querySelector('[data-fs]') && !isFs() && (rfs || ios)) fsBtn(pm, 'h-btn alt'); tc.classList.toggle('cs', cs); if (show && !tc.classList.contains('on')) { tc.classList.add('on'); jrest(); } var co = !!(game && !ui && chat && !cs && !q('#rcgame .h-dos.open')); tc.classList.toggle('chatop', co); ctb.textContent = co ? '✕ CERRAR' : 'CHAT'; tc.classList.toggle('on', show || cs || co); if (!show) releaseAll(); kbd();
   }
   setInterval(vis, 150);
   W.addEventListener('blur', releaseAll); W.addEventListener('resize', function () { jid === null && jrest(); }); W.matchMedia && W.matchMedia('(orientation:portrait)').addEventListener && W.matchMedia('(orientation:portrait)').addEventListener('change', releaseAll);

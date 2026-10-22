@@ -355,7 +355,7 @@
     '.h-chips{display:flex;flex-wrap:wrap;gap:5px;padding:6px 8px;flex:none;max-height:66px;overflow:hidden}.h-chips button{flex:none;white-space:nowrap;background:#241c46;border:1px solid var(--h-violet);border-radius:14px;padding:5px 10px;font-size:calc(12.5px*var(--h-fs));color:var(--h-ink);transition:background .1s,transform .1s}.h-chips button:hover{background:#3b2f66;transform:translateY(-1px)}',
     '.h-in{display:flex;gap:6px;padding:8px;border-top:2px solid var(--h-line);flex:none}.h-in input{flex:1;min-width:0;background:#0a0716;border:2px solid var(--h-line);border-radius:6px;padding:9px 10px;color:var(--h-ink);font-family:var(--h-ui);font-size:calc(15px*var(--h-fs));outline:0;user-select:text}.h-in input:focus{border-color:var(--h-amber);box-shadow:0 0 0 3px #f2a93b33}.h-in .h-btn{padding:0 12px}',
     '.h-newmsg{position:sticky;bottom:0;align-self:center;background:var(--h-amber);color:#2a1606;font-size:12px;font-weight:700;padding:4px 12px;border-radius:12px;cursor:pointer;box-shadow:0 3px 0 #7a4308;display:none}',
-    '.h-chat.min{transform:translateX(calc(100% - 44px))}.h-chat.min .h-log,.h-chat.min .h-in,.h-chat.min .h-chips,.h-chat.min .h-typ{visibility:hidden}.h-chat.min .h-ch .tg{display:none}',
+    '.h-cx{display:none}.h-chat.min{transform:translateX(calc(100% - 44px))}.h-chat.min .h-log,.h-chat.min .h-in,.h-chat.min .h-chips,.h-chat.min .h-typ{visibility:hidden}.h-chat.min .h-ch .tg{display:none}',
     /* cuaderno */
     '.h-dos{position:absolute;left:8px;top:84px;bottom:8px;width:min(420px,calc(100% - var(--h-chatw) - 24px));display:flex;flex-direction:column;background:linear-gradient(#2a2038,#1a1330);border:3px solid var(--h-amber);border-radius:8px;box-shadow:0 0 0 3px #000,0 8px 0 #07040f,0 0 50px #000c;pointer-events:auto;transform:translateX(-120%);transition:transform .35s cubic-bezier(.2,1,.3,1);z-index:6}.h-dos.open{transform:none}',
     '.h-dh{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:2px solid var(--h-line);font-family:var(--h-px);font-size:calc(11px*var(--h-fs));color:var(--h-amber2)}.h-dh .x{margin-left:auto;background:none;border:0;font-size:20px;padding:2px 8px}',
@@ -612,6 +612,7 @@
 .h-fcard .k{font-family:var(--h-px);font-size:calc(9px*var(--h-fs));color:var(--h-amber)}.h-fcard .t{font-weight:800;font-size:calc(17px*var(--h-fs));color:var(--h-amber2);margin:4px 0 2px}.h-fcard .x{font-size:calc(14px*var(--h-fs));color:var(--h-ink)}.h-fcard .u{margin-top:6px;font-size:calc(14px*var(--h-fs));color:var(--h-ink);border-top:2px solid var(--h-line);padding-top:6px}.h-fcard .u b{color:var(--h-amber2)}
 .h-brief{margin:10px 14px 0;padding:8px 12px;border-left:4px solid var(--h-amber);background:#0e0a1d;font-size:calc(15px*var(--h-fs));line-height:1.4}.h-brief b{display:block;font-family:var(--h-px);font-weight:400;font-size:calc(9px*var(--h-fs));color:var(--h-amber2);margin-bottom:4px}
 .h-ic1 .us{margin-top:6px;font-size:calc(14px*var(--h-fs));font-weight:700;color:#5a3a08}.h-ic1 .us b{color:#9b3a12}
+.h-ic1 .ih{display:flex;align-items:flex-start;gap:8px}.h-ic1 .ih .t{flex:1;min-width:0}.h-ic1 .sh{position:static;flex:none;margin-top:2px;white-space:nowrap}.h-ic1 .sh.nu{background:#d33;color:#fff}.h-ic1.shd .sh:not(.nu){transform:rotate(-4deg);border:2px solid #1c7a4a;background:#e3f6e9;color:#1c7a4a}.h-ic1 .h-rel{margin-top:3px}.h-acts .h-btn.big{font-size:calc(9px*var(--h-fs));padding:10px 12px}.h-ic1.shd .h-acts .h-btn.big:not(:hover){background:#e6d6aa;color:#2a1c0a;box-shadow:0 3px 0 #8a7544}
 /* v10 */
 .h-ch .ttl{min-width:0;overflow:hidden;text-overflow:ellipsis}.h-ch .tg{flex:none}.h-big .bt{color:var(--h-amber2)}
 .hud.modal .h-mini,.hud.dlg .h-mini{visibility:hidden}.h-fcard{bottom:176px}.hud:has(.h-dos.open) .h-now,.hud:has(.h-dos.open) .h-mini{visibility:hidden}
@@ -657,9 +658,9 @@
         '<button class="h-btn alt" data-act="dossier" title="Cuaderno de Intel (J)">' + '<span class="bk">' + BOOK + '</span><span class="bl"><b>CUADERNO</b><kbd>J</kbd></span><span class="h-badge" style="display:none"></span><span class="h-lee" style="display:none">Léelas ↓</span></button>' +
         '<button class="h-btn alt ic" data-act="mini" title="Mapa (M)">M</button><button class="h-btn alt ic" data-act="help" title="Ayuda (H)">?</button>' +
         '<button class="h-btn alt ic" data-act="pause" title="Pausa (Esc)">II</button></div></div>' +
-      '<div class="h-chat"><div class="h-ch" data-act="chatmin">' + icon('chat', 14) + '<span class="ttl"> CHAT DEL EQUIPO</span><span class="tg"><kbd>T</kbd><span class="cv"></span><span class="h-badge" style="display:none;position:static"></span></span></div>' +
+      '<div class="h-chat"><div class="h-ch" data-act="chatmin">' + icon('chat', 14) + '<span class="ttl"> CHAT DEL EQUIPO</span><button type="button" class="h-cx" data-act="chatclose" aria-label="Cerrar chat">✕</button><span class="tg"><kbd>T</kbd><span class="cv"></span><span class="h-badge" style="display:none;position:static"></span></span></div>' +
         '<div class="h-logw"><div class="h-log" role="log" aria-live="polite"></div><button type="button" class="h-newmsg" data-act="newmsg">Mensajes nuevos ↓</button></div><div class="h-typ"></div><div class="h-chips"></div>' +
-        '<form class="h-in" autocomplete="off"><input type="text" maxlength="220" placeholder="Escribe al equipo…" aria-label="Mensaje al equipo"><button class="h-btn teal" type="submit">ENVIAR</button></form></div>' +
+        '<form class="h-in" autocomplete="off"><input type="text" maxlength="220" placeholder="Escribe al equipo…" aria-label="Mensaje al equipo" enterkeyhint="send"><button class="h-btn teal" type="submit">ENVIAR</button></form></div>' +
       '<div class="h-fx"></div><div class="h-vig"></div><div class="h-dlg"></div><div class="h-pause"></div>';
     host.appendChild(root);
     var fr = img('ui_frame'); if (fr) root.style.setProperty('--h-frame', 'url(' + fr + ')');
@@ -1318,7 +1319,7 @@
       var last = data.last || (P && P.round >= 5);
       var p = openPanel('summary', '<div class="h-ph1">' + icon('trofeo', 26) + '<div><h2>' + esc(data.title || ('RESUMEN DEL TRAMO ' + (data.round || (P && P.round) || ''))) + '</h2><div class="sub">' + esc(data.subtitle || 'Así ha ido el tramo') + '</div></div></div>' +
         '<div class="h-pb"><div class="h-rows"></div><div class="h-total" style="visibility:hidden"><span class="nm">PUNTOS DEL TRAMO</span><span class="v">0</span></div><ul class="h-notes"></ul></div>' +
-        '<div class="h-foot"><span class="l"></span><button class="h-btn" data-act="cont" disabled>' + (last ? 'VER FINAL ▶' : 'SIGUIENTE TRAMO ▶') + '</button></div>');
+        '<div class="h-foot"><span class="l"></span><button class="h-btn" data-act="cont" disabled>' + (data.wait ? 'Esperando al anfitrión…' : last ? 'VER FINAL ▶' : 'SIGUIENTE TRAMO ▶') + '</button></div>');
       var rows = p.querySelector('.h-rows'), tot = 0, skip = false;
       p.addEventListener('click', function (e) { if (!e.target.closest('.h-mn')) skip = true; });
       var S = function (ms) { return skip ? Promise.resolve() : sleep(ms); };
@@ -1337,10 +1338,10 @@
         sparks(.5, .55, 12);
         var ul = p.querySelector('.h-notes'); (data.notes || []).forEach(function (n) { var li = D.createElement('li'); li.textContent = n; ul.appendChild(li); });
         (data.achievements || []).forEach(function (a, k) { setTimeout(function () { achievement(a); }, 400 + k * 900); });
-        var b = p.querySelector('[data-act=cont]'); b.disabled = false; b.classList.add('pulse');
+        var b = p.querySelector('[data-act=cont]'); if (!data.wait) { b.disabled = false; b.classList.add('pulse'); } // wait: el anfitrión avanza; onPhase cierra este panel
       })();
       p._abort = function () { if (!p._done) { p._done = true; done(); } };
-      p._end = function () { if (p._done) return; p._done = true; closePanel(); done(); };
+      p._end = function () { if (p._done || data.wait) return; p._done = true; closePanel(); done(); };
     });
   }
 
@@ -1412,7 +1413,7 @@
   function setChat(open) {
     if (isMobile()) { el.chat.classList.toggle('open', open); el.chat.classList.remove('min'); root.classList.remove('chatmin'); root.classList.toggle('chatopen', open); }
     else { el.chat.classList.toggle('min', !open); el.chat.classList.remove('open'); root.classList.toggle('chatmin', !open); if (cb.insets) setTimeout(function () { cb.insets(getInsets()); }, 0); }
-    if (open) { unread = 0; requestAnimationFrame(function () { el.log.scrollTop = el.log.scrollHeight; }); }
+    if (open) { unread = 0; requestAnimationFrame(function () { el.log.scrollTop = el.log.scrollHeight; }); } else if (el.input && D.activeElement === el.input) el.input.blur();
     badge();
   }
   function chatOpen() { return isMobile() ? el.chat.classList.contains('open') : !el.chat.classList.contains('min'); }
@@ -1432,18 +1433,18 @@
   }
   function closeDossier() { if (!el.dos.classList.contains('open')) return; el.dos.classList.remove('open'); editing = null; snd('close'); }
   function renderDossier() {
-    var intel = (V && V.intel) || [], tabs = [['intel', 'INTEL'], ['secreto', 'SECRETO'], ['objetivo', 'OBJETIVO'], ['hallazgos', 'HALLAZGOS']];
+    var intel = (V && V.intel) || [], tabs = [['intel', 'PISTAS'], ['secreto', 'SECRETO'], ['objetivo', 'OBJETIVO'], ['hallazgos', 'HALLAZGOS']];
     var body = '';
     if (dossierTab === 'intel') {
-      if (!intel.length) body = '<div class="h-empty">Sin tarjetas · <kbd>E</kbd></div>';
+      if (!intel.length) body = '<div class="h-empty">Aún no hay pistas. Examina cosas con <kbd>E</kbd>.</div>';
       else {
         var rounds = {}; intel.forEach(function (c) { (rounds[c.round] = rounds[c.round] || []).push(c); });
         Object.keys(rounds).sort(function (a, b) { return b - a; }).forEach(function (r) {
           body += '<div class="h-gh">TRAMO ' + r + '</div>';
           rounds[r].forEach(function (c) {
             var isNew = intel.indexOf(c) >= newFrom, ri = relInfo(c.reliability), isEd = editing === c.id;
-            body += '<div class="h-ic1 ' + ri.cls + '">' + (isNew ? '<span class="sh" style="background:#d33;color:#fff;left:8px;right:auto">NUEVO</span>' : '') + (c.shared ? '<span class="sh">COMPARTIDA</span>' : '') + '<div class="t">' + poiIcon(c.icon || 'info', 18) + esc(c.title) + '</div><div class="x">' + esc(c.text) + '</div>' + ((c.uses || c.use) ? '<div class="us"><b>Sirve para:</b> ' + esc(c.uses || c.use) + '</div>' : '') + relHtml(c.reliability) +
-              '<div class="h-acts" style="margin-top:8px"><button class="h-btn" data-act="share" data-id="' + esc(c.id) + '">' + icon('radio', 14) + ' Contárselo al equipo</button><button class="h-btn alt sm" data-act="edit" data-id="' + esc(c.id) + '">✏️ Cambiar y contar</button></div>' +
+            body += '<div class="h-ic1 ' + ri.cls + (c.shared ? ' shd' : '') + (isNew ? ' nw' : '') + '"><div class="ih"><div class="t">' + poiIcon(c.icon || 'info', 18) + esc(c.title) + '</div>' + (isNew ? '<span class="sh nu">NUEVA</span>' : '') + (c.shared ? '<span class="sh">✔ CONTADA</span>' : '') + '</div>' + relHtml(c.reliability) + '<div class="x">' + esc(c.text) + '</div>' + ((c.uses || c.use) ? '<div class="us"><b>Sirve para:</b> ' + esc(c.uses || c.use) + '</div>' : '') +
+              '<div class="h-acts"><button class="h-btn big" data-act="share" data-id="' + esc(c.id) + '">' + icon('radio', 14) + (c.shared ? ' CONTAR OTRA VEZ' : ' CONTAR AL EQUIPO') + '</button><button class="h-btn alt sm" data-act="edit" data-id="' + esc(c.id) + '">✏ con cambios</button></div>' +
               (isEd ? '<div class="h-edit"><textarea data-ta="' + esc(c.id) + '" maxlength="300">' + esc(c.text) + '</textarea><div class="w">⚠ Cambiar el texto es MENTIR. Si el equipo lo descubre, perderás confianza (pero puedes ganar si cuela).</div><div class="h-acts"><button class="h-btn red" data-act="sendlie" data-id="' + esc(c.id) + '">' + icon('alerta', 14) + ' Enviar versión alterada</button><button class="h-btn alt" data-act="canceledit">Cancelar</button></div></div>' : '') + '</div>';
           });
         });
@@ -1584,7 +1585,7 @@
     }
     if (paused) return;
     var lk = k.toLowerCase();
-    if (lk === 't' || k === 'Enter') { e.preventDefault(); setChat(true); el.input.focus(); }
+    if (lk === 't' || k === 'Enter') { e.preventDefault(); if (D.body.classList.contains('rc-touch')) setChat(lk === 't' ? !chatOpen() : true); else { setChat(true); el.input.focus(); } } // táctil: T abre/cierra sin sacar el teclado
     else if (lk === 'j') { el.dos.classList.contains('open') ? closeDossier() : openDossier(); }
     else if (lk === 'h') toggleHelp();
     else if (lk === 'o') toggleGoals();
@@ -1628,7 +1629,8 @@
       case 'ability': if (abilO && abilO.ready === false) { snd('error'); } if (cb.ability) cb.ability(); break;
       case 'ask': var hx = helpO && helpO[+t.dataset.i]; if (hx && hx.enabled !== false && cb.ask) cb.ask(hx.role, hx.gateId); break;
       case 'chatmin': setChat(!chatOpen()); break;
-      case 'chatfocus': setChat(true); el.input.focus(); break;
+      case 'chatfocus': setChat(true); if (!D.body.classList.contains('rc-touch')) el.input.focus(); break;
+      case 'chatclose': setChat(false); break;
       case 'help': toggleHelp(); break;
       case 'mini': miniUser = !el.mini.classList.contains('on'); if (!miniUser) closeBig(); drawMini(); break;
       case 'bigmap': toggleBig(); break;
@@ -1675,7 +1677,7 @@
     setTimeout(function () { ctl.stop(); n.classList.add('out'); setTimeout(function () { n.remove(); }, 320); }, ms);
   }
   function tch(t) { // movil: sin teclas en los textos
-    var M = { 'ESPACIO': 'TOCA AL ACERTAR', 'MACHACA E': 'TOCA RÁPIDO', 'MANTÉN E · SUELTA PARA BAJAR': 'MANTÉN EL DEDO · SUELTA PARA BAJAR', 'FLECHAS / WASD': 'TOCA LAS FLECHAS' };
+    var M = { 'ESPACIO': 'TOCA EN CUALQUIER PARTE', 'MACHACA E': 'TOCA RÁPIDO EN CUALQUIER PARTE', 'MANTÉN E · SUELTA PARA BAJAR': 'MANTÉN EL DEDO EN LA PANTALLA', 'FLECHAS / WASD': 'TOCA LAS FLECHAS' };
     return D.body.classList.contains('rc-touch') ? M[t] || String(t).replace('W A S D o las flechas', '◀ ▶').replace('Pulsa E', 'Toca E').replace('con las teclas 1, 2, 3', 'tocando su tarjeta').replace(/\bPulsa\b/, 'Toca') : t;
   }
   function paintCoach() {
@@ -1948,19 +1950,27 @@
     var dur = clamp({ timing: 4.5, mash: 4, hold: 7, sequence: 5 }[kind] - (lv - 1) * (kind === 'hold' ? .5 : .4), 2, 7);
     return new Promise(function (res) {
       var box = D.createElement('div'); box.className = 'h-mg ' + kind + (th ? ' th' : '');
-      box.innerHTML = '<div class="mh">' + jIcon(ic, 28) + '<b>' + esc(cut(title, 18)) + '</b><span class="lv">' + '★★★'.slice(0, lv) + '</span><span class="tm">' + dur.toFixed(1) + '</span></div><div class="tb"><i></i></div><div class="mb"></div><div class="mf">' + esc(tch(K[2])) + '</div>';
+      box.innerHTML = '<div class="mh">' + jIcon(ic, 28) + '<b>' + esc(cut(title, 18)) + '</b><span class="lv">' + '★★★'.slice(0, lv) + '</span><span class="tm">' + dur.toFixed(1) + '</span><button type="button" class="mgx" aria-label="Cancelar">✕</button></div><div class="tb"><i></i></div><div class="mb"></div><div class="mf">' + esc(tch(K[2])) + '</div>';
       root.appendChild(box); snd('tick');
+      // táctil: capa a pantalla completa bajo el minijuego; tocar en cualquier parte = Espacio/E (mantener el dedo = mantener E)
+      var cap = null, capIds = {};
+      if (D.body.classList.contains('rc-touch')) {
+        cap = D.createElement('div'); cap.className = 'h-mgcap'; root.insertBefore(cap, box);
+        cap.addEventListener('pointerdown', function (e) { e.preventDefault(); e.stopPropagation(); if (done) return; try { cap.setPointerCapture(e.pointerId); } catch (x) { } capIds[e.pointerId] = 1; if (kind !== 'sequence' && performance.now() - t0 >= 120) press(false); });
+        var capUp = function (e) { delete capIds[e.pointerId]; if (!done && !Object.keys(capIds).length) rel(); };
+        cap.addEventListener('pointerup', capUp); cap.addEventListener('pointercancel', capUp);
+      }
       var mb = box.querySelector('.mb'), tmEl = box.querySelector('.tm'), tbI = box.querySelector('.tb i'), t0 = performance.now(), done = false, raf = 0, S = {}, upd = function () { }, press = function () { }, rel = function () { }, tkey = function () { };
       function pop(n, col, x, y) { if (red) n = Math.min(n, 3); for (var i = 0; i < n; i++) { var p = D.createElement('i'), a = Math.random() * 6.28, d = 30 + Math.random() * 50; p.className = 'pt'; p.textContent = i % 2 ? '★' : '✦'; p.style.cssText = 'left:' + x + '%;top:' + y + '%;color:' + col + ';--dx:' + Math.cos(a) * d + 'px;--dy:' + Math.sin(a) * d + 'px'; box.appendChild(p); setTimeout(function (q) { q.remove(); }.bind(null, p), 700); } }
       function fl(txt, x, y, col) { var f = D.createElement('em'); f.className = 'fl'; f.textContent = txt; f.style.cssText = 'left:' + x + '%;top:' + y + '%;color:' + (col || '#ffe08a'); box.appendChild(f); setTimeout(function () { f.remove(); }, 800); }
       function shake() { if (red) return; box.classList.remove('shk'); void box.offsetWidth; box.classList.add('shk'); }
       function end(result, score, quiet, why) {
         if (done) return; done = true; cancelAnimationFrame(raf); W.removeEventListener('keydown', kd, true); W.removeEventListener('keyup', ku, true); mgCur = null;
-        if (quiet === true) { box.remove(); return res({ result: 'fail', score: 0 }); }
+        if (quiet === true) { box.remove(); cap && cap.remove(); return res({ result: 'fail', score: 0 }); }
         var v = D.createElement('div'); v.className = 'vd ' + result; v.textContent = result === 'perfect' ? '¡PERFECTO!' : result === 'ok' ? 'Bien' : (why || 'Casi…'); box.appendChild(v); box.classList.add('end', result);
         if (result === 'perfect') { pop(14, '#ffd34d', 50, 50); snd('achievement'); mgStreak++; } else if (result === 'ok') { pop(6, '#9bffc0', 50, 50); snd('confirm'); mgStreak = 0; } else { shake(); snd('error'); mgStreak = 0; }
         if (o.streak !== false) setStreak(mgStreak);
-        setTimeout(function () { box.classList.add('out'); setTimeout(function () { box.remove(); res({ result: result, score: Math.round(clamp(score, 0, 100)) }); }, 160); }, 800);
+        setTimeout(function () { box.classList.add('out'); setTimeout(function () { box.remove(); cap && cap.remove(); res({ result: result, score: Math.round(clamp(score, 0, 100)) }); }, 160); }, 800);
       }
       function kd(e) {
         if (e.ctrlKey || e.metaKey || e.altKey) return; e.preventDefault(); e.stopImmediatePropagation(); var k = e.key.toLowerCase();
@@ -1970,7 +1980,7 @@
       }
       function ku(e) { e.preventDefault(); e.stopImmediatePropagation(); var k = e.key.toLowerCase(); if (!done && (k === ' ' || k === 'e' || k === 'enter')) rel(); }
       W.addEventListener('keydown', kd, true); W.addEventListener('keyup', ku, true);
-      box.addEventListener('pointerdown', function (e) { e.preventDefault(); e.stopPropagation(); var b = e.target.closest && e.target.closest('[data-d]'); if (done) return; if (b) tkey(b.dataset.d); else press(false); });
+      box.addEventListener('pointerdown', function (e) { e.preventDefault(); e.stopPropagation(); var b = e.target.closest && e.target.closest('[data-d]'); if (done) return; if (e.target.closest && e.target.closest('.mgx')) return end('fail', 0, false, 'Cancelado'); if (b) tkey(b.dataset.d); else press(false); });
       box.addEventListener('pointerup', function () { if (!done) rel(); }); box.addEventListener('pointercancel', function () { if (!done) rel(); }); box.addEventListener('click', function (e) { e.stopPropagation(); });
       mgCur = { end: function () { end('fail', 0, true); } };
       if (kind === 'timing') {
@@ -2038,6 +2048,7 @@
     '.h-mg .tb{height:6px;background:#26204a;border-radius:3px;overflow:hidden}.h-mg .tb i{display:block;height:100%;background:#ffb347}.h-mg.low .tb i{background:#ff5d5d}',
     '.h-mg .mb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;min-height:100px;gap:8px}',
     '.h-mg .mf{text-align:center;font-size:11px;color:#b9b0d8;letter-spacing:1px}',
+    '.h-mg .mgx{display:none}',
     '.h-mg .bar{position:relative;width:100%;height:30px;background:#0a0716;border:2px solid #5a4d96;border-radius:6px}.h-mg .bar.big{height:34px;overflow:hidden}',
     '.h-mg .zn{position:absolute;top:0;bottom:0;background:rgba(95,227,154,.45);border-left:2px solid #5fe39a;border-right:2px solid #5fe39a;box-sizing:border-box}.h-mg .zn u{position:absolute;left:50%;top:0;bottom:0;width:2px;margin-left:-1px;background:#ffd34d}',
     '.h-mg .cu{position:absolute;top:-5px;bottom:-5px;width:6px;margin-left:-3px;background:#fff;border-radius:2px;box-shadow:0 0 8px #fff}',
@@ -2096,7 +2107,7 @@
     closePanel: function () { closePanel(true); }, isTyping: typingNow, resetHelp: function () { helpSeen = {}; lsSet('rcv3_hudhelp', helpSeen); },
     reset: function () { setBlocked(null); this.chat.clear(); closePanel(true); closeDossier(); cur = { phase: null, round: 0 }; dispInit = false; waterLevelHit = 0; lastIntelLen = 0; intelSeen = 0; localReady = false; localVote = null; secretSel = null; secretSealed = false; P = null; V = null; nowOv = misOv = readyOv = null; nowKey = ''; airV = null; abilO = helpO = quickO = null; if (this.skipDialogue) this.skipDialogue(); setAir(null); paintAbil(); coachO = null; miniUser = true; sayQ = []; dlgHold = []; sayHold = []; if (el.sy) el.sy.innerHTML = ''; paintCoach(); },
     say: say, setCoach: setCoach,
-    onChat: function (f) { cb.chat = f; }, onShare: function (f) { cb.share = f; }, onVote: function (f) { cb.vote = f; }, onSecret: function (f) { cb.secret = f; },
+    closeChat: function () { setChat(false); }, isChatOpen: chatOpen, onChat: function (f) { cb.chat = f; }, onShare: function (f) { cb.share = f; }, onVote: function (f) { cb.vote = f; }, onSecret: function (f) { cb.secret = f; },
     onReady: function (f) { cb.ready = f; }, onExit: function (f) { cb.exit = f; }, onSettings: function (f) { cb.settings = f; }, onPause: function (f) { cb.pause = f; },
     onAbility: function (f) { cb.ability = f; }, onAsk: function (f) { cb.ask = f; }, onDialogue: function (f) { cb.dialogue = f; },
     onFx: function (f) { cb.fx = f; }, onChatFocus: function (f) { cb.focus = f; }, onTyping: function (f) { cb.typing = f; },

@@ -174,7 +174,7 @@
       if (jr) { // el diario es la pantalla unica de fin de tramo (resumen = respaldo)
         const sd = res && res.scoreDelta, dsum = typeof sd === 'number' ? sd : sd ? (sd.total != null ? sd.total : Object.keys(sd).reduce((a, k) => a + (+sd[k] || 0), 0)) : 0, last = Story.isOver(st);
         Hud.showJournal(Object.assign({}, jr, { secret, pts: { d: Math.round(dsum), t: st.score.total }, ach: achs(res), bar: { r: st.round, last }, cta: last ? 'VER FINAL ▸' : 'SIGUIENTE TRAMO ▸' })).then(after, after);
-      } else Hud.showSummary({ round: st.round, score: res ? res.scoreDelta : {}, total: st.score.total, secret, achievements: achs(res) }).then(after);
+      } else Hud.showSummary({ round: st.round, score: res ? res.scoreDelta : {}, total: st.score.total, secret, achievements: achs(res), wait: mode === 'client' }).then(after);
     }
     if (st.phase === 'final' && st.final && !shownFinal) {
       shownFinal = true; try { localStorage.setItem('rcv3_games', String((+localStorage.getItem('rcv3_games') || 0) + 1)); } catch (e) { }
@@ -257,7 +257,7 @@
         case 'summary':
           if (Story.isOver(st)) { st.final = await Story.finish(st, { role: myRole }); break; }
           { let tr = null; try { tr = Story.travelScene(st); } catch (e) { }
-            Story.advance(st);
+            Story.advance(st); if (mode === 'host') Net.broadcast('phase', { travel: 1 }); // los clientes cierran el resumen: pasan al viaje con el anfitrión
             if (tr && eng.playTravel) await new Promise(res => { let d = false; const fin = () => { if (!d) { d = true; try { Hud.hideTravel && Hud.hideTravel(); } catch (e) { } res(); } };
               try { Hud.setNow({ text: tr.caption || 'Viajan a la siguiente zona', sub: '', kind: 'info' }); Hud.showTravel && Hud.showTravel({ from: st.round - 1, to: st.round, kind: tr.kind }); } catch (e) { }
               const ok = eng.playTravel({ toZone: st.round, kind: tr.kind, outcome: tr.outcome, ms: st.quick ? 8500 : 11500, onShot: (i) => { try { Hud.setNow({ text: [tr.caption || 'Salen de la zona', 'Recorren el camino', 'Llegan a la nueva zona'][i] || '', sub: '', kind: 'info' }); } catch (e) { } } }, fin); if (ok === false) return fin();
@@ -354,7 +354,7 @@
       else if (s.phase !== 'intro') render();
     });
     Net.on('priv', d => { myPriv = d; if (st) render(); });
-    Net.on('phase', d => { if (d && d.note) { Hud.floatText(d.note, 'info'); snd(d.sfx || 'intel'); } });
+    Net.on('phase', d => { if (d && d.travel && mode === 'client') { Hud.closePanel(); try { Hud.setNow({ text: 'Viajan a la siguiente zona', sub: '', kind: 'info' }); } catch (e) { } } if (d && d.note) { Hud.floatText(d.note, 'info'); snd(d.sfx || 'intel'); } });
     Net.on('snapshot', s => { if (mode === 'client' && eng) eng.applySnapshot(s); });
     Net.on('cine', d => { if (mode === 'client' && d && d.act === 'skip') { try { UI.skipCine(); } catch (e) { } } });
     UI.on('cineskip', () => { if (Net.role === 'host') Net.broadcast('cine', { act: 'skip' }); });
