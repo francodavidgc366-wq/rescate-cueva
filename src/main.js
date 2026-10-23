@@ -126,7 +126,7 @@
   const KEYMAP = { ArrowLeft: 'left', a: 'left', ArrowRight: 'right', d: 'right', ArrowUp: 'up', w: 'up', ArrowDown: 'down', s: 'down', ' ': 'jump', e: 'interact', q: 'ability', Shift: 'run' };
   const kmap = e => KEYMAP[e.key.length > 1 ? e.key : e.key.toLowerCase()];
   const cur = () => (st && st.phase === 'explore' && !typing && !(Hud.isDialogue && Hud.isDialogue())) ? Object.assign({}, ZERO, keys) : ZERO;
-  function pushInput() { if (!st || !eng || !started) return; const i = cur(); if (isClient()) Net.send('input', i); else eng.setInput(myRole, i); }
+  function pushInput() { if (!st || !eng || !started) return; const i = cur(); if (isClient()) Net.send('input', i); eng.setInput(myRole, i); }
   addEventListener('keydown', e => { if (/INPUT|TEXTAREA/.test(e.target.tagName) || e.ctrlKey || e.metaKey) return; const k = kmap(e); if (k) { keys[k] = 1; if (st && st.phase === 'explore') e.preventDefault(); pushInput(); } });
   addEventListener('keydown', e => { if (!/INPUT|TEXTAREA/.test(e.target.tagName) && /^j$/i.test(e.key)) coachFlags.nb = true; });
   addEventListener('keydown', e => { if (st && st.phase === 'summary' && (e.key === ' ' || e.key === 'Enter') && !/INPUT|TEXTAREA/.test(e.target.tagName)) { const b = document.querySelector('#rcgame button[data-act=cont]:not([disabled])'); if (b) { e.preventDefault(); b.click(); } } });

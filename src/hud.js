@@ -916,7 +916,7 @@
     return z;
   }
   function drawMini() {
-    if (!el.mini || hidden || !P || el.mini.offsetParent === null) return; // minimapa oculto (p. ej. móvil): no dibujar
+    if (!el.mini || hidden || !P) return;
     var zn = 0; try { var e0 = W.RC && W.RC.eng && W.RC.eng(); zn = e0 && e0.getZone ? e0.getZone() : 0; } catch (e1) { }
     if (!(miniUser != null ? miniUser : zn >= 2)) { el.mini.classList.remove('on'); return; }
     var fn = miniFn; if (!fn) { var e = W.RC && W.RC.eng && W.RC.eng(); if (e && e.drawMinimap) fn = function (c, w, h, o) { return e.drawMinimap(c, w, h, o); }; }
@@ -1884,7 +1884,7 @@
   }
   function onTabUp(e) {
     if (e.key !== 'Tab' || !tabHold) return; e.preventDefault(); tabHold = false;
-    if (Date.now() - tabAt >= 250) closeBig();
+    if (Date.now() - tabAt >= 250 && !D.body.classList.contains('rc-touch')) closeBig(); // móvil: el mapa se cierra con ✕ o tocando MAPA otra vez
   }
   var tileIm = null;
   function mgScene(theme, mb, S) {

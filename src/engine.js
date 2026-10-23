@@ -1416,7 +1416,9 @@ function create(canvas, opts) {
     if (s.gs) s.gs.forEach(function (o, i) { var g0 = GT[i]; if (!g0) return; if (o && !g0.open) doOpen(g0, true); else if (!o && g0.open) { g0.open = false; g0.n = 0; setCells(g0.cells, g0.solid ? 1 : 0); navDirty(); } });
     Object.keys(s.p).forEach(function (id) {
       var q = s.p[id], b = bodies[id]; if (!b) return;
-      b.tx = q[0]; b.ty = q[1]; b.vx = q[2]; b.vy = q[3]; b.face = q[4]; b.anim = q[5]; b.exAnim = q[5]; b.cl = q[6]; b.role = q[7] || b.role; b.name = q[8] || b.name;
+      b.tx = q[0]; b.ty = q[1]; b.cl = q[6];
+      if (authority || id !== localId || !b.seen || b.cl) { b.vx = q[2]; b.vy = q[3]; b.face = q[4]; b.anim = q[5]; b.exAnim = q[5]; }
+      else b.face = b.inp && b.inp.left !== b.inp.right ? (b.inp.right ? 1 : -1) : b.face; b.role = q[7] || b.role; b.name = q[8] || b.name;
       if (q[9] !== undefined) b.air = q[9]; b.swim = !!q[10];
       if (!b.seen || Math.abs(b.tx - b.x) > 48 || Math.abs(b.ty - b.y) > 48) { b.x = b.tx; b.y = b.ty; b.seen = true; }
       if (authority) { b.x = b.tx; b.y = b.ty; }
@@ -1583,13 +1585,29 @@ function create(canvas, opts) {
     }
   }
 
+  /* v21: prediccion del cuerpo propio en el cliente: la fisica corre local (sin esperar al host) y el snapshot solo corrige.
+     shortcut: sin cuerdas ni cinematicas (ahi sigue al host); error > 28 px = ajuste suave, > 48 px = salto. */
+  function predictLocal(b) {
+    var inp = inputs[b.id] || NOINP; b.inp = inp;
+    if (cs || b.cl || b.bot || ropeAt(b) && (inp.up || inp.down)) return false;
+    var dir = (inp.right ? 1 : 0) - (inp.left ? 1 : 0), jp = inp.jump && !b.pj; b.pj = !!inp.jump;
+    if (dir && !b.pdir) b.dtap = (dir === b.ldir && tick - (b.lrel || -99) < 14); else if (!dir) { if (b.pdir) { b.lrel = tick; b.ldir = b.pdir; } b.dtap = false; }
+    b.pdir = dir; b.run = !!dir && (inp.run || b.dtap) && !b.swim;
+    if (jp) b.buf = 6; else if (b.buf > 0) b.buf--;
+    var wy = waterY(wlCur), inW = (b.y - 5) > wy; b.swim = (b.y - 9) > wy;
+    physStep(b, inp, dir, jp, inW, b.grounded);
+    var ex = b.tx - b.x, ey = b.ty - b.y, d = Math.hypot(ex, ey);
+    if (d > 48) { b.x = b.tx; b.y = b.ty; } else if (d > 28 || (!dir && b.grounded && d > 1)) { b.x += ex * 0.12; b.y += ey * 0.12; }
+    b.anim = b.interT > 0 ? 'interact' : !b.grounded ? (b.vy < 0 ? 'jump' : 'fall') : Math.abs(b.vx) > 0.3 && dir ? 'run' : 'idle'; b.exAnim = b.anim; b.fr++;
+    return true;
+  }
   /* ---------- tick global ---------- */
   function doTick() {
     tick++; if (tick % 6 === 0) mmExplore();
     wSlopeT = zoneSlope(); wSlope += clamp(wSlopeT - wSlope, -0.004, 0.004);
     if (authority) { syncBodies(); gateTick(); if (cs) csTick(); Object.keys(bodies).forEach(function (id) { tickBody(bodies[id]); for (var q = 1; cs && q < cs.sub; q++) tickBody(bodies[id]); }); separate(); writeBack(); }
     else {
-      Object.keys(bodies).forEach(function (id) { var b = bodies[id]; b.x += (b.tx - b.x) * 0.35; b.y += (b.ty - b.y) * 0.35; b.fr++; b.grounded = b.exAnim !== 'jump' && b.exAnim !== 'fall'; });
+      Object.keys(bodies).forEach(function (id) { var b = bodies[id]; if (id === localId && b.seen && predictLocal(b)) return; b.x += (b.tx - b.x) * 0.35; b.y += (b.ty - b.y) * 0.35; b.fr++; b.grounded = b.exAnim !== 'jump' && b.exAnim !== 'fall'; });
       if (!st() && false) return;
       if (cs) { cs.t++; if (cs.ft >= 0 && cs.ft < 20) cs.ft++; }
     }
@@ -2543,7 +2561,7 @@ function create(canvas, opts) {
     maxW = maxW || global.innerWidth; maxH = maxH || global.innerHeight;
     // v10: factor entero en PIXELES FISICOS (devicePixelRatio 1.25/1.5 con factor CSS entero daba pixeles desiguales = texto borroso)
     var dpr = global.devicePixelRatio || 1, f = Math.min(maxW * dpr / W, maxH * dpr / H), s = Math.max(1, Math.floor(f + 1e-6)), st = canvas.style;
-    if (s / f < 0.85) s = f;   // el factor entero dejaría el juego pequeño con barras: mejor llenar (pixelated, sin suavizado)
+    if (s / f < 0.999) s = f;   // el factor entero dejaría el juego pequeño con barras: mejor llenar (pixelated, sin suavizado)
     if (f < 1 || (global.document && global.document.body.classList.contains('rc-touch'))) s = f;   // movil: llenar la pantalla (fraccional)   // ventana menor que 320x180 fisicos: no queda otra que fraccionario
     st.width = W * s / dpr + 'px'; st.height = H * s / dpr + 'px'; st.flex = 'none'; st.maxWidth = 'none'; st.imageRendering = 'pixelated';
     return s / dpr;
