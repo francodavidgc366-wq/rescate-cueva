@@ -37,12 +37,23 @@
   // Misión v5: UN objetivo, flecha guía, habilidad, ayuda, aire, reunión y chips de chat contextuales
   let gKey = '', quickMap = {};
   const humansActed = () => RK.filter(r => st.players[r].owner).every(r => { try { return Story.privOf(st, r).ap < 3; } catch (e) { return true; } });
+  // La flecha va al punto sin recoger MÁS CERCANO (antes iba siempre al primero de la lista, aunque hubiera otro delante)
+  function nearestTask(m, r) {
+    try {
+      const b = eng.bodies[r], t0 = m.now.task; if (!b || !/^(propia|comun|otra)$/.test(t0 || '')) return m;
+      let best = null, bd = 1e9;
+      Story.tasks(st, r).forEach(t => { if (t.type === 'gate' || t.type === 'help') return; const q = eng.poiPos(t.poiId); if (!q) return; const d = Math.hypot(q.x - b.x, q.y - b.y); if (d < bd) { bd = d; best = t; } });
+      if (!best || best.poiId === m.now.target) return m;
+      const p = st.pois.find(x => x.id === best.poiId); if (!p) return m;
+      return Object.assign({}, m, { now: Object.assign({}, m.now, { target: best.poiId, text: best.text + ' (E)', short: 'Ve a ' + p.name }) });
+    } catch (e) { return m; }
+  }
   function guide() {
     if (!st || !eng || !started || !myPriv || st.phase === 'intro' || st.phase === 'final') return;
     const gd = isClient() ? myPriv.gd : null; if (isClient() && !gd) return; // cliente: misión/coach/pistas los calcula el host (estado oculto) y llegan en priv.gd
     const ex = st.phase === 'explore', air = eng.getAir ? eng.getAir(myRole) : 100;
     Hud.setAir && Hud.setAir(ex && air != null && air < 99 ? air : null);
-    let m; try { m = gd ? gd.m : Story.mission(st, myRole); } catch (e) { return; } if (!m || !m.now) return;
+    let m; try { m = gd ? gd.m : Story.mission(st, myRole); } catch (e) { return; } if (!m || !m.now) return; if (!gd && ex) m = nearestTask(m, myRole);
     const cr = gd ? (gd.cr || { ready: false }) : ex ? Story.crisisReady(st) : { ready: false }, g = ex ? eng.nearGate(myRole) : null;
     const gates = (st.gates || []).filter(x => !st.gatesOpen[x.id] && x.zone === st.round && x.role !== myRole);
     const k = JSON.stringify([m.now.text, !!g, m.steps.map(x => x.done), st.round, ex && myPriv.ap, !!g, cr.ready, gates.length]);
@@ -150,7 +161,7 @@
   const lastPriv = {};
   function gdFor(r) {
     const o = { m: null, cr: null, q: [], c: [], ph: null };
-    try { o.m = Story.mission(st, r); } catch (e) { } try { o.cr = st.phase === 'explore' ? Story.crisisReady(st) : { ready: false }; } catch (e) { } try { o.q = (Story.chatSuggest(st, r) || []).map(c => ({ label: c.label, text: c.text, gateId: c.gateId, toRole: c.toRole, cardId: c.cardId })); } catch (e) { } try { o.ph = Story.poiHints(st, r); } catch (e) { }
+    try { o.m = Story.mission(st, r); if (st.phase === 'explore') o.m = nearestTask(o.m, r); } catch (e) { } try { o.cr = st.phase === 'explore' ? Story.crisisReady(st) : { ready: false }; } catch (e) { } try { o.q = (Story.chatSuggest(st, r) || []).map(c => ({ label: c.label, text: c.text, gateId: c.gateId, toRole: c.toRole, cardId: c.cardId })); } catch (e) { } try { o.ph = Story.poiHints(st, r); } catch (e) { }
     if (st.phase === 'explore') for (let i = 0; i < 8; i++) { try { o.c.push(Story.coach(st, r, { moved: !!(i & 1), near: !!(i & 2), notebook: !!(i & 4) }) || null); } catch (e) { o.c.push(null); } }
     return o;
   }
