@@ -7540,8 +7540,8 @@ function showMenu() {
   const act = { solo: () => startFlow('solo'), host: () => startFlow('host'), join: () => joinDialog(), tut: () => showTutorial(), ach: () => showAchievements(), set: () => openSettings(), cred: () => showCredits() };
   items.forEach(([n, k, key, cls], i) => { const b = $('button', 'btn ' + (cls || ''), L, esc(n) + '<span class="k">' + key + '</span>'); b.style.animationDelay = i * .06 + .2 + 's'; b.onclick = () => { sfx(k === 'solo' ? 'confirm' : 'click'); act[k](); }; if (!i) b.classList.add('sel'); });
   const c = $('div', 'corner', s); if (document.body.classList.contains('rc-touch') && window.RCTouch && !RCTouch.isFs()) { RCTouch.fsBtn(c, 'btn sec'); }
-  const mb = $('button', 'btn sec', c, S.mute ? 'MUDO' : 'SON'); mb.title = 'Sonido (M)'; mb.setAttribute('aria-label', 'Silenciar'); mb.onclick = toggleMute;
-  function toggleMute() { S.mute = !S.mute; saveS(); applySound(); mb.textContent = S.mute ? 'MUDO' : 'SON'; sfx('click'); }
+  const mb = $('button', 'btn sec', c, S.mute ? '🔇' : '🔊'); mb.title = 'Sonido (M)'; mb.style.fontSize = '20px'; mb.setAttribute('aria-label', 'Silenciar'); mb.onclick = toggleMute;
+  function toggleMute() { S.mute = !S.mute; saveS(); applySound(); mb.textContent = S.mute ? '🔇' : '🔊'; sfx('click'); }
   $('div', 'foot', s, '1-7 elegir &middot; flechas/W-S mover &middot; Enter aceptar &middot; D dificultad &middot; M sonido');
   return s;
 }
