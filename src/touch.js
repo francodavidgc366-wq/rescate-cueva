@@ -91,6 +91,7 @@
       '§.h-stp{padding:1px 6px 1px 3px;font-size:10px}',
       // ---- dialogo compacto
       '§.h-dlg{left:6px;right:6px;bottom:4px}§.dl-wrap{max-width:none}§.dl-box{gap:8px;padding:5px 12px 5px 5px;max-height:30vh;border-width:2px}',
+    '§.h-dlg.compact{left:22%;right:22%;bottom:4px}§.h-dlg.compact .dl-box{max-height:22vh;padding:3px 8px 3px 3px}§.h-dlg.compact .dl-text{font-size:12px;line-height:1.25}§.h-dlg.compact .dl-fr{transform:scale(.6);transform-origin:left center;margin-right:-26px}§.h-dlg.compact .dl-foot{display:none}',
       '§.dl-box{background:#0a071a}§.dl-fr{border-width:2px}§.dl-tx{gap:2px;min-height:0}§.dl-name b{font-size:9px}§.dl-name i{font-size:10px}',
       '§.dl-text{font-size:14px!important;line-height:1.3;min-height:0;max-height:calc(30vh - 34px)}§.dl-foot{right:8px;bottom:2px;gap:8px;font-size:10px}§.dl-foot .arr{font-size:12px}§.dl-foot .sk{font-size:10px;min-height:0!important;padding:0 2px}',
       // ---- tarjeta de viaje: arriba, una fila, opaca; sustituye al cartel

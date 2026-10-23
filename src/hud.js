@@ -539,6 +539,8 @@
 .dl-foot{position:absolute;right:16px;bottom:6px;z-index:3;display:flex;align-items:center;gap:14px;font-size:12px;color:#a89fc4}.dl-foot .arr{font-size:20px;color:var(--c);animation:dl-bl .8s steps(2) infinite}@keyframes dl-bl{50%{opacity:.15}}
 .dl-foot .sk{background:none;border:0;color:#a89fc4;font-size:12px;cursor:pointer;padding:2px 4px}.dl-foot .sk:hover{color:#fff}
 .h-dlg.radio .dl-box{background:rgba(5,24,17,.92);border-color:#a5f0c4}.h-dlg.radio .dl-text{color:var(--h-radio);font-family:ui-monospace,Menlo,Consolas,monospace}
+/* compact (multijugador): no modal, deja jugar; se cierra solo */
+.h-dlg.compact{left:20%;right:calc(var(--h-chatw) + 16px);bottom:8px;pointer-events:none}.h-dlg.compact .dl-wrap{max-width:640px}.h-dlg.compact .dl-box{pointer-events:auto;padding:8px 16px 8px 8px;gap:10px}.h-dlg.compact .dl-text{font-size:calc(14px*var(--h-fs))}
 @media (max-width:820px),(max-height:520px){.h-dlg{left:4px;right:4px;bottom:4px}.dl-box{padding:10px 18px 10px 10px;gap:12px}.dl-foot .sk kbd{display:none}.dl-text{font-size:calc(17px*var(--h-fs))}}
 /* popup de chat (Hud.say): versión compacta del mismo estilo */
 .h-sy{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);width:min(560px,calc(100% - 340px));min-width:260px;display:flex;flex-direction:column;gap:6px;z-index:9;pointer-events:none}
@@ -914,7 +916,7 @@
     return z;
   }
   function drawMini() {
-    if (!el.mini || hidden || !P) return;
+    if (!el.mini || hidden || !P || el.mini.offsetParent === null) return; // minimapa oculto (p. ej. móvil): no dibujar
     var zn = 0; try { var e0 = W.RC && W.RC.eng && W.RC.eng(); zn = e0 && e0.getZone ? e0.getZone() : 0; } catch (e1) { }
     if (!(miniUser != null ? miniUser : zn >= 2)) { el.mini.classList.remove('on'); return; }
     var fn = miniFn; if (!fn) { var e = W.RC && W.RC.eng && W.RC.eng(); if (e && e.drawMinimap) fn = function (c, w, h, o) { return e.drawMinimap(c, w, h, o); }; }
@@ -1500,7 +1502,7 @@
       box.innerHTML = '<div class="dl-wrap"><div class="dl-box"><div class="dl-fr"><div class="dl-por"></div></div><div class="dl-tx"><div class="dl-name"><b></b><i></i></div><div class="dl-text"><span class="a"></span><span class="b"></span></div></div><div class="dl-foot"><span class="pg"></span><span class="arr">▼</span><button type="button" class="sk" data-act="dlgskip">Saltar <kbd>Esc</kbd></button></div></div></div>';
       if (o.skippable === false) { var sb_ = box.querySelector('[data-act=dlgskip]'); if (sb_) sb_.style.display = 'none'; }
       var dbox = box.querySelector('.dl-box'), fr = box.querySelector('.dl-fr'), por = box.querySelector('.dl-por'), nm = box.querySelector('.dl-name'), ta = box.querySelector('.a'), tb = box.querySelector('.b'), wrap = box.querySelector('.dl-wrap'), pg = box.querySelector('.pg'), arr = box.querySelector('.arr');
-      box.classList.add('on'); root.classList.add('dlg'); dlgOpen = true; snd('dialogue_open'); if (cb.dialogue) cb.dialogue(true);
+      box.classList.toggle('compact', !!o.compact); box.classList.add('on'); if (!o.compact) { root.classList.add('dlg'); dlgOpen = true; if (cb.dialogue) cb.dialogue(true); } snd('dialogue_open');
       function next() {
         clearTimeout(tm); clearTimeout(talkTm); clearTimeout(autoTm); i++;
         if (i >= lines.length) return end();
@@ -1525,7 +1527,7 @@
       function finish() {
         fin = true; clearTimeout(tm); clearTimeout(talkTm); typed = text.length; ta.innerHTML = hlHtml(parts, text.length, b0.color); tb.textContent = '';
         ctl.talk(false); fr.classList.remove('talk'); arr.style.visibility = 'visible';
-        if (o.auto) autoTm = setTimeout(next, o.auto);
+        if (o.compact) autoTm = setTimeout(next, Math.min(6500, 2400 + text.length * 45)); else if (o.auto) autoTm = setTimeout(next, o.auto);
       }
       function advance() { if (ended) return; if (!fin) finish(); else { snd('click'); next(); } }
       function end() {
@@ -1542,7 +1544,7 @@
         else if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight' || e.key === 'e' || e.key === 'E') { if (!e.repeat) advance(); }
       }
       function onC(e) { if (e.target.closest('[data-act=dlgskip]')) { if (o.skippable !== false) end(); return; } advance(); }
-      W.addEventListener('keydown', onK, true); box.addEventListener('click', onC);
+      if (!o.compact) W.addEventListener('keydown', onK, true); box.addEventListener('click', onC);
       dlgCur = { end: end }; next();
     });
   }

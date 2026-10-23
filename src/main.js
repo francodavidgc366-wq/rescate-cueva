@@ -39,10 +39,11 @@
   const humansActed = () => RK.filter(r => st.players[r].owner).every(r => { try { return Story.privOf(st, r).ap < 3; } catch (e) { return true; } });
   function guide() {
     if (!st || !eng || !started || !myPriv || st.phase === 'intro' || st.phase === 'final') return;
+    const gd = isClient() ? myPriv.gd : null; if (isClient() && !gd) return; // cliente: misión/coach/pistas los calcula el host (estado oculto) y llegan en priv.gd
     const ex = st.phase === 'explore', air = eng.getAir ? eng.getAir(myRole) : 100;
     Hud.setAir && Hud.setAir(ex && air != null && air < 99 ? air : null);
-    let m; try { m = Story.mission(st, myRole); } catch (e) { return; } if (!m || !m.now) return;
-    const cr = ex ? Story.crisisReady(st) : { ready: false }, g = ex ? eng.nearGate(myRole) : null;
+    let m; try { m = gd ? gd.m : Story.mission(st, myRole); } catch (e) { return; } if (!m || !m.now) return;
+    const cr = gd ? (gd.cr || { ready: false }) : ex ? Story.crisisReady(st) : { ready: false }, g = ex ? eng.nearGate(myRole) : null;
     const gates = (st.gates || []).filter(x => !st.gatesOpen[x.id] && x.zone === st.round && x.role !== myRole);
     const k = JSON.stringify([m.now.text, !!g, m.steps.map(x => x.done), st.round, ex && myPriv.ap, !!g, cr.ready, gates.length]);
     if (k !== gKey) {
@@ -53,9 +54,9 @@
       const ab = { guia: 'Clavar anclaje', medica: 'Estabilizar / reptadero', ing: 'Puente / válvula' }[myRole];
       Hud.setAbilities && Hud.setAbilities(ex && g ? { key: 'Q', label: ab, hint: g.text, ready: true } : null);
       Hud.setHelp && Hud.setHelp(ex ? gates.map(x => ({ role: x.role, label: 'Pedir a ' + { guia: 'Mateo', medica: 'Elena', ing: 'Samuel' }[x.role] + ': ' + x.kind, enabled: true, hint: x.why, gateId: x.id })) : null);
-      try { const q = Story.chatSuggest(st, myRole) || []; quickMap = {}; q.forEach(c => quickMap[c.text] = c); Hud.setQuick && Hud.setQuick(q.map(c => ({ label: c.label, text: c.text }))); } catch (e) { }
+      try { const q = gd ? (gd.q || []) : (Story.chatSuggest(st, myRole) || []); quickMap = {}; q.forEach(c => quickMap[c.text] = c); Hud.setQuick && Hud.setQuick(q.map(c => ({ label: c.label, text: c.text }))); } catch (e) { }
     }
-    try { const c = st.phase === 'explore' ? Story.coach(st, myRole, coachFlags(m)) : null; Hud.setCoach && Hud.setCoach(c ? { step: c.step, total: c.total, text: c.text } : null); } catch (e) { }
+    try { const fl = coachFlags(m), c = st.phase !== 'explore' ? null : gd ? (gd.c || [])[(fl.moved ? 1 : 0) | (fl.near ? 2 : 0) | (fl.notebook ? 4 : 0)] : Story.coach(st, myRole, fl); Hud.setCoach && Hud.setCoach(c ? { step: c.step, total: c.total, text: c.text } : null); } catch (e) { }
     try { const gt = ex && m.now.task === 'ayuda' && m.now.gate ? (st.gates || []).find(x => x.id === m.now.gate && !st.gatesOpen[x.id]) : null;
       Hud.setBlocked && Hud.setBlocked(gt && gt.role !== myRole ? { role: gt.role, gateId: gt.id, text: 'Pedir a ' + { guia: 'Mateo', medica: 'Elena', ing: 'Samuel' }[gt.role] + ': abrir ' + (gt.label || gt.kind) } : null); } catch (e) { }
     const tgt = ex && m.now.target ? m.now.target : null; if (tgt !== guide.t) { guide.t = tgt; eng.setGuide(tgt, tgt ? { label: m.now.short ? m.now.short.replace(/^Ve a /, '') : '' } : undefined); }
@@ -135,12 +136,29 @@
   addEventListener('blur', () => { Object.keys(keys).forEach(k => keys[k] = 0); pushInput(); });
 
   // ---------- Estado -> pantalla ----------
+  // Cliente: el motor local necesita los POI/zona del tramo (el host los pone en startRound) para pintar anillos, flecha y minimapa igual que el host
+  let csKey = '';
+  function clientSync() {
+    if (!eng || !st || !st.pois) return; const k = st.round + ':' + st.pois.map(p => p.id).join(',');
+    if (k !== csKey) { csKey = k; eng.setUnlocked(st.round); eng.setPois(st.round, st.pois); guide.t = undefined; gKey = ''; syncPois(); }
+    try { if (myPriv && myPriv.gd && myPriv.gd.ph) eng.setPoiHints(myPriv.gd.ph); } catch (e) { }
+    guide();
+  }
+  setInterval(() => { if (isClient() && started && st && myPriv) { try { clientSync(); } catch (e) { } } }, 250);
   function syncPois() { if (!eng || !st || !st.pois) return; st.pois.forEach(p => eng.markPoi(p.id, { used: p.used, by: p.by })); }
+  // Datos de guía de un rol remoto (dependen de estado oculto del host): misión, coach (8 variantes según flags locales), chips de chat y ojitos de POI
+  const lastPriv = {};
+  function gdFor(r) {
+    const o = { m: null, cr: null, q: [], c: [], ph: null };
+    try { o.m = Story.mission(st, r); } catch (e) { } try { o.cr = st.phase === 'explore' ? Story.crisisReady(st) : { ready: false }; } catch (e) { } try { o.q = (Story.chatSuggest(st, r) || []).map(c => ({ label: c.label, text: c.text, gateId: c.gateId, toRole: c.toRole, cardId: c.cardId })); } catch (e) { } try { o.ph = Story.poiHints(st, r); } catch (e) { }
+    if (st.phase === 'explore') for (let i = 0; i < 8; i++) { try { o.c.push(Story.coach(st, r, { moved: !!(i & 1), near: !!(i & 2), notebook: !!(i & 4) }) || null); } catch (e) { o.c.push(null); } }
+    return o;
+  }
   function push() {
     if (!st) return; render();
     if (mode === 'host') {
-      Net.broadcast('state', Story.publicState(st));
-      RK.forEach(r => { const o = st.players[r].owner; if (o && o !== myId && o !== 'solo') Net.sendTo(o, 'priv', Story.privOf(st, r)); });
+      { const ps = Story.publicState(st); if (ps.chat && ps.chat.length > 80) ps.chat = ps.chat.slice(-80); Net.broadcast('state', ps); } // el chat del HUD solo muestra 80 líneas
+      RK.forEach(r => { const o = st.players[r].owner; if (o && o !== myId && o !== 'solo') { const p = Object.assign({}, Story.privOf(st, r), { gd: gdFor(r) }), j = JSON.stringify(p); if (lastPriv[o] !== j) { lastPriv[o] = j; Net.sendTo(o, 'priv', p); } } });
     }
   }
   const revKind = t => t === 'lie' ? 'lie' : (t === 'secret' || t === 'secret_action' || t === 'trap' || t === 'crisis') ? 'secret' : 'good';
@@ -151,14 +169,17 @@
     syncPois();
     if (st.phase === 'intro' || !myPriv) return;
     Hud.update(st, myPriv, myRole);
+    if (isClient()) clientSync();
     const t = TRACK[st.phase]; if (t && t !== lastTrack) { lastTrack = t; S.music && S.music(t); }
     S.setIntensity && S.setIntensity(st.s.agua / 100);
     (st.chat || []).forEach(m => { if (m.id > lastChatId) { lastChatId = m.id; lastChatAt = Date.now(); if (RK.includes(m.from) && (m.kind === 'chat' || m.kind === 'share') && eng) eng.say(m.from, String(m.text).slice(0, 70)); if (lastChatId0 && m.from !== myRole && (m.from === 'lia' || (RK.includes(m.from) && (m.kind === 'chat' || m.kind === 'share')))) Hud.say && Hud.say({ who: m.from, mood: m.mood || 'talk', text: String(m.text || (m.card && m.card.text) || '').slice(0, 110) }); } lastChatId0 = true; });
-    const sk = st.round + ':' + st.phase;
+    // Multijugador: el diálogo del Director es compacto y no modal (cada uno a su ritmo, se puede jugar); el host pasa a explorar sin esperarlo
+    const multi = mode === 'host' || mode === 'client', sk = multi ? ((st.phase === 'briefing' || st.phase === 'explore') ? 'ev' + st.round : lastScene) : st.round + ':' + st.phase;
     if (sk !== lastScene) {
-      lastScene = sk; const kind = st.phase === 'briefing' ? 'event' : null;
+      lastScene = sk; const kind = (multi ? sk.slice(0, 2) === 'ev' : st.phase === 'briefing') ? 'event' : null;
       if (kind && Hud.dialogue) { let ls = []; try { ls = Story.scene(st, kind) || []; } catch (e) { } if (st.round === 1 && kind === 'event') { try { ls = ls.concat(Story.scene(st, 'lia') || []); } catch (e) { } }
-        Hud.dialogue(ls).then(() => { if (kind === 'event' && mode !== 'client' && st && st.phase === 'briefing') advance(); }); }
+        Hud.dialogue(ls, multi ? { compact: true } : undefined).then(() => { if (!multi && kind === 'event' && mode !== 'client' && st && st.phase === 'briefing') advance(); }); }
+      if (multi && kind && mode === 'host') [1200, 3500].forEach(ms => setTimeout(() => { if (st && st.phase === 'briefing') advance(); }, ms));
     }
     const res = st.lastRes;
     if (st.phase === 'resolve' && res && shownRes !== st.round) {
@@ -365,7 +386,7 @@
         started = true; UI.hide(); ensureGame(); makeEngine(false); setupBots();
       }
       if (s.phase !== 'intro') hideWait();
-      if (prev && prev.phase !== s.phase) { if (prev.phase === 'briefing' && Hud.isDialogue && Hud.isDialogue()) Hud.skipDialogue(); pushInput(); } // el host saltó/terminó el diálogo del Director
+      if (prev && prev.phase !== s.phase) pushInput();
       if (s.phase === 'intro' && (!prev || prev.phase !== 'intro')) { introDone = false; playIntro().then(() => { introDone = true; Net.send('ready', { act: 'intro' }); if (st && st.phase === 'intro') showWait(waitLast || { d: 0, n: 0, miss: [] }); }); }
       else if (s.phase !== 'intro') render();
     });

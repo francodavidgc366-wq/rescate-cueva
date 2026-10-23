@@ -2518,8 +2518,11 @@ function create(canvas, opts) {
   function loop(ts) {
     if (!running) return;
     raf = requestAnimationFrame(loop);
-    var dt = Math.min(0.1, (ts - last) / 1000); last = ts; step(dt); render();
+    var dt = Math.min(0.1, (ts - last) / 1000); last = ts; step(dt);
+    // móvil (cliente): tope de ~30 fps de dibujo; la simulación/interpolación sigue a 60. shortcut: tope fijo, subir a adaptativo si hay móviles rápidos que lo notan.
+    if (!authority && cap30 && ts - lastR < 30) return; lastR = ts; render();
   }
+  var lastR = 0, cap30 = !!(global.document && global.document.body && global.document.body.classList.contains('rc-touch'));
   function start() { if (running) return; running = true; last = performance.now(); acc = 0; raf = requestAnimationFrame(loop); }
   function stop() { running = false; cancelAnimationFrame(raf); }
   function setInput(id, inp) {
